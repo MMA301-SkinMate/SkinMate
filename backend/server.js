@@ -4,6 +4,7 @@ require('dotenv').config();
 
 const connectDB = require('./src/config/db');
 const { errorHandler } = require('./src/middlewares/errorMiddleware');
+const scanRoutes = require('./src/routes/scanRoutes');
 
 const app = express();
 
@@ -17,9 +18,12 @@ app.get('/health', (req, res) => {
     res.status(200).json({ status: 'UP', timestamp: new Date().toISOString() });
 });
 
+// Scan routes
+app.use('/api/scan', scanRoutes);
+
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}/`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server is running on http://0.0.0.0:${PORT}`);
 });

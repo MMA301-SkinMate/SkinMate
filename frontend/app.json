@@ -19,6 +19,14 @@
     },
     "web": {
       "favicon": "./src/assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Ứng dụng cần truy cập camera để quét bảng thành phần mỹ phẩm."
+        }
+      ]
+    ]
   }
 }
