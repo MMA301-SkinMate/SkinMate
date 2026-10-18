@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useCameraPermissions } from 'expo-camera';
 import { Alert } from 'react-native';
 import scanApi from '../api/scanApi';
+import { uploadImage } from '../utils/uploadImage';
 
 const useScan = (navigation) => {
     const [facing, setFacing] = useState('back');
@@ -18,6 +19,23 @@ const useScan = (navigation) => {
     const toggleFlash = () => setFlash(prev => (prev === 'off' ? 'on' : 'off'));
     const toggleFacing = () => setFacing(prev => (prev === 'back' ? 'front' : 'back'));
 
+    const processImageScan = async (imageUri) => {
+        try {
+            setCapturedImageUri(imageUri);
+            setIsLoading(true);
+
+            const result = await scanApi.scanIngredientImage(imageUri);
+
+            setScannedData(result?.data);
+            setIsModalVisible(true);
+        } catch (error) {
+            Alert.alert('Error', error?.message || 'Cannot send image to server. Please try again.');
+            setCapturedImageUri(null);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const handleCapture = async () => {
         if (!cameraRef.current) return;
 
@@ -26,18 +44,16 @@ const useScan = (navigation) => {
                 quality: 0.8,
                 skipProcessing: true,
             });
-            setCapturedImageUri(photo.uri);
-            setIsLoading(true);
-
-            const result = await scanApi.scanIngredientImage(photo.uri);
-            console.log('Result from Backend:', result);
-
-            setScannedData(result?.data)
-            setIsModalVisible(true);
+            await processImageScan(photo.uri);
         } catch (error) {
             Alert.alert('Error', error?.message || 'Cannot send image to server. Please try again.');
-        } finally {
-            setIsLoading(false);
+        }
+    };
+
+    const handleUploadImage = async () => {
+        const imageUri = await uploadImage();
+        if (imageUri) {
+            await processImageScan(imageUri);
         }
     };
 
@@ -54,10 +70,6 @@ const useScan = (navigation) => {
 
     const handleScanHistory = () => {
         Alert.alert('Scan History', 'View your previously scanned cosmetic products.');
-    };
-
-    const handleUploadImage = () => {
-        Alert.alert('Upload Image', 'Select an image from gallery to scan ingredients.');
     };
 
     return {
