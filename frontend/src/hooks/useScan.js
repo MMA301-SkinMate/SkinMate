@@ -57,13 +57,13 @@ const useScan = (navigation) => {
         }
     };
 
-    const handleEditIngredients = () => {
-        setIsModalVisible(false);
-        setCapturedImageUri(null);
-        Alert.alert('Edit Mode', 'Chuyển sang màn hình chỉnh sửa danh sách thành phần.');
-    };
-
-    const handleCloseModal = () => {
+    const handleCloseModal = (updatedIngredients) => {
+        if (updatedIngredients && Array.isArray(updatedIngredients)) {
+            setScannedData(prev => ({
+                ...prev,
+                ingredients: updatedIngredients,
+            }));
+        }
         setIsModalVisible(false);
         setCapturedImageUri(null);
     };
@@ -85,7 +85,6 @@ const useScan = (navigation) => {
         toggleFlash,
         toggleFacing,
         handleCapture,
-        handleEditIngredients,
         handleCloseModal,
         handleUploadImage,
         handleScanHistory,

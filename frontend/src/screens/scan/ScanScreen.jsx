@@ -23,7 +23,6 @@ const ScanScreen = ({ navigation }) => {
         toggleFlash,
         toggleFacing,
         handleCapture,
-        handleEditIngredients,
         handleCloseModal,
         handleUploadImage,
         handleScanHistory,
@@ -79,7 +78,6 @@ const ScanScreen = ({ navigation }) => {
             {isModalVisible && (
                 <ScanResultModal
                     ingredients={scannedData?.ingredients || []}
-                    onEdit={handleEditIngredients}
                     onClose={handleCloseModal}
                 />
             )}

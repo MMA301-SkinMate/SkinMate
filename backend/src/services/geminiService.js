@@ -1,5 +1,12 @@
 const ai = require('../config/AI');
 
+// Fallback models in case one hits rate limit (429) or high demand (503)
+const CANDIDATE_MODELS = [
+    'gemini-3.5-flash',
+    'gemini-3.7-flash',
+    'gemini-3-flash-preview',
+];
+
 const extractIngredientsFromImage = async (file) => {
     const imagePart = {
         inlineData: {
@@ -17,31 +24,49 @@ const extractIngredientsFromImage = async (file) => {
         }
     `;
 
-    const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: [imagePart, prompt],
-        config: {
-            responseMimeType: 'application/json',
-        },
-    });
+    let lastError = null;
 
-    const rawText = (response.text || '').trim();
-    const cleanJsonString = rawText
-        .replace(/^```json\s*/i, '')
-        .replace(/^```\s*/, '')
-        .replace(/\s*```$/, '');
+    for (const model of CANDIDATE_MODELS) {
+        try {
+            console.log(`[geminiService] Calling model ${model}...`);
+            const response = await ai.models.generateContent({
+                model,
+                contents: [imagePart, prompt],
+                config: {
+                    responseMimeType: 'application/json',
+                },
+            });
 
-    try {
-        return JSON.parse(cleanJsonString);
-    } catch (parseError) {
-        console.error('JSON Parse Error:', parseError.message);
-        console.log('Raw AI Text:', response.text);
-        return {
-            ingredients: [],
-            rawText: response.text,
-            message: 'Failed to parse JSON from AI response.',
-        };
+            const rawText = (response.text || '').trim();
+            const cleanJsonString = rawText
+                .replace(/^```json\s*/i, '')
+                .replace(/^```\s*/, '')
+                .replace(/\s*```$/, '');
+
+            try {
+                return JSON.parse(cleanJsonString);
+            } catch (parseError) {
+                console.error('JSON Parse Error:', parseError.message);
+                console.log('Raw AI Text:', response.text);
+                return {
+                    ingredients: [],
+                    rawText: response.text,
+                    message: 'Failed to parse JSON from AI response.',
+                };
+            }
+        } catch (error) {
+            console.warn(`[geminiService] Model ${model} failed:`, error.message || error);
+            lastError = error;
+            // If rate-limited or unavailable, continue to next model
+            if (error.status === 429 || error.status === 503 || error.message?.includes('quota') || error.message?.includes('high demand')) {
+                continue;
+            }
+            // For other critical errors, rethrow or try next model
+            continue;
+        }
     }
+
+    throw lastError || new Error('All Gemini models failed to process image');
 };
 
 module.exports = {
