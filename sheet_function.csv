@@ -1,0 +1,192 @@
+ID,Function/ Screen,Screen,Description,Người phụ trách,
+1,Login/Logout,,,Nguyễn Quang,
+2,Đăng ký,,,Nguyễn Quang,
+3,Xây khung UI,Intro,Bottom tab,An,
+4,Intro ,,3 slide intro app,An,
+5,Thiết lập Hồ sơ da,,"Loại da, thành phần dị ứng, tình trạng hiện tại",Trần Quang,
+6,Popup Cẩm nang da,,"Do, Don't dựa trên loại da, và thành phần dị ứng",Trần Quang,
+7,Popup thêm vào tủ đồ,,,Trần Quang,
+8,Gợi ý chuỗi routine,,"Gợi ý chuỗi routine cải thiện tình trạng da hiện tại vừa được cập nhật từ những sản phẩm có sẵn trong tủ đồ (loại bỏ các sản phẩm bị gán mác hết hạn mà người dùng vẫn dùng), trong tủ đồ không có sản phẩm có thành phần cải thiện => gọi API gợi ý sản phẩm bên ngoài tủ đồ 
+
+=> Chọn bình thường thì chu trình sẽ hướng tới 1 làn da căng bóng => chủ yếu cấp ẩm nên nó cứ gen 7 ngày rồi sau đó cứ lặp lại nếu không có tình trạng da xấu xuất hiện",Trần Quang,
+9,View gợi ý chuỗi routine detail,,"Hiện thị chuỗi routine theo ngày và mỗi ngày chia theo buổi sáng, tối
+=> Button: Thêm vào chuỗi routine của tôi, bỏ qua (ấn bỏ qua thì hệ thống tự lưu nháp để sau người dùng lại cần gợi ý thì lại lấy text ra)",Trần Quang,
+10,Nút FAB Guide,All,,Trần Quang,
+11,UI Home,Home,"- Widget check in da
+- Daily routine hôm nay
+- List 1 vài bài đăng từ community phù hợp với da user",Huyền,
+12,Thông báo checkin da hàng ngày,,Thông báo về thiết bị user vào checkin da,Huyền,
+13,Checkin tình trạng da hàng ngày,,"Widget ""Nhật ký làn da"": 
+Title: Da bạn hôm nay thế nào ? 
+icon: Bình thường, khô rát, kích ứng, nổi mụn, bóng dầu 
+=> có thể chọn nhiều icon, nếu chọn 'bình thường' thì bỏ các lựa chọn khác
+
+=> sau khi user chọn xong icon tình trạng da => có một thông báo bé 10s cho phép người dùng undo 
+=> user chọn xong => cập nhật lại Daily Routine",Huyền,
+14,Phân tích tình trạng da và Daily Routine,," + Hệ thống kiểm tra xem người dùng có đang kích hoạt một ""Chuỗi Routine"" nào không (Ví dụ: Đang ở Ngày thứ 3 của Chuỗi Trị Mụn 14 ngày).
+ + Hiển thị danh sách sản phẩm được lên lịch sẵn cho Ngày thứ ... ra làm bản nháp
+ + Hệ thống đối chiếu routine daily nháp này với Check-in da hôm nay. Nếu chuỗi quy định hôm nay bôi BHA, nhưng user lại check-in là ""Khô rát"", thuật toán lập tức ghi đè (override): đẩy B5/Ceramide thay thế, lùi toàn bộ routine hôm nay và sau này xuống 1 ngày
+=> tìm sản phẩm sẵn trong 'My Collection' (loại bỏ các sản phẩm bị gán mác hết hạn mà người dùng vẫn dùng), nếu trong My Collection thiếu sản phẩm có thành phần đấy 
+=> gọi API gợi ý sản phẩm bên ngoài tủ đồ",Huyền,
+15,View Daily Routine,,"Chưa có gì thì hiện 'Gợi ý chu trình skincare phù hợp' => click vào => 'Gợi ý chuỗi routine'
+Có sản phẩm trong daily routine => cái kệ gỗ với các icon sản phẩm và tên sản phẩm xếp theo chiều ngang => Button View Detail
+=> Có một nút nhỏ cạnh View routine daily detail mở ra Chuỗi routine đang dùng => chuyển đến View chuỗi routine detail",Huyền,
+16,View Daily Routine Detail,,"Theo 5 bước 
+Bước 1: Làm sạch (Tẩy trang / Sữa rửa mặt).
+Bước 2: Cân bằng (Toner / Nước hoa hồng).
+Bước 3: Đặc trị (Tẩy da chết / Serum / Chấm mụn) – Đây là bước thuật toán rẽ nhánh thay đổi nhiều nhất tùy theo 5 trạng thái Check-in.
+Bước 4: Dưỡng / Phục hồi (Kem dưỡng / Gel).
+Bước 5: Bảo vệ (Kem chống nắng – bắt buộc nếu là chu trình Buổi sáng).
+
+Mỗi bước sẽ được render thành một Card nằm ngang
+Chứa 3 luồng thông tin xếp dọc:
+
+Tiêu đề bước: BƯỚC 1 - LÀM SẠCH
+Icon đại diện sản phẩm
+Tên sản phẩm: Sữa rửa mặt Simple Refreshing.
+Hướng dẫn sử dụng (nếu có)
+Lý do động: Một dòng text màu làm điểm nhấn, được sinh ra từ trạng thái Check-in. Ví dụ: ""Sữa rửa mặt simple có hoạt chất Pro-Vitamin B5 sẽ giúp làm dịu nền da đang Khô Rát của bạn"" (nếu có)",Huyền,
+17,View chuỗi routine detail,,"Giao diện giống View gợi ý chuỗi routine detail nhưng button khác
+Button: Add/ Edit",Huyền,
+18,Add/Edit sản phẩm vào chuỗi routine,,"Add thì sẽ add các sản phẩm có trong tủ đồ, có thể chỉ add sản phẩm vào các ngày có sẵn, hoặc thêm hẳn 1 ngày mới
+=> Hệ thống check xung đột (UC: Phân tích độ phù hợp với da)=> Popup cảnh báo trước khi cho lưu",Huyền,
+19,View tủ đồ,My Collection,"2 tab: Đang sử dụng, đã sử dụng (bao gồm các sản phẩm hết hạn và đã dùng hết)
+background kệ đồ 
+icon + tên sản phẩm theo từng hàng kệ
+số lượng sản phẩm vượt quá 1 screen => thêm ngăn
+=> background cuộn cùng sản phẩm, không phải background đứng yên và chỉ sản phẩm bị cuộn",Nguyễn Quang,
+20,View detail thông tin từng sản phẩm ,,"Click vào sản phẩm => popup thông tin sản phẩm detail bao gồm: thành phần, ngày mở nắp, ngày hết hạn, ghi chú",Nguyễn Quang,
+21,Edit thông tin sản phẩm,,"Cho phép user edit các thông tin trên (ngày hết hạn có thể chọn ngày cụ thể hoặc chọn khoảng thời gian, vd: 6 tháng với trường hợp này bắt buộc phải có ngày mở nắp)",Nguyễn Quang,
+22,Delete sản phẩm,,"Giữ sản phẩm onLongPress: hiện delete hoặc đánh dấu dùng hết
+=> Nếu xóa sản phẩm đang trong chuối routine
+Hiện cảnh báo ""Sản phẩm này đang được dùng trong Phác đồ điều trị của bạn. Hệ thống sẽ tự động thay thế bằng sản phẩm tương đương trong tủ đồ. Bạn có chắc chắn muốn xóa?""
+Gọi API tìm sản phẩm phù hợp không có thì thôi",Nguyễn Quang,
+23,Đánh dấu dùng hết,,Đánh dấu sản phẩm dùng hết và cho vào tab đã dùng hết,Nguyễn Quang,
+24,Thông báo sản phẩm hết hạn (về điện thoại),,"Thông báo gửi về điện thoại user khi có sản phẩm sắp hết hạn (7 ngày), và khi sản phẩm đến ngày hết hạn => báo mỗi 8h sáng
+1 tuần quét 1 lần (báo lại cả các trường hợp sản phẩm hết hạn nhưng user vẫn sử dụng)",Nguyễn Quang,
+25,Popup thông báo sản phẩm hết hạn,,"Khi user vào app => hiện ngay popup thông báo các sản phẩm đã hết hạn: sản phẩm này đã hết hạn, bạn có muốn tiếp tục sử dụng ?
+button: 
++ không => cho sản phẩm vào tab đã sử dụng
++ tiếp tục sử dụng => vẫn để sản phẩm ở tab đang sử dụng nhưng có trạng thái cảnh báo đỏ",Nguyễn Quang,
+26,Scan thành phần,Scan,"có thể tải ảnh lên hoặc scan trực tiếp ( UI 3 button dưới: tải ảnh lên - Nút scan - list scan history)
+=> hiển thị popup các thành phần vừa quét được",An,
+27,Popup comfirm thành phần,,"hiển thị các thành phần vừa quét được
+button: 
+- Ok => chuyển đến trang add thông tin sản phẩm
+- Edit ",An,
+28,Edit thành phần scan,,cho phép edit các thành phần vừa quét được cho đúng với thực tế,An,
+29,Add thông tin sản phẩm,,"hiện danh sách thành phần vừa xác nhận và có thêm các trường nhập tên sản phẩm, chọn loại sản phẩm (sữa rửa mặt, serum,....), icon tượng trưng, hạn sử dụng, ngày mở nắp, ghi chú
+=> Ok => gen ra nội dung ""Phân tích độ phù hợp da""",An,
+30,Phân tích độ phù hợp da,," phân tích mức độ phù hợp dựa trên hồ sơ da, tình trạng da hôm nay, và routine daily (nếu có)
+ + dưới ...%: báo đỏ các thành phần không phù hợp
+ + trên ...%: đưa ra các thành phần giúp cải thiện tình trạng da
+==> Prompt: ""Bạn là chuyên gia da liễu. Hệ thống của chúng tôi vừa chấm điểm sản phẩm này đạt [65%] độ phù hợp.
+Thông tin user: Loại da gốc là [Da_Dầu]. Tình trạng hôm nay là [Kích_Ứng].
+Daily Routine hôm nay gồm: [SP_A, B]. Tủ đồ có: [SP_C, D].
+Dựa vào số điểm [65%] và dữ liệu trên, hãy giải thích lý do cho điểm số này và trả về JSON gồm: verdict, conflict_resolution, best_pairing_in_closet, future_plan.""
+
+Tách kết quả làm 2 phần. Phần lõi là ""Độ phù hợp nền da"" (chỉ chạy Bước 1 của công thức tính điểm). Phần phụ là cảnh báo bối cảnh, lúc này Prompt LLM sẽ ghi chú thêm: ""Sản phẩm này đạt 85% phù hợp với loại da của bạn, nhưng nếu mua, tuyệt đối không dùng chung với Daily Routine hôm nay vì...""
+
+Công thức tính %:
+Gắn điểm xuất phát mặc định là 70 điểm (Mức độ trung bình/An toàn). Tối đa là 100 điểm, tối thiểu là 0 điểm. Thuật toán sẽ dùng vòng lặp (map/reduce) chạy qua mảng thành phần OCR vừa quét được:
+
+Bước 1: Lọc theo Hồ sơ da (Base Profile)
+ - Nếu thành phần nằm trong mảng Do's: +10 điểm (Khuyến khích).
+ - Nếu thành phần nằm trong mảng Don'ts: -15 điểm (Phạt nặng vì gây bí/khô da).
+
+Bước 2: Lọc theo Tình trạng da Check-in (Today's Condition)
+ - Nếu thành phần nằm trong nhóm ""Trị liệu"" của Tình trạng hôm nay: +20 điểm. (Ví dụ: Đang mụn mà quét trúng Tràm trà).
+ - Nếu thành phần nằm trong nhóm ""Cấm kỵ"" của Tình trạng hôm nay: -30 điểm. (Ví dụ: Đang kích ứng mà quét trúng AHA).
+
+Bước 3: Lọc Xung đột Routine (Conflict Check)
+ - Backend bốc mảng thành phần của các sản phẩm đang có trong Daily Routine hôm nay ra.
+ - Nếu chất vừa quét nằm trong danh sách kỵ với bất kỳ chất nào đang có trong Routine: -40 điểm (Mức phạt cao nhất, vì nó sẽ gây hỏng da ngay lập tức).
+
+Bước 4: Chốt hạ và Ràng buộc (Clamp)
+ - Sau khi cộng trừ liên tiếp, kết quả có thể vọt lên 130 hoặc tụt xuống âm. Dev sử dụng hàm toán học để khóa nó lại trong khoảng 0 - 100:
+        final_score = Math.min(100, Math.max(0, current_score));
+
+
+
+ + cho phép lưu draft hoặc thêm vào tủ đồ",An,
+31,Add sản phẩm vào tủ đồ,,Add các sản phẩm đã được scan và phân tích vào tủ đồ,An,
+32,List history scan,,"list history scan được lưu draft
+ - thêm vào tủ đồ
+ - xem detail
+ - xóa",An,
+33,History scan detail,,Xem chi tiết bản ghi như màn hình add thông tin sản phẩm sau khi được phân tích,An,
+34,Delete history record ,,Xóa bản ghi ,An,
+35,List bài đăng,Community,list danh sách các bài chia sẻ routine (có lượt tym và lượt copy),Nguyễn Quang,
+36,Bài đăng chi tiết ,,"hiển thị chi tiết các bài đăng, chuỗi routine theo ngày và chia sáng tối",Nguyễn Quang,
+37,Báo cáo bài đăng,,Bị báo cáo quá ... lần thì ẩn bài viết,Nguyễn Quang,x
+38,Đổi mật khẩu,Profile,,Nguyễn Quang,
+39,Đổi thông tin user,,"Avatar, tên",Nguyễn Quang,
+40,Thiết lập lại hồ sơ da,,"1. Cập nhật Cẩm nang Cốt lõi (Do's & Don'ts)
+Ngay khi người dùng nhấn ""Lưu"" loại da mới, hệ thống phải tự động tra cứu lại từ điển Skin_Dictionary để thay đổi toàn bộ danh sách Hoạt chất khuyên dùng (Do's) và Cấm kỵ (Don'ts). Nút Guide FAB trên toàn app sẽ lập tức phản ánh dữ liệu mới này.
+
+2. Đánh giá lại Tủ đồ (Re-evaluate Closet)
+Vì điểm % phù hợp của sản phẩm phụ thuộc lớn vào loại da, khi loại da thay đổi, độ phù hợp của các sản phẩm trên kệ cũng thay đổi theo (Một chai kem dưỡng ẩm đặc từ 90% hợp da khô sẽ rớt xuống 30% nếu user đổi sang da dầu).
+
+UX tinh tế: Khi đổi loại da, app nên hiện một Popup: ""Hồ sơ da của bạn đã thay đổi. Hệ thống sẽ đánh giá lại mức độ phù hợp của các sản phẩm trong tủ đồ.""
+
+3. Tác động đến Phác đồ đang chạy (Active Treatment Plan)
+Nếu bạn áp dụng luồng ""Chuỗi Routine 7-14 ngày"", việc người dùng đổi loại da ở giữa chu trình có thể làm hỏng logic của phác đồ.
+
+Xử lý Logic: Cần có cảnh báo rẽ nhánh: ""Việc thay đổi hồ sơ da sẽ hủy bỏ phác đồ điều trị hiện tại và hệ thống cần tính toán lại lộ trình mới. Bạn có chắc chắn không?""",Trần Quang,x
+41,Routine History,,"Lịch sử các chuỗi chu trình mình đã dùng
+=> Xem chi tiết, copy vào chuỗi routine để dùng lại",Trần Quang,
+42,View chuỗi routine history detail,,"Giao diện giống View gợi ý chuỗi routine detail nhưng button khác
+=> Button: Copy, Chia sẻ lên Cộng đồng",Trần Quang,
+43,Copy chuỗi routine cũ,,"Kiểm tra hiện tại có đang dùng chuỗi routine nào không, và chuỗi routine vừa copy thì có phù hợp tình trạng da hiện tại không
+=> user chọn bỏ routine cũ bắt đầu dùng routine mới / dùng xong routine cũ mới chuyển qua routine vừa copy để dùng
+
+Trước khi xác nhận Copy, hệ thống phải quét đối chiếu mảng sản phẩm trong chuỗi cũ với Tủ đồ hiện tại (tab Đang sử dụng). Nếu thiếu, hiển thị thông báo: ""Bạn đã hết sản phẩm [Tên SP]. Hệ thống sẽ thay thế bằng sản phẩm tương đương trong tủ đồ của bạn"" (thuật toán tự động tìm sản phẩm có chung thành phần active để lấp vào chỗ trống).",Trần Quang,
+44,Chia sẻ bài đăng routine,,"Hệ thống tự fill chuỗi routine mà người dùng vừa bấm chọn chia sẻ, người dùng tự nhập title, note, chỉnh sửa routine",Trần Quang,
+45,Thiết kế ERD,,"1. Users (Hồ sơ người dùng)
+
+Lưu trữ: Thông tin tài khoản, ảnh đại diện, và dữ liệu cá nhân hóa nền tảng (Loại da gốc, danh sách thành phần dị ứng). Đây là bảng trung tâm mà mọi module khác đều phải trỏ về.
+
+2. Ingredients_Dictionary (Từ điển thành phần)
+
+Lưu trữ: Bộ dữ liệu chuẩn của các hoạt chất (tên INCI, phân loại chức năng, điểm gây bít tắc, điểm kích ứng). Bảng này đóng vai trò là ""bộ não"" offline để hệ thống đối chiếu và chấm điểm phần trăm khi người dùng quét mã OCR.
+
+3. My_Collection (Tủ đồ mỹ phẩm)
+
+Lưu trữ: Các sản phẩm mỹ phẩm cụ thể mà người dùng đang sở hữu. Bao gồm tên sản phẩm, danh sách thành phần quét được, ngày mở nắp, hạn sử dụng và trạng thái (đang dùng, đã dùng hết, hoặc bỏ đi).
+
+4. Daily_Routines (Nhật ký & Lịch trình hàng ngày)
+
+Lưu trữ: Trạng thái check-in da của người dùng trong một ngày cụ thể (ví dụ: Kích ứng, Nổi mụn) và chi tiết các bước bôi thoa Sáng/Tối của riêng ngày hôm đó.
+
+5. Treatment_Plans (Phác đồ dài ngày)
+
+Lưu trữ: Dữ liệu của các chuỗi routine kéo dài (ví dụ: Phác đồ trị mụn 7 ngày hoặc 14 ngày). Quản lý tiến độ xem người dùng đang ở ngày thứ mấy, trạng thái phác đồ đang chạy tiếp hay phải tạm dừng do da xấu.
+
+6. Community_Posts (Bài đăng cộng đồng)
+
+Lưu trữ: Nội dung người dùng chia sẻ lên bảng tin chung. Bao gồm text, hình ảnh, bản sao lưu của chu trình họ chia sẻ (để người khác bấm copy), tổng số lượt thả tim và số lượt bị báo cáo.",,
+46,Data,,"Từ điển Hồ sơ da (Skin_Dictionary):
+ - Da_Dầu: Do's [Niacinamide, BHA, Clay], Don'ts [Mineral Oil, Shea Butter, Coconut Oil].
+
+Từ điển Trạng thái da (Condition_Dictionary):
+ - Kích_Ứng: Trị liệu [B5, Ceramide, Centella], Cấm kỵ [AHA, BHA, Retinol, Vitamin C].
+ - Nổi_Mụn: Trị liệu [Salicylic Acid, Tea Tree, Benzoyl Peroxide], Cấm kỵ [Silicone, Mineral Oil].
+
+Ma trận Xung đột (Conflict_Matrix):
+ - AHA kỵ [Retinol, BHA, Vitamin C].
+ - BHA kỵ [Retinol, AHA].",Huyền,
+47,,,,,
+48,,,,,
+49,,,,,
+50,,,,,
+51,,,,,
+52,,,,,
+53,,,,,
+54,,,,,
+55,,,,,
+56,,,,,
+57,,,,,
+58,,,,,
+59,,,,,
+60,,,,,
+61,,,,,
