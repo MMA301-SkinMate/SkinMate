@@ -1,5 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useAuthSession } from '../context/AuthSessionContext';
 
 import BottomTabNavigator from './BottomTabNavigator';
 import OnboardingScreen from '../screens/auth/OnboardingScreen';
@@ -26,8 +27,16 @@ import RoutineHistoryScreen from '../screens/profile/RoutineHistoryScreen';
 const Stack = createNativeStackNavigator();
 
 export default function RootNavigator() {
+  const { session, isRestoring } = useAuthSession();
+
+  if (isRestoring) return null;
+
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
+    <Stack.Navigator
+      key={session ? 'authenticated' : 'anonymous'}
+      initialRouteName={session ? 'MainTabs' : 'Onboarding'}
+      screenOptions={{ headerShown: false, animation: 'slide_from_right' }}
+    >
       {/* 1. Luồng Auth & Onboarding */}
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />
       <Stack.Screen name="Auth" component={AuthScreen} />

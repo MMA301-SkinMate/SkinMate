@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -22,6 +23,9 @@ import {
   UserRound,
 } from 'lucide-react-native';
 import { useApp } from '../../context/AppContext';
+import { useAuthSession } from '../../context/AuthSessionContext';
+import { getGoogleAuthorizationUrl, register } from '../../api/authApi';
+import { Linking } from 'react-native';
 
 const AUTH_BACKGROUND = '#F8F8FF';
 const AUTH_PRIMARY = '#08B981';
@@ -37,8 +41,9 @@ const requirements = [
   { key: 'match', label: 'Passwords match' },
 ];
 
-export default function AuthScreen({ navigation }) {
+export default function RegisterScreen({ navigation }) {
   const { setUserProfile } = useApp();
+  const { saveAuthSession } = useAuthSession();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -47,6 +52,7 @@ export default function AuthScreen({ navigation }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [selectedTarget, setSelectedTarget] = useState('Hydration & Dew');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const passwordRequirements = useMemo(() => ({
     length: password.length >= 8,
@@ -54,15 +60,33 @@ export default function AuthScreen({ navigation }) {
     match: password.length > 0 && password === confirmPassword,
   }), [password, confirmPassword]);
 
-  const handleSubmit = () => {
-    setUserProfile(prev => ({
-      ...prev,
-      name: fullName.trim() || prev.name,
-      email: email.trim() || prev.email,
-      isGuest: false,
-      skinGoal: selectedTarget,
-    }));
-    navigation.navigate('SkinProfileSetup');
+  const handleSubmit = async () => {
+    if (!acceptedTerms || !fullName.trim() || !email.trim() || !passwordRequirements.length || !passwordRequirements.number || !passwordRequirements.match || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const result = await register({ fullName: fullName.trim(), email: email.trim(), password });
+      await saveAuthSession(result);
+      setUserProfile(prev => ({
+        ...prev,
+        name: result.user.fullName,
+        email: result.user.email,
+        isGuest: false,
+        skinGoal: selectedTarget,
+      }));
+      navigation.navigate('SkinProfileSetup');
+    } catch (error) {
+      Alert.alert('Unable to create account', error.message || 'Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await Linking.openURL(getGoogleAuthorizationUrl());
+    } catch (error) {
+      Alert.alert('Google sign-in unavailable', error.message || 'Please try again later.');
+    }
   };
 
   const handleLogIn = () => {
@@ -183,10 +207,10 @@ export default function AuthScreen({ navigation }) {
           <TouchableOpacity
             style={[styles.primaryButton, (!acceptedTerms || !fullName || !email || !passwordRequirements.length || !passwordRequirements.number || !passwordRequirements.match) && styles.primaryButtonDisabled]}
             onPress={handleSubmit}
-            disabled={!acceptedTerms}
+            disabled={!acceptedTerms || !fullName.trim() || !email.trim() || !passwordRequirements.length || !passwordRequirements.number || !passwordRequirements.match || isSubmitting}
             activeOpacity={0.85}
           >
-            <Text style={styles.primaryButtonText}>Join Vanity Ritual</Text>
+            <Text style={styles.primaryButtonText}>{isSubmitting ? 'Creating account...' : 'Join Vanity Ritual'}</Text>
             <Text style={styles.arrow}>→</Text>
           </TouchableOpacity>
 
@@ -201,7 +225,7 @@ export default function AuthScreen({ navigation }) {
               <Text style={styles.appleIcon}>●</Text>
               <Text style={styles.socialText}>Apple</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.socialButton} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.socialButton} activeOpacity={0.8} onPress={handleGoogleSignIn} disabled={isSubmitting}>
               <Text style={styles.googleIcon}>G</Text>
               <Text style={styles.socialText}>Google</Text>
             </TouchableOpacity>

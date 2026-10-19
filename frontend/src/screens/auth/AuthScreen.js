@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, Linking, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AtSign, Eye, EyeOff, Leaf, LockKeyhole } from 'lucide-react-native';
 import { useApp } from '../../context/AppContext';
+import { useAuthSession } from '../../context/AuthSessionContext';
+import { exchangeGoogleCode, getGoogleAuthorizationUrl, login } from '../../api/authApi';
 
 const COLORS = {
   background: '#F8F8FF',
@@ -13,15 +15,67 @@ const COLORS = {
   icon: '#718078',
 };
 
-export default function AuthScreen({ navigation }) {
+export default function AuthScreen({ navigation, route }) {
   const { setUserProfile } = useApp();
+  const { saveAuthSession } = useAuthSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = () => {
-    setUserProfile(prev => ({ ...prev, email: email.trim() || prev.email, isGuest: false }));
-    navigation.navigate('MainTabs');
+  const completeAuthentication = async result => {
+    await saveAuthSession(result);
+    setUserProfile(prev => ({
+      ...prev,
+      name: result.user.fullName,
+      email: result.user.email,
+      isGuest: false,
+    }));
+    navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+  };
+
+  const handleSubmit = async () => {
+    if (!email.trim() || !password || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const result = await login({ email: email.trim(), password });
+      await completeAuthentication(result);
+    } catch (error) {
+      Alert.alert('Unable to sign in', error.message || 'Check your email and password.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleResponse = async code => {
+    if (!code || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const result = await exchangeGoogleCode(code);
+      await completeAuthentication(result);
+    } catch (error) {
+      Alert.alert('Google sign-in failed', error.message || 'Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (route.params?.provider === 'google') {
+      if (route.params.status === 'success') {
+        handleGoogleResponse(route.params.code);
+      } else if (route.params.status === 'error') {
+        Alert.alert('Google sign-in failed', 'Please try again.');
+      }
+    }
+  }, [route.params?.code, route.params?.provider, route.params?.status]);
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await Linking.openURL(getGoogleAuthorizationUrl());
+    } catch (error) {
+      Alert.alert('Google sign-in unavailable', error.message || 'Please try again later.');
+    }
   };
 
   return (
@@ -62,8 +116,8 @@ export default function AuthScreen({ navigation }) {
           onRightIconPress={() => setShowPassword(value => !value)}
         />
 
-        <TouchableOpacity style={styles.primaryButton} onPress={handleSubmit} activeOpacity={0.85}>
-          <Text style={styles.primaryButtonText}>Sign In to Vanity</Text>
+        <TouchableOpacity style={[styles.primaryButton, isSubmitting && styles.buttonDisabled]} onPress={handleSubmit} activeOpacity={0.85} disabled={isSubmitting}>
+          <Text style={styles.primaryButtonText}>{isSubmitting ? 'Signing in...' : 'Sign In to Vanity'}</Text>
           <Text style={styles.arrow}>→</Text>
         </TouchableOpacity>
 
@@ -77,7 +131,7 @@ export default function AuthScreen({ navigation }) {
           <TouchableOpacity style={styles.socialButton} activeOpacity={0.8}>
             <Text style={styles.appleIcon}>●</Text><Text style={styles.socialText}>Apple</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.socialButton} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.socialButton} activeOpacity={0.8} onPress={handleGoogleSignIn} disabled={isSubmitting}>
             <Text style={styles.googleIcon}>G</Text><Text style={styles.socialText}>Google</Text>
           </TouchableOpacity>
         </View>
@@ -118,6 +172,7 @@ const styles = StyleSheet.create({
   inputContainer: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, backgroundColor: '#FFFFFF', borderRadius: 24, shadowColor: '#A8AEBB', shadowOpacity: 0.12, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 2, marginBottom: 14 },
   input: { flex: 1, color: COLORS.text, fontSize: 14, paddingVertical: 0 },
   primaryButton: { minHeight: 48, borderRadius: 24, backgroundColor: COLORS.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, shadowColor: COLORS.primary, shadowOpacity: 0.25, shadowRadius: 5, shadowOffset: { width: 0, height: 3 }, elevation: 3, marginTop: 5 },
+  buttonDisabled: { opacity: 0.65 },
   primaryButtonText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
   arrow: { color: '#FFFFFF', fontSize: 22, lineHeight: 22 },
   dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 26 },

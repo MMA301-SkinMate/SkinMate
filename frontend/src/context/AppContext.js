@@ -1,8 +1,16 @@
-import { createContext, useState, useContext } from 'react';
+import { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import { useAuthSession } from './AuthSessionContext';
+import {
+  createCollectionProduct,
+  deleteCollectionProduct,
+  listCollectionProducts,
+  updateCollectionProduct,
+} from '../api/collectionApi';
 
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
+  const { session } = useAuthSession();
   // 1. Hồ sơ da
   const [userProfile, setUserProfile] = useState({
     name: 'Trần Quang',
@@ -10,56 +18,73 @@ export const AppProvider = ({ children }) => {
     skinType: 'Da dầu mụn',
     concerns: ['Mụn bọc', 'Bóng dầu vùng T', 'Thâm sau mụn'],
     allergies: ['Fragrance/Hương liệu', 'Alcohol Denat (Cồn khô)'],
-    isGuest: false,
+    isGuest: true,
   });
+
+  // Đồng bộ phiên đăng nhập đã được khôi phục từ SecureStore.
+  useEffect(() => {
+    if (!session?.user) return;
+
+    setUserProfile(prev => ({
+      ...prev,
+      name: session.user.fullName,
+      email: session.user.email,
+      isGuest: false,
+    }));
+  }, [session]);
 
   // 2. Trạng thái Check-in hôm nay
   const [todaySkinStatus, setTodaySkinStatus] = useState([]);
   const [checkInDone, setCheckInDone] = useState(false);
 
   // 3. Tủ đồ cá nhân (My Collection)
-  const [collection, setCollection] = useState([
-    {
-      id: '1',
-      name: 'Sữa rửa mặt CeraVe Foaming Cleanser',
-      type: 'cleanser',
-      openedDate: '10/01/2026',
-      expiryDate: '10/01/2027',
-      status: 'active', // 'active' | 'expiring' | 'expired' | 'empty'
-      ingredients: ['Water', 'Niacinamide', 'Ceramide NP', 'Hyaluronic Acid'],
-      note: 'Dùng sáng và tối',
-    },
-    {
-      id: '2',
-      name: 'Paula\'s Choice Skin Perfecting BHA 2%',
-      type: 'serum',
-      openedDate: '15/12/2025',
-      expiryDate: '20/04/2026', // Sắp hết hạn -> chấm cam
-      status: 'expiring',
-      ingredients: ['Salicylic Acid', 'Camellia Oleifera Leaf Extract'],
-      note: 'Chỉ dùng buổi tối cách ngày',
-    },
-    {
-      id: '3',
-      name: 'Kem dưỡng La Roche-Posay Cicaplast B5+',
-      type: 'cream',
-      openedDate: '01/02/2026',
-      expiryDate: '01/02/2027',
-      status: 'active',
-      ingredients: ['Panthenol 5%', 'Madecassoside', 'Zinc Gluconate'],
-      note: 'Phục hồi da khi khô rát',
-    },
-    {
-      id: '4',
-      name: 'Toner Tràm Trà Some By Mi AHA-BHA-PHA',
-      type: 'toner',
-      openedDate: '01/01/2025',
-      expiryDate: '01/01/2026', // Hết hạn -> bị mờ + badge đỏ
-      status: 'expired',
-      ingredients: ['Tea Tree Water', 'AHA', 'BHA', 'PHA'],
-      note: 'Đã hết hạn sử dụng',
-    },
-  ]);
+  const [collection, setCollection] = useState([]);
+  const [isCollectionLoading, setIsCollectionLoading] = useState(false);
+  const [collectionError, setCollectionError] = useState(null);
+
+  const refreshCollection = useCallback(async () => {
+    if (!session?.user) {
+      setCollection([]);
+      setCollectionError(null);
+      return;
+    }
+
+    setIsCollectionLoading(true);
+    setCollectionError(null);
+    try {
+      const result = await listCollectionProducts();
+      setCollection(result.products || []);
+    } catch (error) {
+      setCollectionError(error.message || 'Không thể tải tủ đồ skincare.');
+    } finally {
+      setIsCollectionLoading(false);
+    }
+  }, [session?.user]);
+
+  useEffect(() => {
+    refreshCollection();
+  }, [refreshCollection]);
+
+  const addProductToCollection = async payload => {
+    const result = await createCollectionProduct(payload);
+    setCollection(previous => [result.product, ...previous]);
+    return result.product;
+  };
+
+  const updateProduct = async (id, updates) => {
+    const result = await updateCollectionProduct(id, updates);
+    setCollection(previous => previous.map(product => (
+      product.id === id ? result.product : product
+    )));
+    return result.product;
+  };
+
+  const deleteProduct = async id => {
+    await deleteCollectionProduct(id);
+    setCollection(previous => previous.filter(product => product.id !== id));
+  };
+
+  const markAsEmpty = id => updateProduct(id, { status: 'finished', remainingPercent: 0 });
 
   // 4. Daily Routine 5 bước linh hoạt
   const [dailyRoutine, setDailyRoutine] = useState([
@@ -113,23 +138,6 @@ export const AppProvider = ({ children }) => {
     setCommunityPosts(prev => [newPost, ...prev]);
   };
 
-  // Thao tác với tủ đồ
-  const addProductToCollection = (newProd) => {
-    setCollection(prev => [newProd, ...prev]);
-  };
-
-  const updateProduct = (id, updatedFields) => {
-    setCollection(prev => prev.map(p => p.id === id ? { ...p, ...updatedFields } : p));
-  };
-
-  const deleteProduct = (id) => {
-    setCollection(prev => prev.filter(p => p.id !== id));
-  };
-
-  const markAsEmpty = (id) => {
-    setCollection(prev => prev.map(p => p.id === id ? { ...p, status: 'empty' } : p));
-  };
-
   return (
     <AppContext.Provider
       value={{
@@ -137,6 +145,7 @@ export const AppProvider = ({ children }) => {
         todaySkinStatus, setTodaySkinStatus,
         checkInDone, setCheckInDone,
         collection, setCollection,
+        isCollectionLoading, collectionError, refreshCollection,
         addProductToCollection, updateProduct, deleteProduct, markAsEmpty,
         dailyRoutine, setDailyRoutine,
         scanHistory, setScanHistory,

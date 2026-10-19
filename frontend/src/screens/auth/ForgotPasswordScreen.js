@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, ArrowRight, AtSign, CheckCircle2, Leaf, LockKeyhole, ShieldCheck } from 'lucide-react-native';
+import { ArrowLeft, ArrowRight, AtSign, Leaf, LockKeyhole, ShieldCheck } from 'lucide-react-native';
+import { requestPasswordReset } from '../../api/authApi';
 
 const COLORS = {
   background: '#F8F8FF',
@@ -14,6 +15,20 @@ const COLORS = {
 
 export default function ForgotPasswordScreen({ navigation }) {
   const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!email.trim() || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await requestPasswordReset(email.trim());
+      Alert.alert('Check your email', 'If an active SkinMate account uses this email, a reset link will arrive shortly.');
+    } catch (error) {
+      Alert.alert('Unable to send link', error.message || 'Please try again later.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -37,7 +52,6 @@ export default function ForgotPasswordScreen({ navigation }) {
 
         <View style={styles.fieldHeader}>
           <Text style={styles.label}>Email Address</Text>
-          <View style={styles.verified}><CheckCircle2 size={16} color={COLORS.dark} /><Text style={styles.verifiedText}>Verified</Text></View>
         </View>
         <View style={styles.inputContainer}>
           <AtSign size={26} color={COLORS.icon} strokeWidth={2.2} />
@@ -60,8 +74,8 @@ export default function ForgotPasswordScreen({ navigation }) {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.primaryButton} activeOpacity={0.85} onPress={() => navigation.navigate('NewPassword')}>
-          <Text style={styles.primaryButtonText}>Send Recovery Link</Text>
+        <TouchableOpacity style={[styles.primaryButton, isSubmitting && styles.primaryButtonDisabled]} activeOpacity={0.85} onPress={handleSubmit} disabled={isSubmitting}>
+          <Text style={styles.primaryButtonText}>{isSubmitting ? 'Sending...' : 'Send Recovery Link'}</Text>
           <ArrowRight size={24} color="#FFFFFF" />
         </TouchableOpacity>
 
@@ -108,6 +122,7 @@ const styles = StyleSheet.create({
   privacyTitle: { color: COLORS.dark, fontSize: 15, fontWeight: '600', marginBottom: 3 },
   privacyText: { color: COLORS.dark, fontSize: 13, lineHeight: 18 },
   primaryButton: { minHeight: 56, borderRadius: 28, backgroundColor: COLORS.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, shadowColor: COLORS.primary, shadowOpacity: 0.25, shadowRadius: 5, shadowOffset: { width: 0, height: 3 }, elevation: 3, marginBottom: 22 },
+  primaryButtonDisabled: { opacity: 0.65 },
   primaryButtonText: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
   helpPanel: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 18, backgroundColor: '#FFFFFF', shadowColor: '#A8AEBB', shadowOpacity: 0.1, shadowRadius: 5, shadowOffset: { width: 0, height: 2 }, elevation: 2, marginBottom: 24 },
   helpIcon: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F0F2FF' },

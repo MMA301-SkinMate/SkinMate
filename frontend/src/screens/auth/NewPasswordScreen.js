@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ArrowLeft,
@@ -12,6 +12,7 @@ import {
   LockKeyhole,
   ShieldCheck,
 } from 'lucide-react-native';
+import { resetPassword } from '../../api/authApi';
 
 const COLORS = {
   background: '#F8F8FF',
@@ -22,11 +23,13 @@ const COLORS = {
   icon: '#718078',
 };
 
-export default function NewPasswordScreen({ navigation }) {
+export default function NewPasswordScreen({ navigation, route }) {
+  const resetToken = route.params?.token;
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const checks = useMemo(() => ({
     length: password.length >= 8,
@@ -37,6 +40,22 @@ export default function NewPasswordScreen({ navigation }) {
 
   const completedChecks = [checks.length, checks.upperNumber, checks.symbol, checks.match];
   const isValid = completedChecks.every(Boolean);
+
+  const handleSubmit = async () => {
+    if (!resetToken || !isValid || isSubmitting) {
+      if (!resetToken) Alert.alert('Invalid reset link', 'Please request a new password reset link.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await resetPassword(resetToken, password);
+      navigation.replace('PasswordSuccess');
+    } catch (error) {
+      Alert.alert('Unable to reset password', error.message || 'Your reset link may have expired.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -113,20 +132,20 @@ export default function NewPasswordScreen({ navigation }) {
             <LockKeyhole size={21} color={COLORS.dark} />
           </View>
           <View style={styles.sessionCopy}>
-            <Text style={styles.sessionTitle}>Active Session Continuity</Text>
+            <Text style={styles.sessionTitle}>Other devices will be signed out</Text>
             <Text style={styles.sessionText}>
-              Updating your password refreshes your secure token while maintaining your routine reminders.
+              Updating your password revokes existing sessions. Sign in again with your new password to continue.
             </Text>
           </View>
         </View>
 
         <TouchableOpacity
           style={[styles.primaryButton, !isValid && styles.disabled]}
-          disabled={!isValid}
+          disabled={!isValid || isSubmitting}
           activeOpacity={0.85}
-          onPress={() => navigation.navigate('PasswordSuccess')}
+          onPress={handleSubmit}
         >
-          <Text style={styles.primaryText}>Update Password & Continue</Text>
+          <Text style={styles.primaryText}>{isSubmitting ? 'Updating...' : 'Update Password & Continue'}</Text>
           <ArrowRight size={22} color="#FFFFFF" />
         </TouchableOpacity>
 
