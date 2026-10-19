@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test",
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
@@ -15,7 +15,12 @@
     "cors": "^2.8.6",
     "dotenv": "^18.0.7",
     "express": "^5.3.0",
+    "google-auth-library": "^9.15.1",
+    "bcryptjs": "^3.0.2",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^6.9.16",
     "joi": "^18.2.9",
+    "mongodb": "^7.7.0",
     "mongoose": "^9.11.1"
   },
   "devDependencies": {
