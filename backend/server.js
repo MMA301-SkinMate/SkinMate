@@ -10,6 +10,7 @@ const { assertConfiguration } = require('./src/services/authService');
 const AppError = require('./src/errors/app-error');
 
 assertConfiguration();
+const scanRoutes = require('./src/routes/scanRoutes');
 
 const app = express();
 
@@ -34,9 +35,12 @@ app.use((req, res, next) => {
     )
   );
 });
+// Scan routes
+app.use('/api/scan', scanRoutes);
+
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}/`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server is running on http://0.0.0.0:${PORT}`);
 });

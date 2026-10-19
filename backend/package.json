@@ -12,16 +12,17 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@google/genai": "^2.30.0",
     "cors": "^2.8.6",
-    "dotenv": "^18.0.7",
+    "dotenv": "^18.0.8",
     "express": "^5.3.0",
     "google-auth-library": "^9.15.1",
     "bcryptjs": "^3.0.2",
     "jsonwebtoken": "^9.0.2",
     "nodemailer": "^6.9.16",
     "joi": "^18.2.9",
-    "mongodb": "^7.7.0",
-    "mongoose": "^9.11.1"
+    "mongoose": "^9.11.1",
+    "multer": "^2.4.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
