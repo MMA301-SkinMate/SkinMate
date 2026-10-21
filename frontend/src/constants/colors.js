@@ -1,11 +1,15 @@
 export const COLORS = {
-    // Brand & Primary
+    // Stitch brand palette. Keep existing semantic keys for current screens.
+    pink: '#F6E2E9',
+    sage: '#B8CFB3',
+    olive: '#84A282',
+
     primary: '#0f766e',
     primaryDark: '#0d5e56',
     primaryLight: '#2dd4bf',
 
     // Backgrounds & Surfaces
-    background: '#ffffff',
+    background: '#FEFAF3',
     surface: '#f8fafc',
     card: '#ffffff',
 
