@@ -232,7 +232,7 @@ const AnalysisResultView = ({ data }) => {
                     {/* Ingredients to Avoid */}
                     {ingredientsToAvoid.length > 0 && (
                         <View style={styles.tagGroup}>
-                            <Text style={[styles.tagGroupLabel, { color: COLORS.error }]}>Ingredients to avoid:</Text>
+                            <Text style={[styles.tagGroupLabel, { color: COLORS.error, marginTop: 10 }]}>Ingredients to avoid:</Text>
                             <View style={styles.chipsContainer}>
                                 {ingredientsToAvoid.map((ing, i) => (
                                     <View key={i} style={styles.avoidChip}>
@@ -256,7 +256,7 @@ const AnalysisResultView = ({ data }) => {
                         </View>
                     </View>
 
-                    <View style={styles.planBadgesContainer}>
+                    <View style={styles.planBadgesRow}>
                         <View style={styles.planBadge}>
                             <Ionicons name="repeat-outline" size={15} color={COLORS.primary} />
                             <View style={{ flex: 1 }}>
@@ -267,7 +267,7 @@ const AnalysisResultView = ({ data }) => {
 
                         <View style={styles.planBadge}>
                             <Ionicons name="time-outline" size={15} color={COLORS.primary} />
-                            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <View style={{ flex: 1 }}>
                                 <Text style={styles.planBadgeLabel}>Timing</Text>
                                 <Text style={styles.planBadgeValue}>{planTiming}</Text>
                             </View>
@@ -501,9 +501,9 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: COLORS.error,
     },
-    planBadgesContainer: {
-        flexDirection: 'column',
-        gap: 8,
+    planBadgesRow: {
+        flexDirection: 'row',
+        gap: 10,
         marginBottom: 10,
     },
     planBadge: {
@@ -511,7 +511,11 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        padding: 8,
+        backgroundColor: '#F8FAFC',
+        padding: 10,
+        borderRadius: SIZES.radius,
+        borderWidth: 1,
+        borderColor: COLORS.border,
     },
     planBadgeLabel: {
         fontSize: SIZES.small,

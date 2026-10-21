@@ -1,440 +1,315 @@
-import { useState } from 'react';
 import {
-    View,
-    Text,
     StyleSheet,
     ScrollView,
-    TextInput,
-    TouchableOpacity,
     KeyboardAvoidingView,
     Platform,
-    TouchableWithoutFeedback,
-    Keyboard,
-    Image,
+    Alert,
+    View,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../constants/colors';
-import { SIZES, SHADOWS } from '../../constants/theme';
-
-const PRODUCT_TYPES = [
-    'Cleansers', 'Toners', 'Essences', 'Cream',
-    'Oil', 'Serums', 'Treatments', 'Moisturizers',
-    'Exfoliators', 'Sunscreens', 'Masks', 'Others',
-];
-
-// Khai báo đường dẫn đến các ảnh icon sản phẩm
-const PRODUCT_ICONS = [
-    { id: 'serum', image: require('../../assets/icons/serum.png') },
-    { id: 'chai_to', image: require('../../assets/icons/chaito.png') },
-    { id: 'hu', image: require('../../assets/icons/hu.png') },
-    { id: 'tuyp_xanh', image: require('../../assets/icons/tuypxanh.png') },
-    { id: 'oil', image: require('../../assets/icons/oil.png') },
-    { id: 'pum', image: require('../../assets/icons/pum.png') },
-    { id: 'mask', image: require('../../assets/icons/mask.png') },
-    { id: 'tuyp', image: require('../../assets/icons/tuyp.png') },
-];
+import { SIZES } from '../../constants/theme';
+import IngredientSummaryCard from '../../components/scan/productInfoDetail/IngredientSummaryCard';
+import ProductNameField from '../../components/scan/productInfoDetail/ProductNameField';
+import ProductShapePicker from '../../components/scan/productInfoDetail/ProductShapePicker';
+import ProductTypeChips from '../../components/scan/productInfoDetail/ProductTypeChips';
+import ScreenHeader from '../../components/scan/productInfoDetail/ScreenHeader';
+import AnalysisResultView from '../../components/scan/productInfoDetail/AnalysisResultView';
+import { useState, useRef } from 'react';
+import { collectionApi } from '../../api/collectionApi';
+import { parseToISODate } from '../../utils/formatDate';
 
 const AddProductScreen = ({ route, navigation }) => {
-    const { ingredientList = [] } = route.params || {};
+    const { productData, analysisResult } = route.params;
+    const scrollViewRef = useRef(null);
 
-    const [productName, setProductName] = useState('');
-    const [selectedType, setSelectedType] = useState(0);
-    const [expiryDate, setExpiryDate] = useState('');
-    const [paoMonths, setPaoMonths] = useState('12');
+    const [productName, setProductName] = useState(productData.productName);
+    const [selectedIcon, setSelectedIcon] = useState(productData.selectedIcon);
+    const [selectedType, setSelectedType] = useState(productData.selectedType);
+    const [openedDate, setOpenedDate] = useState('');
+    const [expiryType, setExpiryType] = useState('date');
+    const [expiryDateValue, setExpiryDateValue] = useState('');
+    const [paoMonths, setPaoMonths] = useState('');
     const [notes, setNotes] = useState('');
-    const [selectedIcon, setSelectedIcon] = useState('tube');
+    const [loading, setLoading] = useState(false);
 
-    const handleAnalyze = () => {
-        if (!productName.trim()) {
-            alert('Vui lòng nhập tên sản phẩm!');
-            return;
+    const handleConfirmAdd = async () => {
+        if (expiryType === 'months' && paoMonths.trim() !== '') {
+            if (!openedDate.trim()) {
+                Alert.alert(
+                    'Missing information',
+                    'Because you entered the expiry period in months, please enter the Opening Date to calculate accurately!'
+                );
+                return;
+            }
         }
 
-        const productPayload = {
-            productName: productName.trim(),
+        const formattedOpenedDate = parseToISODate(openedDate.trim());
+
+        let finalExpirationDate = null;
+        if (expiryType === 'date' && expiryDateValue.trim()) {
+            finalExpirationDate = parseToISODate(expiryDateValue.trim());
+        } else if (expiryType === 'months' && openedDate.trim() && paoMonths.trim()) {
+            const opened = new Date(formattedOpenedDate);
+            if (!isNaN(opened.getTime())) {
+                const monthsToAdd = parseInt(paoMonths) || 0;
+                opened.setMonth(opened.getMonth() + monthsToAdd);
+                finalExpirationDate = opened.toISOString().split('T')[0];
+            }
+        }
+
+
+        const payload = {
+            userId: "65b123456789abcdef123456", // ID test tạm thời
+            productName: productName,
             productType: selectedType,
             productIcon: selectedIcon,
-            expiryDate,
-            paoMonths,
-            notes,
-            ingredientList,
+            ingredients: productData.ingredientList,
+            analysisResult: analysisResult,
+            openedDate: formattedOpenedDate,
+            expiryDate: expiryType === 'date' ? parseToISODate(expiryDateValue.trim()) : null,
+            paoMonths: expiryType === 'months' ? parseInt(paoMonths) || null : null,
+            finalExpiryDate: finalExpirationDate,
+            notes: notes.trim(),
+            status: 'active'
         };
+        console.log(payload)
 
-        console.log('Dữ liệu gửi đi phân tích:', productPayload);
+        try {
+            setLoading(true);
+            const result = await collectionApi.addProduct(payload);
 
-
+            if (result) {
+                Alert.alert('Success', 'Added product to your collection successfully!', [
+                    { text: 'OK', onPress: () => navigation.navigate('MyCollection') }
+                ]);
+            }
+        } catch (error) {
+            Alert.alert('Error', error.message || 'Unable to add product to your collection');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
+            <ScreenHeader
+                title="Product Information"
+                onGoBack={() => navigation.goBack()}
+            />
+
             <KeyboardAvoidingView
-                style={styles.container}
+                style={styles.keyboardAvoid}
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             >
-                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                    <View style={styles.inner}>
-                        {/* Header Bar */}
-                        <View style={styles.header}>
-                            <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-                                <Ionicons name="arrow-back" size={24} color={COLORS.textMain} />
-                            </TouchableOpacity>
-                            <Text style={styles.headerTitle}>Information Product</Text>
-                            <View style={{ width: 40 }} />
+                <ScrollView
+                    ref={scrollViewRef}
+                    style={styles.scrollForm}
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode="on-drag"
+                >
+                    <IngredientSummaryCard ingredientList={productData.ingredientList} />
+
+                    <ProductNameField
+                        value={productName}
+                        onChangeText={setProductName}
+                    />
+
+                    <ProductShapePicker
+                        selectedIcon={selectedIcon}
+                        onSelectIcon={setSelectedIcon}
+                    />
+
+                    <ProductTypeChips
+                        selectedType={selectedType}
+                        onSelectType={setSelectedType}
+                    />
+
+                    <Text style={styles.label}>Expiration Type</Text>
+                    <View style={styles.tabContainer}>
+                        <TouchableOpacity
+                            style={[styles.tabBtn, expiryType === 'date' && styles.activeTabBtn]}
+                            onPress={() => setExpiryType('date')}
+                        >
+                            <Text style={[styles.tabText, expiryType === 'date' && styles.activeTabText]}>
+                                Specific Date
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.tabBtn, expiryType === 'months' && styles.activeTabBtn]}
+                            onPress={() => setExpiryType('months')}
+                        >
+                            <Text style={[styles.tabText, expiryType === 'months' && styles.activeTabText]}>
+                                Months after opening
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.rowFields}>
+                        <View style={[styles.fieldGroup, { flex: 1 }]}>
+                            <Text style={styles.label}>
+                                Opened Date {expiryType === 'months' && <Text style={{ color: 'red' }}>*</Text>}
+                            </Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="DD-MM-YYYY"
+                                placeholderTextColor={COLORS.textMuted}
+                                value={openedDate}
+                                onChangeText={setOpenedDate}
+                            />
                         </View>
 
-                        <ScrollView
-                            style={styles.scrollForm}
-                            showsVerticalScrollIndicator={false}
-                            keyboardShouldPersistTaps="handled"
-                        >
-                            {/* Box hiển thị tóm tắt thành phần đã quét */}
-                            <View style={styles.ingredientsSummaryCard}>
-                                <View style={styles.summaryHeader}>
-                                    <Ionicons name="flask-outline" size={20} color={COLORS.primary} />
-                                    <Text style={styles.summaryTitle}>
-                                        Confirmed ingredients ({ingredientList.length})
-                                    </Text>
-                                </View>
-
-                                <ScrollView
-                                    style={styles.badgeVerticalScroll}
-                                    showsVerticalScrollIndicator={true}
-                                    contentContainerStyle={styles.badgeContainer}
-                                    nestedScrollEnabled={true}
-                                >
-                                    {ingredientList.map((item, index) => (
-                                        <View key={index} style={styles.badge}>
-                                            <Text style={styles.badgeText}>{item}</Text>
-                                        </View>
-                                    ))}
-                                </ScrollView>
-                            </View>
-
-                            {/* Field 1: Tên sản phẩm */}
-                            <View style={styles.fieldGroup}>
-                                <Text style={styles.label}>Product Name <Text style={styles.required}>*</Text></Text>
+                        {expiryType === 'date' ? (
+                            <View style={[styles.fieldGroup, { flex: 1 }]}>
+                                <Text style={styles.label}>Expiry Date</Text>
                                 <TextInput
                                     style={styles.input}
-                                    placeholder="Serum La Roche-Posay Effaclar..."
+                                    placeholder="DD-MM-YYYY"
                                     placeholderTextColor={COLORS.textMuted}
-                                    value={productName}
-                                    onChangeText={setProductName}
+                                    value={expiryDateValue}
+                                    onChangeText={setExpiryDateValue}
                                 />
                             </View>
-
-                            {/* Field: Product Shape */}
-                            <View style={styles.fieldGroup}>
-                                <Text style={styles.label}>Product Shape</Text>
-                                <ScrollView
-                                    horizontal
-                                    showsHorizontalScrollIndicator={false}
-                                    contentContainerStyle={styles.shelfScrollContent}
-                                >
-                                    {PRODUCT_ICONS.map((item) => {
-                                        const isSelected = selectedIcon === item.id;
-                                        return (
-                                            <TouchableOpacity
-                                                key={item.id}
-                                                style={[
-                                                    styles.iconCard,
-                                                    isSelected && styles.iconCardSelected
-                                                ]}
-                                                onPress={() => setSelectedIcon(item.id)}
-                                                activeOpacity={0.8}
-                                            >
-                                                <Image
-                                                    source={item.image}
-                                                    style={styles.iconImage}
-                                                    resizeMode="contain"
-                                                />
-                                            </TouchableOpacity>
-                                        );
-                                    })}
-                                </ScrollView>
-
-                                {/* Đường thẳng chiếc kệ với bóng đổ đen bên dưới */}
-                                <View style={styles.shelfLine} />
-                            </View>
-
-                            {/* Field 2: Loại sản phẩm (Chips Select) */}
-                            <View style={styles.fieldGroup}>
-                                <Text style={styles.label}>Product Type</Text>
-                                <View style={styles.typeChipsContainer}>
-                                    {PRODUCT_TYPES.map((type, index) => {
-                                        const isSelected = selectedType === type;
-                                        return (
-                                            <TouchableOpacity
-                                                key={index}
-                                                style={[styles.chip, isSelected && styles.chipSelected]}
-                                                onPress={() => setSelectedType(type)}
-                                                activeOpacity={0.7}
-                                            >
-                                                <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
-                                                    {type}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        );
-                                    })}
-                                </View>
-                            </View>
-
-                            {/* Field 3 & 4: HSD & Ngày mở nắp (2 cột) */}
-                            {/* <View style={styles.rowFields}>
-                                <View style={[styles.fieldGroup, { flex: 1 }]}>
-                                    <Text style={styles.label}>Hạn sử dụng</Text>
-                                    <TextInput
-                                        style={styles.input}
-                                        placeholder="MM/YYYY"
-                                        placeholderTextColor={COLORS.textMuted || '#94A3B8'}
-                                        value={expiryDate}
-                                        onChangeText={setExpiryDate}
-                                    />
-                                </View>
-
-                                <View style={[styles.fieldGroup, { flex: 1 }]}>
-                                    <Text style={styles.label}>Dùng sau mở nắp</Text>
-                                    <TextInput
-                                        style={styles.input}
-                                        placeholder="Ví dụ: 6 tháng, 12 tháng"
-                                        placeholderTextColor={COLORS.textMuted || '#94A3B8'}
-                                        value={paoMonths}
-                                        onChangeText={setPaoMonths}
-                                        keyboardType="numeric"
-                                    />
-                                </View>
-                            </View> */}
-
-                            {/* Field 5: Ghi chú */}
-                            {/* <View style={styles.fieldGroup}>
-                                <Text style={styles.label}>Ghi chú cá nhân</Text>
+                        ) : (
+                            <View style={[styles.fieldGroup, { flex: 1 }]}>
+                                <Text style={styles.label}>PAO (Months)</Text>
                                 <TextInput
-                                    style={[styles.input, styles.textArea]}
-                                    placeholder="Cảm nhận ban đầu, mua ở đâu, lưu ý..."
-                                    placeholderTextColor={COLORS.textMuted || '#94A3B8'}
-                                    value={notes}
-                                    onChangeText={setNotes}
-                                    multiline
-                                    numberOfLines={3}
+                                    style={styles.input}
+                                    placeholder="Ex: 6, 12"
+                                    placeholderTextColor={COLORS.textMuted}
+                                    value={paoMonths}
+                                    onChangeText={setPaoMonths}
+                                    keyboardType="numeric"
                                 />
-                            </View> */}
-                        </ScrollView>
-
-                        {/* Footer Submit Button */}
-                        <View style={styles.footer}>
-                            <TouchableOpacity
-                                style={styles.submitBtn}
-                                onPress={handleAnalyze}
-                                activeOpacity={0.8}
-                            >
-                                <Ionicons name="sparkles" size={20} color="#FFF" />
-                                <Text style={styles.submitText}>Analyze Product Matching Skin</Text>
-                            </TouchableOpacity>
-                        </View>
+                            </View>
+                        )}
                     </View>
-                </TouchableWithoutFeedback>
+
+                    {/* Personal Notes */}
+                    <View style={styles.fieldGroup}>
+                        <Text style={styles.label}>Personal notes</Text>
+                        <TextInput
+                            style={[styles.input, styles.textArea]}
+                            placeholder="Write your notes here..."
+                            placeholderTextColor={COLORS.textMuted}
+                            value={notes}
+                            onChangeText={setNotes}
+                            multiline
+                            numberOfLines={3}
+                        />
+                    </View>
+
+                    {analysisResult && <AnalysisResultView data={analysisResult} />}
+
+                    <TouchableOpacity
+                        style={styles.submitBtn}
+                        onPress={handleConfirmAdd}
+                        disabled={loading}
+                    >
+                        {loading ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text style={styles.submitBtnText}>Save</Text>
+                        )}
+                    </TouchableOpacity>
+
+                </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
-
     );
-}
+};
 
-export default AddProductScreen
+export default AddProductScreen;
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: COLORS.background,
     },
-    inner: {
+    keyboardAvoid: {
         flex: 1,
-        justifyContent: 'space-between',
-    },
-    header: {
-        height: 56,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: SIZES.medium || 16,
-        backgroundColor: COLORS.card || '#FFFFFF',
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border || '#E2E8F0',
-    },
-    backBtn: {
-        padding: 8,
-    },
-    headerTitle: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: COLORS.textMain,
     },
     scrollForm: {
         flex: 1,
-        padding: SIZES.medium || 16,
     },
-    // Thay thế hoặc bổ sung các style này trong StyleSheet.create
-    ingredientsSummaryCard: {
-        backgroundColor: COLORS.card || '#FFFFFF',
-        borderRadius: SIZES.radius || 12,
-        padding: 12,
-        marginBottom: 16,
-        borderWidth: 1,
-        borderColor: COLORS.border || '#E2E8F0',
-        ...SHADOWS.light,
+    scrollContent: {
+        paddingHorizontal: SIZES.medium,
+        paddingTop: SIZES.medium,
+        paddingBottom: 40,
     },
-    summaryHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        marginBottom: 8,
-    },
-    summaryTitle: {
-        fontSize: 13,
+    label: {
+        fontSize: 14,
         fontWeight: '600',
         color: COLORS.textMain,
+        marginBottom: 6,
+        marginTop: 12,
     },
-    // Thêm style cho ScrollView dọc và container chứa badge
-    badgeVerticalScroll: {
-        maxHeight: 110, // Giới hạn chiều cao khung chứa (tương đương khoảng 3 dòng thẻ), nhiều hơn sẽ cuộn dọc
-    },
-    badgeContainer: {
+    tabContainer: {
         flexDirection: 'row',
-        flexWrap: 'wrap', // Giúp các thẻ tự động xuống dòng
-        gap: 6,           // Khoảng cách giữa các thẻ badge
-        paddingBottom: 4,
-    },
-    badge: {
-        backgroundColor: 'rgba(52, 211, 153, 0.1)',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 6,
-        borderWidth: 1,
-        borderColor: COLORS.primary,
-    },
-    badgeText: {
-        fontSize: 11,
-        color: COLORS.primary,
-        fontWeight: '600',
-    },
-    iconScroll: {
-        flexDirection: 'row',
-        marginBottom: 4,
-    },
-    // Thêm hoặc thay thế các style này trong StyleSheet.create
-    shelfScrollContent: {
-        alignItems: 'flex-end',
-        paddingHorizontal: 4,
-        gap: 12,
-        paddingBottom: 4, // Khoảng cách nhỏ từ đáy icon xuống mặt kệ
-    },
-    iconCard: {
-        width: 58,
-        height: 58,
-        borderRadius: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'transparent',
-        borderWidth: 1,
-        borderColor: 'transparent', // Mặc định không có viền
-    },
-    // Khi được chọn: Chỉ tô màu viền bao quanh, không tô nền
-    iconCardSelected: {
-        borderColor: COLORS.primary,
-    },
-    iconImage: {
-        width: 36,
-        height: 36,
-    },
-    // Đường thẳng mặt kệ và hiệu ứng đổ bóng đen xuống dưới
-    shelfLine: {
-        height: 1,
-        backgroundColor: COLORS.border,
-        width: '100%',
-        marginTop: 2,
+        gap: 8,
         marginBottom: 8,
-        // Đổ bóng đen hắt xuống dưới cho cả iOS và Android
-        shadowColor: COLORS.shadow,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3, // Tăng độ đậm bóng đen cho rõ giống cái kệ
-        shadowRadius: 3,
-        elevation: 4,
     },
-    fieldGroup: {
-        marginBottom: 24,
+    tabBtn: {
+        flex: 1,
+        paddingVertical: 10,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        backgroundColor: COLORS.background,
+        alignItems: 'center',
+    },
+    activeTabBtn: {
+        backgroundColor: COLORS.primary,
+        borderColor: COLORS.primary,
+    },
+    tabText: {
+        fontSize: 12,
+        color: COLORS.textSecondary,
+        fontWeight: '500',
+    },
+    activeTabText: {
+        color: '#FFFFFF',
+        fontWeight: 'bold',
     },
     rowFields: {
         flexDirection: 'row',
         gap: 12,
     },
-    label: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: COLORS.textMain,
-        marginBottom: 10,
-    },
-    required: {
-        color: COLORS.error || '#EF4444',
+    fieldGroup: {
+        marginBottom: 12,
     },
     input: {
-        backgroundColor: COLORS.card,
-        height: 46,
-        borderRadius: SIZES.radius,
-        paddingHorizontal: 12,
         borderWidth: 1,
         borderColor: COLORS.border,
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
         fontSize: 14,
         color: COLORS.textMain,
+        backgroundColor: '#FFFFFF',
     },
     textArea: {
         height: 80,
-        paddingTop: 10,
         textAlignVertical: 'top',
     },
-    typeChipsContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-    },
-    chip: {
-        backgroundColor: COLORS.card,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-    },
-    chipSelected: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary,
-    },
-    chipText: {
-        fontSize: 12,
-        color: COLORS.textSecondary,
-        fontWeight: '500',
-    },
-    chipTextSelected: {
-        color: '#FFFFFF',
-        fontWeight: '500',
-    },
-    footer: {
-        padding: SIZES.medium,
-        backgroundColor: COLORS.card,
-        borderTopWidth: 1,
-        borderTopColor: COLORS.border,
-    },
     submitBtn: {
-        height: 50,
         backgroundColor: COLORS.primary,
-        borderRadius: 25,
-        flexDirection: 'row',
-        justifyContent: 'center',
+        paddingVertical: 14,
+        borderRadius: 10,
         alignItems: 'center',
-        gap: 8,
-        ...SHADOWS.medium,
+        marginTop: 24,
+        marginBottom: 20,
     },
-    submitText: {
-        color: COLORS.card,
-        fontSize: 15,
-        fontWeight: '700',
+    submitBtnText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: 'bold',
     },
 });

@@ -75,10 +75,14 @@ const collectionSchema = new mongoose.Schema(
             default: null,
         },
 
-        paoDays: {
+        paoMonths: {
             type: Number,
             default: null,
             min: 1,
+        },
+        finalExpiryDate: {
+            type: Date,
+            default: null,
         },
 
         note: {

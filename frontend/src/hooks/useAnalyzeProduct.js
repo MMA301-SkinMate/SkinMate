@@ -9,7 +9,6 @@ const useAnalyzeProduct = () => {
         try {
             setLoading(true);
             setError(null);
-            console.log("gửi request")
             const response = await collectionApi.analyzeProduct(payload);
             return response;
 

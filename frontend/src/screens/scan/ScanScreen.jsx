@@ -58,8 +58,6 @@ const ScanScreen = ({ navigation }) => {
 
         navigation.navigate('ProductInfoDetail', { ingredientList: mockIngredients });
     };
-
-    console.log(scannedData)
     return (
         <View style={styles.container}>
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />

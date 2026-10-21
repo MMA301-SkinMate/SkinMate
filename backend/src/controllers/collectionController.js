@@ -7,7 +7,6 @@ const { analyzeProductByScores } = require('../services/geminiService');
 
 const analyzeProduct = async (req, res) => {
     try {
-        console.log('🚀 [1/5] Bắt đầu nhận request phân tích sản phẩm...');
         const { productName, productType, productIcon, ingredientList, userId: bodyUserId } = req.body;
         const ingredients = Array.isArray(ingredientList) && ingredientList.length > 0
             ? ingredientList
@@ -35,7 +34,6 @@ const analyzeProduct = async (req, res) => {
             }).catch(() => null);
         }
 
-        console.log('🎒 [3/5] Đang quét routine và tủ đồ active...');
         const skinType = user?.skinProfile?.skinType || 'Da_Thuong';
         const todayStr = new Date().toISOString().split('T')[0];
 
@@ -58,7 +56,6 @@ const analyzeProduct = async (req, res) => {
             ? await Collection.find({ userId: user._id, status: 'active' }).select('productName productType ingredients')
             : [];
 
-        console.log('🧮 [4/5] Đang chạy thuật toán chấm điểm cục bộ...');
         const scores = calculateProductScores({
             ingredients,
             skinType,
@@ -68,7 +65,6 @@ const analyzeProduct = async (req, res) => {
 
         let aiResponse = null;
         try {
-            console.log('🤖 [5/5] Đang gửi dữ liệu sang Gemini AI để lấy lời khuyên...');
             aiResponse = await analyzeProductByScores({
                 productName,
                 productType,
@@ -79,7 +75,6 @@ const analyzeProduct = async (req, res) => {
                 ingredients,
                 userClosetProducts
             });
-            console.log('✅ [Gemini AI] Kết quả nhận được thành công!');
         } catch (aiError) {
             console.warn('[collectionController] AI analysis error, using fallback:', aiError.message);
         }
@@ -108,21 +103,11 @@ const analyzeProduct = async (req, res) => {
             },
         };
 
-        const response = {
-            analysisResult,
-            productName,
-            productType,
-            productIcon,
-            skinType,
-            todayCondition,
-            ingredients,
-            userClosetProducts
-        };
 
         return res.status(200).json({
             success: true,
             message: 'Product analysis successful',
-            data: response
+            data: analysisResult
         });
 
     } catch (error) {
@@ -131,4 +116,88 @@ const analyzeProduct = async (req, res) => {
     }
 };
 
-module.exports = { analyzeProduct };
+const saveDraft = async (req, res) => {
+    try {
+        const { userId = '65b123456789abcdef123456', productName, productType, productIcon, ingredients, status, analysisResult } = req.body;
+
+        if (!userId) {
+            console.warn('[saveDraft] Missing userId from request body');
+        }
+
+        const productData = {
+            userId,
+            productName,
+            productType,
+            productIcon,
+            ingredients,
+            status,
+        };
+
+        if (analysisResult) {
+            productData.analysisResult = analysisResult;
+        }
+
+        const savedProduct = await Collection.create(productData);
+
+        return res.status(201).json({
+            success: true,
+            message: 'Product saved successfully',
+            data: savedProduct
+        });
+
+    } catch (error) {
+        console.error('Product save error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to save product',
+            error: error.message
+        });
+    }
+};
+
+const addProduct = async (req, res) => {
+    try {
+        const { userId, productName, productType, productIcon, ingredients, status, analysisResult, openedDate, expiryDate, paoMonths, finalExpiryDate, notes } = req.body;
+
+        if (!userId) {
+            console.warn('[saveDraft] Missing userId from request body');
+        }
+
+        const productData = {
+            userId,
+            productName,
+            productType,
+            productIcon,
+            ingredients,
+            status,
+            openedDate,
+            expiryDate,
+            paoMonths,
+            finalExpiryDate,
+            notes
+        };
+
+        if (analysisResult) {
+            productData.analysisResult = analysisResult;
+        }
+
+        const savedProduct = await Collection.create(productData);
+
+        return res.status(201).json({
+            success: true,
+            message: 'Product saved successfully',
+            data: savedProduct
+        });
+
+    } catch (error) {
+        console.error('Product save error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to save product',
+            error: error.message
+        });
+    }
+};
+
+
+module.exports = { analyzeProduct, saveDraft, addProduct };
