@@ -1,4 +1,4 @@
-import { View, StyleSheet, StatusBar } from 'react-native';
+import { View, StyleSheet, StatusBar, TouchableOpacity, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../../constants/colors';
 import ScanPermissionView from '../../components/scan/ScanPermissionView';
@@ -8,6 +8,7 @@ import ScanControls from '../../components/scan/ScanControls';
 import useScan from '../../hooks/useScan';
 import ScanLoadingOverlay from '../../components/scan/ScanLoadingOverlay';
 import ScanResultModal from '../../components/scan/ScanResultModal';
+import { Ionicons } from '@expo/vector-icons';
 
 const ScanScreen = ({ navigation }) => {
     const {
@@ -45,6 +46,20 @@ const ScanScreen = ({ navigation }) => {
         );
     }
 
+    const handleTestWithMockData = () => {
+        const mockIngredients = [
+            'Water',
+            'Glycerin',
+            'Niacinamide',
+            'Hyaluronic Acid',
+            'Salicylic Acid',
+            'Phenoxyethanol'
+        ];
+
+        navigation.navigate('ProductInfoDetail', { ingredientList: mockIngredients });
+    };
+
+    console.log(scannedData)
     return (
         <View style={styles.container}>
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
@@ -77,10 +92,23 @@ const ScanScreen = ({ navigation }) => {
 
             {isModalVisible && (
                 <ScanResultModal
-                    ingredients={scannedData?.ingredients || []}
+                    ingredients={
+                        Array.isArray(scannedData)
+                            ? scannedData
+                            : (scannedData?.ingredients || scannedData?.ingredientList || [])
+                    }
                     onClose={handleCloseModal}
                 />
             )}
+
+            <TouchableOpacity
+                style={styles.devMockBtn}
+                onPress={handleTestWithMockData}
+                activeOpacity={0.8}
+            >
+                <Ionicons name="bug-outline" size={18} color="#FFF" />
+                <Text style={styles.devMockText}>Test Nhanh (Mock Data)</Text>
+            </TouchableOpacity>
         </View>
     );
 }
@@ -92,5 +120,23 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: COLORS.shadow,
         justifyContent: 'space-between',
+    },
+    devMockBtn: {
+        position: 'absolute',
+        top: 60,
+        right: 20,
+        flexDirection: 'row',
+        backgroundColor: 'rgba(239, 68, 68, 0.85)', // Màu đỏ nổi bật cho chế độ dev
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+        alignItems: 'center',
+        gap: 6,
+        zIndex: 999,
+    },
+    devMockText: {
+        color: '#FFF',
+        fontSize: 12,
+        fontWeight: '700',
     },
 });

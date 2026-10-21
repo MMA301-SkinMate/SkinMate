@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useNavigation } from '@react-navigation/native';
 
-export function useScanResultEdit(ingredients, onClose) {
+const useScanResultEdit = (ingredients, onClose) => {
+    const navigation = useNavigation();
     const [isEditing, setIsEditing] = useState(false);
     const [ingredientList, setIngredientList] = useState([]);
     const [editingIndex, setEditingIndex] = useState(null);
@@ -126,10 +128,17 @@ export function useScanResultEdit(ingredients, onClose) {
     const handleOk = () => {
         if (isEditing) {
             saveCurrentEdit();
-            resetEditState()
+            resetEditState();
         } else {
-            if (onClose) {
-                onClose(ingredientList);
+            if (hasIngredients) {
+                if (onClose) {
+                    onClose(ingredientList);
+                }
+                navigation.navigate('ProductInfoDetail', { ingredientList: ingredientList });
+            } else {
+                if (onClose) {
+                    onClose([]);
+                }
             }
         }
     };
@@ -153,3 +162,5 @@ export function useScanResultEdit(ingredients, onClose) {
         resetEditState,
     };
 }
+
+export default useScanResultEdit;

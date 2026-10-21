@@ -5,6 +5,7 @@ require('dotenv').config();
 const connectDB = require('./src/config/db');
 const { errorHandler } = require('./src/middlewares/errorMiddleware');
 const scanRoutes = require('./src/routes/scanRoutes');
+const collectionRoutes = require('./src/routes/collectionRoutes');
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.get('/health', (req, res) => {
 
 // Scan routes
 app.use('/api/scan', scanRoutes);
+app.use('/api/collections', collectionRoutes);
 
 app.use(errorHandler);
 

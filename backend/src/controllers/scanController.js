@@ -9,7 +9,7 @@ const scanIngredients = async (req, res, next) => {
             });
         }
 
-        const result = await geminiService.extractIngredientsFromImage(req.file);
+        const result = await geminiService.readIngredientsFromImage(req.file);
 
         return res.status(200).json({
             success: true,

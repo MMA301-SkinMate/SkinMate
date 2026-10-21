@@ -16,7 +16,7 @@ export const COLORS = {
     textLight: '#ffffff',
 
     // Borders & Dividers
-    border: '#f1f5f9',
+    border: '#e2e8f0',
     borderDark: '#e2e8f0',
 
     // Status & Feedback

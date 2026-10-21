@@ -7,9 +7,9 @@ import { COLORS } from '../constants/colors';
 
 import HomeScreen from '../screens/home/HomeScreen';
 import CollectionScreen from '../screens/collection/CollectionScreen';
-import ScanScreen from '../screens/scan/ScanScreen';
 import CommunityScreen from '../screens/community/CommunityScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
+import ScanStackNav from './ScanStackNav';
 
 const Tab = createBottomTabNavigator();
 
@@ -58,8 +58,8 @@ const BottomTabNav = () => {
                 }}
             />
             <Tab.Screen
-                name="Scan"
-                component={ScanScreen}
+                name="ScanTab"
+                component={ScanStackNav}
                 options={{
                     tabBarLabel: () => null,
                     tabBarButton: (props) => <CustomScanButton {...props} />,
@@ -69,7 +69,7 @@ const BottomTabNav = () => {
                 name="Community"
                 component={CommunityScreen}
                 options={{
-                    tabBarLabel: 'Communityg',
+                    tabBarLabel: 'Community',
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="grid-outline" size={size} color={color} />
                     ),
