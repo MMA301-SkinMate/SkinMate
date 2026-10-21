@@ -4,7 +4,7 @@ export const COLORS = {
     sage: '#B8CFB3',
     olive: '#84A282',
 
-    primary: '#29382D',
+    primary: '#0f766e',
     primaryDark: '#0d5e56',
     primaryLight: '#2dd4bf',
 
@@ -14,8 +14,8 @@ export const COLORS = {
     card: '#ffffff',
 
     // Text Colors
-    textMain: '#29382D',
-    textSecondary: '#566252',
+    textMain: '#1e293b',
+    textSecondary: '#64748b',
     textMuted: '#94a3b8',
     textLight: '#ffffff',
 
