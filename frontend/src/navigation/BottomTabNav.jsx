@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 
 import HomeScreen from '../screens/home/HomeScreen';
-import CollectionScreen from '../screens/collection/CollectionScreen';
+import MyCollectionScreen from '../screens/collection/MyCollectionScreen';
 import ScanScreen from '../screens/scan/ScanScreen';
 import CommunityScreen from '../screens/community/CommunityScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
@@ -49,7 +49,7 @@ const BottomTabNav = () => {
             />
             <Tab.Screen
                 name="Collection"
-                component={CollectionScreen}
+                component={MyCollectionScreen}
                 options={{
                     tabBarLabel: 'Collection',
                     tabBarIcon: ({ color, size }) => (

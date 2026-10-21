@@ -21,12 +21,14 @@
       "favicon": "./src/assets/favicon.png"
     },
     "plugins": [
+      "expo-notifications",
       [
         "expo-camera",
         {
-          "cameraPermission": "Ứng dụng cần truy cập camera để quét bảng thành phần mỹ phẩm."
+          "cameraPermission": "Ứng dụng cần truy cập camera để chụp ảnh sản phẩm."
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ]
   }
 }

@@ -1,0 +1,12 @@
+const express = require('express');
+const controller = require('../controllers/collectionController');
+const validate = require('../validations/collectionDto');
+const uploadProductImage = require('../middlewares/productImageUploadMiddleware');
+const router = express.Router();
+router.get('/', controller.list);
+router.post('/image', uploadProductImage.single('image'), controller.uploadImage);
+router.post('/', validate.create, controller.create);
+router.get('/:id', validate.id, controller.get);
+router.patch('/:id', validate.id, validate.update, controller.update);
+router.delete('/:id', validate.id, controller.remove);
+module.exports = router;
