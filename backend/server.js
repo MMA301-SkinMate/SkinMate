@@ -6,6 +6,7 @@ require('dotenv').config();
 const connectDB = require('./src/config/db');
 const collectionRoutes = require('./src/routes/collectionRoutes');
 const notificationRoutes = require('./src/routes/notificationRoutes');
+const communityRoutes = require('./src/routes/communityRoutes');
 const { startExpiryScheduler } = require('./src/services/expiryNotificationService');
 const scanRoutes = require('./src/routes/scanRoutes');
 const { errorHandler } = require('./src/middlewares/errorMiddleware');
@@ -15,7 +16,8 @@ connectDB();
 
 const tempDir = path.join(__dirname, 'temp');
 const productUploadsDir = path.join(__dirname, 'uploads/products');
-[tempDir, productUploadsDir].forEach(directory => {
+const communityUploadsDir = path.join(__dirname, 'uploads/community');
+[tempDir, productUploadsDir, communityUploadsDir].forEach(directory => {
   if (!fs.existsSync(directory)) fs.mkdirSync(directory, { recursive: true });
 });
 
@@ -25,6 +27,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.get('/health', (req, res) => res.status(200).json({ status: 'UP', timestamp: new Date().toISOString() }));
 app.use('/api/collections', collectionRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/community', communityRoutes);
 app.use('/api/scan', scanRoutes);
 app.use((req, res) => res.status(404).json({ error: { message: 'Endpoint not found', code: 'NOT_FOUND' } }));
 app.use(errorHandler);
