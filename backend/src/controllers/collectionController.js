@@ -1,4 +1,5 @@
 const Collection = require('../models/Collection');
+const { uploadToCloudinary } = require('../services/cloudinaryService');
 
 const DEFAULT_USER_ID = '6ad620492ae8913ed1eb2871';
 
@@ -37,8 +38,8 @@ const notFound = res => res.status(404).json({ error: { message: 'Collection pro
 exports.uploadImage = async (req, res, next) => {
   try {
     if (!req.file) return res.status(400).json({ error: { message: 'A JPG, PNG, or WebP image is required', code: 'INVALID_IMAGE' } });
-    const imageUrl = `${req.protocol}://${req.get('host')}/uploads/products/${req.file.filename}`;
-    res.status(201).json({ imageUrl });
+    const result = await uploadToCloudinary(req.file, 'skinmate/collection');
+    res.status(201).json({ imageUrl: result.secureUrl });
   } catch (error) {
     next(error);
   }
