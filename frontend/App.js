@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import RootNavigator from './src/navigation/RootNavigator';
 import ExpiredProductAlertModal from './src/components/collection/ExpiredProductAlertModal';
 import { CollectionProvider } from './src/context/CollectionContext';
+import { CommunityProvider } from './src/context/CommunityContext';
 import { usePushNotifications } from './src/hooks/usePushNotifications';
 
 function AppContent() {
@@ -18,8 +19,10 @@ export default function App() {
       <NavigationContainer>
         <StatusBar style="dark" backgroundColor="#ffffff" />
         <CollectionProvider>
-          <AppContent />
-          <ExpiredProductAlertModal />
+          <CommunityProvider>
+            <AppContent />
+            <ExpiredProductAlertModal />
+          </CommunityProvider>
         </CollectionProvider>
       </NavigationContainer>
     </SafeAreaProvider>

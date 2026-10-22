@@ -24,7 +24,7 @@ const SHELVES = [
   { id: 'cleanse', title: 'Kệ 3: Làm sạch & Cân bằng', types: ['cleanser', 'toner', 'others', 'other'] },
 ];
 
-const BOTTLE_COLORS = ['#E3ECFF', '#D4F5E8', '#FFDCC8', '#F2E2D4', '#DEE5FF'];
+const BOTTLE_COLORS = [Colors.primaryLight, Colors.surface, Colors.info, Colors.borderDark, Colors.primary];
 
 function formatDate(value) {
   if (!value) return 'Chưa cập nhật';
@@ -140,7 +140,7 @@ export default function MyCollectionScreen({ navigation }) {
         {expiredActiveCount > 0 ? (
           <View style={styles.expiredBanner}>
             <View style={styles.expiredBannerDot}>
-              <AlertTriangle size={13} color="#FFFFFF" />
+              <AlertTriangle size={13} color={Colors.textLight} />
             </View>
             <Text style={styles.expiredBannerText}>
               Cảnh báo đỏ: Có <Text style={styles.expiredBannerBold}>{expiredActiveCount} sản phẩm hết hạn</Text> đang tiếp tục dùng
@@ -172,7 +172,7 @@ export default function MyCollectionScreen({ navigation }) {
         onPress={() => navigation.navigate('AddProduct')}
         activeOpacity={0.85}
       >
-        <Plus size={20} color="#FFFFFF" />
+        <Plus size={20} color={Colors.textLight} />
         <Text style={styles.addText}>Thêm món</Text>
       </TouchableOpacity>
     </SafeAreaView>
@@ -247,7 +247,7 @@ function ProductCard({ product, navigation }) {
         ) : null}
         {showRedAlert ? (
           <View style={styles.expiredRedBadge}>
-            <AlertTriangle size={8} color="#FFFFFF" />
+            <AlertTriangle size={8} color={Colors.textLight} />
             <Text style={styles.expiredRedBadgeText}>Hết hạn</Text>
           </View>
         ) : null}
@@ -263,62 +263,62 @@ function ProductCard({ product, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FAFAFF' },
+  container: { flex: 1, backgroundColor: Colors.surface },
   content: { paddingHorizontal: 12, paddingBottom: 105 },
   headingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 12 },
   titleWithCount: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  title: { color: '#111629', fontSize: 27, lineHeight: 31, fontWeight: '800' },
-  monthBadge: { color: Colors.dark, backgroundColor: '#9BEFD2', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 13, fontSize: 11 },
+  title: { color: Colors.text, fontSize: 27, lineHeight: 31, fontWeight: '800' },
+  monthBadge: { color: Colors.primaryDark, backgroundColor: Colors.primaryLight, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 13, fontSize: 11 },
   subtitle: { color: Colors.muted, fontSize: 13, marginTop: 2 },
   headingActions: { flexDirection: 'row', gap: 8 },
-  roundButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', shadowColor: '#A8AEBB', shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
-  tabBar: { flexDirection: 'row', backgroundColor: '#EEF0FF', borderRadius: 25, padding: 4, marginBottom: 13 },
+  roundButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.background, shadowColor: Colors.shadow, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
+  tabBar: { flexDirection: 'row', backgroundColor: Colors.surface, borderRadius: 25, padding: 4, marginBottom: 13 },
   tabItem: { flex: 1, minHeight: 38, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 21 },
-  tabActive: { backgroundColor: '#FFFFFF', shadowColor: '#A8AEBB', shadowOpacity: 0.08, shadowRadius: 3, elevation: 1 },
-  tabText: { color: '#34433E', fontSize: 13, fontWeight: '500' },
+  tabActive: { backgroundColor: Colors.background, shadowColor: Colors.shadow, shadowOpacity: 0.08, shadowRadius: 3, elevation: 1 },
+  tabText: { color: Colors.textSecondary, fontSize: 13, fontWeight: '500' },
   tabTextActive: { color: Colors.dark, fontWeight: '700' },
-  countBadge: { color: Colors.dark, backgroundColor: '#C9F3E8', paddingHorizontal: 7, paddingVertical: 3, borderRadius: 10, fontSize: 11 },
-  archivedBadge: { color: '#536079', backgroundColor: '#DCE2F6', paddingHorizontal: 7, paddingVertical: 3, borderRadius: 10, fontSize: 11 },
-  expiredBanner: { minHeight: 38, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, borderRadius: 20, backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FCA5A5', marginBottom: 9, shadowColor: '#DC2626', shadowOpacity: 0.1, shadowRadius: 3, elevation: 2, gap: 8 },
-  expiredBannerDot: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#DC2626', alignItems: 'center', justifyContent: 'center' },
-  expiredBannerText: { flex: 1, color: '#991B1B', fontSize: 11.5 },
-  expiredBannerBold: { color: '#DC2626', fontWeight: '800' },
-  reminder: { minHeight: 38, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 11, borderRadius: 20, backgroundColor: '#FFFFFF', marginBottom: 22, shadowColor: '#A8AEBB', shadowOpacity: 0.08, shadowRadius: 3, elevation: 1 },
-  reminderDot: { width: 11, height: 11, borderRadius: 6, backgroundColor: '#A8470A', marginRight: 9 },
-  reminderText: { flex: 1, color: '#34433E', fontSize: 11 },
-  reminderBold: { color: '#A8470A', fontWeight: '700' },
+  countBadge: { color: Colors.primaryDark, backgroundColor: Colors.primaryLight, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 10, fontSize: 11 },
+  archivedBadge: { color: Colors.textSecondary, backgroundColor: Colors.borderDark, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 10, fontSize: 11 },
+    expiredBanner: { minHeight: 38, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, borderRadius: 20, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.error, marginBottom: 9, shadowColor: Colors.error, shadowOpacity: 0.1, shadowRadius: 3, elevation: 2, gap: 8 },
+    expiredBannerDot: { width: 20, height: 20, borderRadius: 10, backgroundColor: Colors.error, alignItems: 'center', justifyContent: 'center' },
+  expiredBannerText: { flex: 1, color: Colors.error, fontSize: 11.5 },
+  expiredBannerBold: { color: Colors.error, fontWeight: '800' },
+    reminder: { minHeight: 38, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 11, borderRadius: 20, backgroundColor: Colors.background, marginBottom: 22, shadowColor: Colors.shadow, shadowOpacity: 0.08, shadowRadius: 3, elevation: 1 },
+  reminderDot: { width: 11, height: 11, borderRadius: 6, backgroundColor: Colors.warning, marginRight: 9 },
+  reminderText: { flex: 1, color: Colors.text, fontSize: 11 },
+  reminderBold: { color: Colors.warning, fontWeight: '700' },
   calendarLink: { color: Colors.dark, fontSize: 11, fontWeight: '600' },
-  stateCard: { alignItems: 'center', gap: 10, padding: 24, borderRadius: 18, backgroundColor: '#FFFFFF', marginTop: 12, shadowColor: '#A8AEBB', shadowOpacity: 0.08, shadowRadius: 4, elevation: 1 },
-  emptyTitle: { color: '#111629', fontSize: 16, fontWeight: '700' },
+    stateCard: { alignItems: 'center', gap: 10, padding: 24, borderRadius: 18, backgroundColor: Colors.background, marginTop: 12, shadowColor: Colors.shadow, shadowOpacity: 0.08, shadowRadius: 4, elevation: 1 },
+  emptyTitle: { color: Colors.text, fontSize: 16, fontWeight: '700' },
   stateText: { color: Colors.muted, fontSize: 13, textAlign: 'center', lineHeight: 19 },
   retryText: { color: Colors.dark, fontSize: 14, fontWeight: '700' },
-  cabinet: { marginHorizontal: -4, paddingHorizontal: 9, paddingTop: 5, backgroundColor: '#8B3F0A', borderRadius: 10, borderWidth: 2, borderColor: '#6C2F08', shadowColor: '#482006', shadowOpacity: 0.25, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 5 },
-  cabinetTop: { height: 13, borderRadius: 5, backgroundColor: '#B65B17', marginBottom: 7, borderTopWidth: 2, borderTopColor: '#D47A2C' },
-  cabinetKnob: { width: 9, height: 9, borderRadius: 5, backgroundColor: '#F2BC65', marginLeft: 7, marginTop: 1 },
-  cabinetBottom: { height: 13, marginHorizontal: -1, marginTop: -15, borderRadius: 4, backgroundColor: '#A94A0B', borderTopWidth: 2, borderTopColor: '#D47A2C' },
+    cabinet: { marginHorizontal: -4, paddingHorizontal: 9, paddingTop: 5, backgroundColor: Colors.primaryDark, borderRadius: 10, borderWidth: 2, borderColor: Colors.primary, shadowColor: Colors.shadow, shadowOpacity: 0.25, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 5 },
+  cabinetTop: { height: 13, borderRadius: 5, backgroundColor: Colors.primary, marginBottom: 7, borderTopWidth: 2, borderTopColor: Colors.primaryLight },
+  cabinetKnob: { width: 9, height: 9, borderRadius: 5, backgroundColor: Colors.primaryLight, marginLeft: 7, marginTop: 1 },
+  cabinetBottom: { height: 13, marginHorizontal: -1, marginTop: -15, borderRadius: 4, backgroundColor: Colors.primary, borderTopWidth: 2, borderTopColor: Colors.primaryLight },
   shelfSection: { marginBottom: 14 },
   shelfHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5, paddingHorizontal: 4 },
   shelfTitleWrap: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  shelfAccent: { width: 5, height: 14, borderRadius: 3, backgroundColor: '#F4A261', marginRight: 5 },
-  shelfTitle: { color: '#FFF7ED', fontSize: 15, fontWeight: '700' },
-  shelfCount: { color: '#FDE7CF', fontSize: 10 },
+    shelfAccent: { width: 5, height: 14, borderRadius: 3, backgroundColor: Colors.primaryLight, marginRight: 5 },
+  shelfTitle: { color: Colors.textLight, fontSize: 15, fontWeight: '700' },
+  shelfCount: { color: Colors.primaryLight, fontSize: 10 },
   productRow: { gap: 7, paddingHorizontal: 1, paddingTop: 5, paddingBottom: 4 },
   productCard: { width: CARD_WIDTH, minHeight: 104, alignItems: 'center', justifyContent: 'flex-end', padding: 2, backgroundColor: 'transparent' },
   productArchived: { opacity: 0.58 },
-  productCardExpired: { backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: 8 },
+    productCardExpired: { backgroundColor: Colors.surface, borderRadius: 8 },
   productIconWrap: { width: 58, height: 63, alignSelf: 'center', alignItems: 'center', justifyContent: 'center', marginTop: 2, marginBottom: 5 },
   productIconImage: { width: '100%', height: '100%' },
-  productIconWrapExpired: { borderWidth: 2, borderColor: '#DC2626', borderRadius: 8, shadowColor: '#DC2626', shadowOpacity: 0.35, shadowRadius: 5, elevation: 3 },
-  finishedBadge: { position: 'absolute', top: 3, backgroundColor: 'rgba(0, 0, 0, 0.65)', paddingHorizontal: 4, paddingVertical: 1, borderRadius: 4, zIndex: 2 },
-  finishedBadgeText: { color: '#FFFFFF', fontSize: 8, fontWeight: '700' },
-  expiredRedBadge: { position: 'absolute', top: 2, flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: '#DC2626', paddingHorizontal: 4, paddingVertical: 1, borderRadius: 4, zIndex: 3 },
-  expiredRedBadgeText: { color: '#FFFFFF', fontSize: 7, fontWeight: '800' },
-  silhouetteLabel: { color: '#34433E', fontSize: 5, textAlign: 'center', fontWeight: '500', paddingHorizontal: 2 },
-  silhouetteLabelExpired: { color: '#7F1D1D', fontWeight: '700' },
-  productName: { width: '100%', color: '#FFF7ED', fontSize: 8, lineHeight: 10, fontWeight: '600', textAlign: 'center' },
-  productNameExpired: { color: '#FECACA', fontWeight: '800' },
-  woodShelf: { height: 10, borderRadius: 3, backgroundColor: '#A8470A', marginTop: 1, shadowColor: '#7F3504', shadowOpacity: 0.27, shadowRadius: 7, shadowOffset: { width: 0, height: 5 }, elevation: 4 },
-  woodHighlight: { height: 3, borderRadius: 2, backgroundColor: '#CB6720', marginHorizontal: 1 },
-  addButton: { position: 'absolute', right: 18, bottom: 18, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, minHeight: 52, borderRadius: 27, backgroundColor: '#047857', shadowColor: Colors.dark, shadowOpacity: 0.25, shadowRadius: 8, shadowOffset: { width: 0, height: 5 }, elevation: 8 },
-  addText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+    productIconWrapExpired: { borderWidth: 2, borderColor: Colors.error, borderRadius: 8, shadowColor: Colors.error, shadowOpacity: 0.35, shadowRadius: 5, elevation: 3 },
+  finishedBadge: { position: 'absolute', top: 3, backgroundColor: Colors.overlay, paddingHorizontal: 4, paddingVertical: 1, borderRadius: 4, zIndex: 2 },
+  finishedBadgeText: { color: Colors.textLight, fontSize: 8, fontWeight: '700' },
+  expiredRedBadge: { position: 'absolute', top: 2, flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: Colors.error, paddingHorizontal: 4, paddingVertical: 1, borderRadius: 4, zIndex: 3 },
+  expiredRedBadgeText: { color: Colors.textLight, fontSize: 7, fontWeight: '800' },
+  silhouetteLabel: { color: Colors.text, fontSize: 5, textAlign: 'center', fontWeight: '500', paddingHorizontal: 2 },
+  silhouetteLabelExpired: { color: Colors.error, fontWeight: '700' },
+  productName: { width: '100%', color: Colors.textLight, fontSize: 8, lineHeight: 10, fontWeight: '600', textAlign: 'center' },
+  productNameExpired: { color: Colors.error, fontWeight: '800' },
+    woodShelf: { height: 10, borderRadius: 3, backgroundColor: Colors.primary, marginTop: 1, shadowColor: Colors.shadow, shadowOpacity: 0.27, shadowRadius: 7, shadowOffset: { width: 0, height: 5 }, elevation: 4 },
+  woodHighlight: { height: 3, borderRadius: 2, backgroundColor: Colors.primaryLight, marginHorizontal: 1 },
+  addButton: { position: 'absolute', right: 18, bottom: 18, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, minHeight: 52, borderRadius: 27, backgroundColor: Colors.primary, shadowColor: Colors.dark, shadowOpacity: 0.25, shadowRadius: 8, shadowOffset: { width: 0, height: 5 }, elevation: 8 },
+  addText: { color: Colors.textLight, fontSize: 14, fontWeight: '700' },
 });

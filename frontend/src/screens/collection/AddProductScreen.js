@@ -328,7 +328,7 @@ export default function AddProductScreen({ route, navigation }) {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{isEditing ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm'}</Text>
         <View style={styles.profile}>
-          <UserRound size={19} color="#FFFFFF" />
+          <UserRound size={19} color={Colors.textLight} />
         </View>
       </View>
 
@@ -345,7 +345,7 @@ export default function AddProductScreen({ route, navigation }) {
             <View style={styles.imagePreviewWrapper}>
               <Image source={{ uri: selectedImage }} style={styles.imagePreview} resizeMode="cover" />
               <View style={styles.imageBadge}>
-                <Check size={14} color="#FFFFFF" strokeWidth={3} />
+                <Check size={14} color={Colors.textLight} strokeWidth={3} />
                 <Text style={styles.imageBadgeText}>Đã chụp ảnh</Text>
               </View>
               <View style={styles.imageActionRow}>
@@ -372,8 +372,8 @@ export default function AddProductScreen({ route, navigation }) {
                   onPress={removeSelectedImage}
                   activeOpacity={0.8}
                 >
-                  <Trash2 size={16} color="#DC2626" />
-                  <Text style={[styles.imageActionBtnText, { color: '#DC2626' }]}>Xoá</Text>
+                  <Trash2 size={16} color={Colors.error} />
+                  <Text style={[styles.imageActionBtnText, { color: Colors.error }]}>Xoá</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -578,7 +578,7 @@ export default function AddProductScreen({ route, navigation }) {
               onPress={addIngredient}
               disabled={!newIngredient.trim()}
             >
-              <Plus size={22} color="#FFFFFF" />
+              <Plus size={22} color={Colors.textLight} />
             </TouchableOpacity>
           </View>
         </View>
@@ -684,9 +684,9 @@ export default function AddProductScreen({ route, navigation }) {
           disabled={isSaving}
         >
           {isSaving ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
+            <ActivityIndicator size="small" color={Colors.textLight} />
           ) : (
-            <Check size={20} color="#FFFFFF" />
+            <Check size={20} color={Colors.textLight} />
           )}
           <Text style={[styles.saveButtonText, { marginLeft: 8 }]}>
             {isSaving ? 'Đang lưu...' : isEditing ? 'Lưu thay đổi' : 'Lưu sản phẩm'}
@@ -823,7 +823,7 @@ export default function AddProductScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FAFAFF'
+    backgroundColor: Colors.surface
   },
   header: {
     minHeight: 60,
@@ -832,11 +832,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#EEF0F7'
+    borderBottomColor: Colors.border
   },
   headerTitle: {
     flex: 1,
-    color: '#111629',
+    color: Colors.text,
     fontSize: 18,
     fontWeight: '600'
   },
@@ -860,19 +860,19 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#111629'
+    color: Colors.text
   },
 
   // Image Section
   imageSection: {
     minHeight: 180,
-    backgroundColor: '#F0F4FF',
+    backgroundColor: Colors.surface,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
     borderWidth: 1.5,
-    borderColor: '#DDE5FD',
+    borderColor: Colors.borderDark,
     borderStyle: 'dashed',
   },
   imageButtons: {
@@ -888,10 +888,10 @@ const styles = StyleSheet.create({
     width: 68,
     height: 68,
     borderRadius: 34,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.background,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#1A3BA8',
+    shadowColor: Colors.shadow,
     shadowOpacity: 0.08,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 8,
@@ -910,11 +910,11 @@ const styles = StyleSheet.create({
   },
   imagePreviewWrapper: {
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.background,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#000000',
+    borderColor: Colors.borderDark,
+    shadowColor: Colors.shadow,
     shadowOpacity: 0.06,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 10,
@@ -923,7 +923,7 @@ const styles = StyleSheet.create({
   imagePreview: {
     width: '100%',
     height: 220,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: Colors.surface,
   },
   imageBadge: {
     position: 'absolute',
@@ -936,14 +936,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 12,
-    shadowColor: '#000000',
+        shadowColor: Colors.shadow,
     shadowOpacity: 0.15,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
     elevation: 2,
   },
   imageBadgeText: {
-    color: '#FFFFFF',
+        color: Colors.textLight,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -953,9 +953,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     paddingVertical: 12,
     paddingHorizontal: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.background,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: Colors.border,
   },
   imageActionBtn: {
     flexDirection: 'row',
@@ -964,10 +964,10 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 10,
-    backgroundColor: '#F0F4FF',
+    backgroundColor: Colors.surface,
   },
   imageDeleteBtn: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: Colors.surface,
   },
   imageActionBtnText: {
     fontSize: 12,
@@ -982,17 +982,17 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#111629'
+    color: Colors.text
   },
   required: {
-    color: '#FF6B6B'
+        color: Colors.error
   },
   input: {
     minHeight: 48,
     borderRadius: 12,
     paddingHorizontal: 14,
-    backgroundColor: '#F0F2FF',
-    color: '#111629',
+    backgroundColor: Colors.surface,
+    color: Colors.text,
     fontSize: 14
   },
   noteInput: {
@@ -1002,28 +1002,28 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 12,
-    color: '#FF6B6B',
+        color: Colors.error,
     marginTop: 4
   },
   selectButton: {
     minHeight: 48,
     borderRadius: 12,
     paddingHorizontal: 14,
-    backgroundColor: '#F0F2FF',
+    backgroundColor: Colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between'
   },
   selectButtonText: {
     fontSize: 14,
-    color: '#111629',
+    color: Colors.text,
     fontWeight: '500'
   },
   dateButton: {
     minHeight: 48,
     borderRadius: 12,
     paddingHorizontal: 14,
-    backgroundColor: '#F0F2FF',
+    backgroundColor: Colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10
@@ -1044,7 +1044,7 @@ const styles = StyleSheet.create({
     width: 48,
     minHeight: 48,
     borderRadius: 12,
-    backgroundColor: '#FEE2E2',
+    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1058,12 +1058,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F0F2FF',
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+        borderColor: Colors.borderDark,
   },
   expiryModeButtonActive: {
-    backgroundColor: '#9BEFD2',
+        backgroundColor: Colors.primaryLight,
     borderColor: Colors.primaryDark,
   },
   expiryModeText: {
@@ -1084,13 +1084,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 13,
     paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: '#F0F2FF',
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+        borderColor: Colors.borderDark,
     alignItems: 'center',
   },
   durationButtonActive: {
-    backgroundColor: '#9BEFD2',
+        backgroundColor: Colors.primaryLight,
     borderColor: Colors.primaryDark,
   },
   durationButtonText: {
@@ -1111,8 +1111,8 @@ const styles = StyleSheet.create({
     minHeight: 44,
     borderRadius: 12,
     paddingHorizontal: 14,
-    backgroundColor: '#F0F2FF',
-    color: '#111629',
+    backgroundColor: Colors.surface,
+    color: Colors.text,
     fontSize: 14,
     textAlign: 'center',
   },
@@ -1137,7 +1137,7 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: '#F0F2FF',
+    backgroundColor: Colors.surface,
     borderRadius: 10,
     borderLeftWidth: 3,
     borderLeftColor: Colors.primary
@@ -1145,7 +1145,7 @@ const styles = StyleSheet.create({
   ingredientItemText: {
     flex: 1,
     fontSize: 13,
-    color: '#111629'
+    color: Colors.text
   },
   emptyState: {
     alignItems: 'center',
@@ -1165,8 +1165,8 @@ const styles = StyleSheet.create({
     minHeight: 48,
     borderRadius: 12,
     paddingHorizontal: 14,
-    backgroundColor: '#F0F2FF',
-    color: '#111629',
+    backgroundColor: Colors.surface,
+    color: Colors.text,
     fontSize: 14
   },
   addButton: {
@@ -1202,7 +1202,7 @@ const styles = StyleSheet.create({
   progressBar: {
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#DCE2F6',
+        backgroundColor: Colors.borderDark,
     overflow: 'hidden',
     marginBottom: 12
   },
@@ -1219,11 +1219,11 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: '#F0F2FF',
+    backgroundColor: Colors.surface,
     alignItems: 'center'
   },
   percentButtonActive: {
-    backgroundColor: '#9BEFD2'
+        backgroundColor: Colors.primaryLight,
   },
   percentButtonText: {
     fontSize: 12,
@@ -1241,11 +1241,11 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     borderRadius: 10,
-    backgroundColor: '#F0F2FF',
+    backgroundColor: Colors.surface,
     alignItems: 'center'
   },
   routineButtonActive: {
-    backgroundColor: '#9BEFD2'
+        backgroundColor: Colors.primaryLight,
   },
   routineButtonText: {
     fontSize: 12,
@@ -1264,9 +1264,9 @@ const styles = StyleSheet.create({
     right: 0,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#FAFAFF',
+    backgroundColor: Colors.surface,
     borderTopWidth: 1,
-    borderTopColor: '#EEF0F7'
+    borderTopColor: Colors.border
   },
   saveButton: {
     minHeight: 48,
@@ -1282,17 +1282,17 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#FFFFFF'
+        color: Colors.textLight
   },
 
   // Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: Colors.overlay,
     justifyContent: 'flex-end'
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.background,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '80%'
@@ -1304,12 +1304,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#EEF0F7'
+    borderBottomColor: Colors.border
   },
   modalTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#111629'
+    color: Colors.text
   },
   modalItem: {
     flexDirection: 'row',
@@ -1318,10 +1318,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F2FF'
+    borderBottomColor: Colors.border
   },
   modalItemActive: {
-    backgroundColor: '#F9FFFD'
+    backgroundColor: Colors.surface
   },
   modalItemText: {
     fontSize: 14,
@@ -1335,14 +1335,14 @@ const styles = StyleSheet.create({
   // DateTimePicker
   datePickerOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: Colors.overlay,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
   },
   datePickerContainer: {
     width: '100%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.background,
     borderRadius: 20,
     overflow: 'hidden',
     maxWidth: 320,
@@ -1350,7 +1350,7 @@ const styles = StyleSheet.create({
   datePickerHeader: {
     paddingVertical: 16,
     paddingHorizontal: 16,
-    backgroundColor: '#F0F2FF',
+    backgroundColor: Colors.surface,
     alignItems: 'center',
   },
   datePickerTitle: {
@@ -1364,7 +1364,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: '#EEF0F7',
+    borderTopColor: Colors.border,
   },
   datePickerButton: {
     flex: 1,
@@ -1373,7 +1373,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   datePickerButtonCancel: {
-    backgroundColor: '#F0F2FF',
+    backgroundColor: Colors.surface,
   },
   datePickerButtonCancelText: {
     fontSize: 13,
@@ -1386,6 +1386,6 @@ const styles = StyleSheet.create({
   datePickerButtonOKText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#FFFFFF',
+        color: Colors.textLight,
   },
 });

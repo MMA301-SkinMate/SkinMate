@@ -27,4 +27,5 @@ export const COLORS = {
 
     // Shadows & Overlays
     shadow: '#000000',
+    overlay: 'rgba(15, 23, 42, 0.62)',
 };
