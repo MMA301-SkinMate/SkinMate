@@ -55,10 +55,18 @@ const extractIngredientsFromImage = async (file) => {
                 };
             }
         } catch (error) {
-            console.warn(`[geminiService] Model ${model} failed:`, error.message || error);
+            console.warn(
+                `[geminiService] Model ${model} failed:`,
+                error.message || error
+            );
             lastError = error;
             // If rate-limited or unavailable, continue to next model
-            if (error.status === 429 || error.status === 503 || error.message?.includes('quota') || error.message?.includes('high demand')) {
+            if (
+                error.status === 429 ||
+                error.status === 503 ||
+                error.message?.includes('quota') ||
+                error.message?.includes('high demand')
+            ) {
                 continue;
             }
             // For other critical errors, rethrow or try next model
