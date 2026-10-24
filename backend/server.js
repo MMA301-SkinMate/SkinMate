@@ -55,7 +55,7 @@ function handleSignal() {
 const startServer = async () => {
     try {
         const config = loadConfig();
-        const app = createApp();
+        const app = createApp(config);
 
         await connectDB(config.mongoUri);
         console.log('Database connected successfully.');

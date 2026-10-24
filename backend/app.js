@@ -1,14 +1,20 @@
 const express = require('express');
-const cors = require('cors');
-const { errorHandler } = require('./src/middlewares/errorMiddleware');
+const helmet = require('helmet');
+const createRequestLogger = require('./src/middlewares/requestLogger');
+const createCorsMiddleware = require('./src/middlewares/corsMiddleware');
+const createApiRateLimiter = require('./src/middlewares/rateLimitMiddleware');
+const { notFound, errorHandler } = require('./src/middlewares/errorMiddleware');
 
-const createApp = () => {
+const createApp = (config) => {
     // Module routes are loaded after server.js has loaded the environment.
     const scanRoutes = require('./src/routes/scanRoutes');
     const app = express();
 
-    app.use(cors());
-    app.use(express.json());
+    app.use(createRequestLogger(config));
+    app.use(helmet());
+    app.use(createCorsMiddleware(config));
+    app.use(express.json({ limit: '1mb' }));
+    app.use('/api', createApiRateLimiter(config));
 
     // Health check endpoint for container orchestration and uptime monitoring.
     app.get('/health', (req, res) => {
@@ -19,6 +25,7 @@ const createApp = () => {
     });
 
     app.use('/api/scan', scanRoutes);
+    app.use(notFound);
     app.use(errorHandler);
 
     return app;
