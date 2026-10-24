@@ -9,7 +9,9 @@ const scanIngredients = async (req, res, next) => {
             });
         }
 
-        const result = await geminiService.extractIngredientsFromImage(req.file);
+        const result = await geminiService.extractIngredientsFromImage(
+            req.file
+        );
 
         return res.status(200).json({
             success: true,
@@ -19,10 +21,20 @@ const scanIngredients = async (req, res, next) => {
     } catch (error) {
         console.error('ScanController Error:', error);
         let userMessage = 'System error when reading image.';
-        if (error.status === 429 || error.message?.includes('quota') || error.message?.includes('RESOURCE_EXHAUSTED')) {
-            userMessage = 'API limit reached. Please try again in a few moments.';
-        } else if (error.status === 503 || error.message?.includes('high demand') || error.message?.includes('overloaded')) {
-            userMessage = 'System is temporarily overloaded. Please try again later!';
+        if (
+            error.status === 429 ||
+            error.message?.includes('quota') ||
+            error.message?.includes('RESOURCE_EXHAUSTED')
+        ) {
+            userMessage =
+                'API limit reached. Please try again in a few moments.';
+        } else if (
+            error.status === 503 ||
+            error.message?.includes('high demand') ||
+            error.message?.includes('overloaded')
+        ) {
+            userMessage =
+                'System is temporarily overloaded. Please try again later!';
         }
         return res.status(500).json({
             success: false,
