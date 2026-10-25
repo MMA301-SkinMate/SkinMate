@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Alert, ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Dimensions, Modal, FlatList, Image } from 'react-native';
+import { Alert, ActivityIndicator, Keyboard, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View, Dimensions, Modal, FlatList, Image, KeyboardAvoidingView } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Camera, Check, CheckCircle2, Leaf, Plus, Upload, X, AlertCircle, UserRound, ChevronDown, Calendar, Trash2 } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -322,7 +323,7 @@ export default function AddProductScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
+      <Pressable style={styles.header} onPress={Keyboard.dismiss}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <ArrowLeft size={24} color={Colors.text} />
         </TouchableOpacity>
@@ -330,13 +331,22 @@ export default function AddProductScreen({ route, navigation }) {
         <View style={styles.profile}>
           <UserRound size={19} color={Colors.textLight} />
         </View>
-      </View>
+      </Pressable>
 
-      <ScrollView
+      <KeyboardAwareScrollView
+        style={styles.scrollView}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        enableOnAndroid={true}
+        enableAutomaticScroll={true}
+        extraScrollHeight={Platform.OS === 'ios' ? 70 : 100}
+        extraHeight={Platform.OS === 'ios' ? 70 : 100}
+        enableResetScrollToCoords={true}
       >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <View style={{ flex: 1, gap: 24 }}>
         {/* Product Photo Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Ảnh sản phẩm</Text>
@@ -419,6 +429,8 @@ export default function AddProductScreen({ route, navigation }) {
               onChangeText={setBrand}
               placeholder="VD: The Ordinary, Cetaphil..."
               placeholderTextColor={Colors.textSecondary}
+              returnKeyType="done"
+              onSubmitEditing={Keyboard.dismiss}
             />
           </View>
 
@@ -430,6 +442,8 @@ export default function AddProductScreen({ route, navigation }) {
               onChangeText={setName}
               placeholder="Nhập tên sản phẩm"
               placeholderTextColor={Colors.textSecondary}
+              returnKeyType="done"
+              onSubmitEditing={Keyboard.dismiss}
             />
             {!name.trim() && <Text style={styles.errorText}>Bắt buộc</Text>}
           </View>
@@ -523,6 +537,8 @@ export default function AddProductScreen({ route, navigation }) {
                   maxLength={3}
                   placeholder="Số tháng"
                   placeholderTextColor={Colors.textSecondary}
+                  returnKeyType="done"
+                  onSubmitEditing={Keyboard.dismiss}
                 />
                 <Text style={styles.customDurationUnit}>tháng sau ngày mở nắp</Text>
               </View>
@@ -596,6 +612,7 @@ export default function AddProductScreen({ route, navigation }) {
                   value={percentDraft}
                   onChangeText={text => setPercentDraft(text.replace(/[^0-9]/g, '').slice(0, 3))}
                   onBlur={commitPercentDraft}
+                  onSubmitEditing={commitPercentDraft}
                   keyboardType="number-pad"
                   returnKeyType="done"
                   maxLength={3}
@@ -674,25 +691,31 @@ export default function AddProductScreen({ route, navigation }) {
             />
           </View>
         </View>
-      </ScrollView>
+      </View>
+    </TouchableWithoutFeedback>
+  </KeyboardAwareScrollView>
 
       {/* Save Button */}
-      <View style={styles.bottomBar}>
-        <TouchableOpacity
-          style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
-          onPress={saveProduct}
-          disabled={isSaving}
-        >
-          {isSaving ? (
-            <ActivityIndicator size="small" color={Colors.textLight} />
-          ) : (
-            <Check size={20} color={Colors.textLight} />
-          )}
-          <Text style={[styles.saveButtonText, { marginLeft: 8 }]}>
-            {isSaving ? 'Đang lưu...' : isEditing ? 'Lưu thay đổi' : 'Lưu sản phẩm'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.bottomBar}>
+          <TouchableOpacity
+            style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
+            onPress={saveProduct}
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <ActivityIndicator size="small" color={Colors.textLight} />
+            ) : (
+              <Check size={20} color={Colors.textLight} />
+            )}
+            <Text style={[styles.saveButtonText, { marginLeft: 8 }]}>
+              {isSaving ? 'Đang lưu...' : isEditing ? 'Lưu thay đổi' : 'Lưu sản phẩm'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
 
       {/* Type Modal */}
       <Modal
@@ -849,10 +872,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
 
+  keyboardAvoid: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
   content: {
     padding: 16,
-    paddingBottom: 100,
-    gap: 24
+    paddingBottom: 24,
+    gap: 24,
+    flexGrow: 1
   },
   section: {
     gap: 12
@@ -1258,15 +1288,11 @@ const styles = StyleSheet.create({
 
   // Bottom Bar
   bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: Colors.surface,
     borderTopWidth: 1,
-    borderTopColor: Colors.border
+    borderTopColor: Colors.border,
   },
   saveButton: {
     minHeight: 48,

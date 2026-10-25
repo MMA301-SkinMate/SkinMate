@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   AlertTriangle,
@@ -224,20 +225,36 @@ export default function ProductDetailModal({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.overlay} edges={[]}>
-      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={() => navigation.goBack()} />
-      <View style={styles.sheet}>
-        <View style={styles.handle} />
-        <View style={styles.header}>
-          <View style={styles.headerTitleRow}>
-            <View style={styles.leafIcon}><Leaf size={21} color={Colors.primaryDark} /></View>
-            <Text style={styles.headerTitle} numberOfLines={1}>VANITY SHELF • NGĂN {TYPE_LABELS[productType]?.toUpperCase() || 'SKINCARE'}</Text>
-          </View>
-          <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
-            <X size={24} color={Colors.text} />
-          </TouchableOpacity>
-        </View>
+      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={() => { Keyboard.dismiss(); navigation.goBack(); }} />
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.sheet}>
+          <View style={styles.handle} />
+          <Pressable style={styles.header} onPress={Keyboard.dismiss}>
+            <View style={styles.headerTitleRow}>
+              <View style={styles.leafIcon}><Leaf size={21} color={Colors.primaryDark} /></View>
+              <Text style={styles.headerTitle} numberOfLines={1}>VANITY SHELF • NGĂN {TYPE_LABELS[productType]?.toUpperCase() || 'SKINCARE'}</Text>
+            </View>
+            <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
+              <X size={24} color={Colors.text} />
+            </TouchableOpacity>
+          </Pressable>
 
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <KeyboardAwareScrollView
+            contentContainerStyle={styles.content}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            showsVerticalScrollIndicator={false}
+            enableOnAndroid={true}
+            enableAutomaticScroll={true}
+            extraScrollHeight={Platform.OS === 'ios' ? 60 : 80}
+            extraHeight={Platform.OS === 'ios' ? 60 : 80}
+            enableResetScrollToCoords={true}
+          >
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+              <View style={{ flex: 1 }}>
           <View style={styles.heroCard}>
             <View style={styles.productPreview}>
               <View style={styles.paoBadge}><ShieldCheck size={13} color={Colors.primaryDark} /><Text style={styles.paoText}>{formatPao(product.paoDays)}</Text></View>
@@ -376,6 +393,7 @@ export default function ProductDetailModal({ route, navigation }) {
                     value={percentDraft}
                     onChangeText={text => setPercentDraft(text.replace(/[^0-9]/g, '').slice(0, 3))}
                     onBlur={commitPercentDraft}
+                    onSubmitEditing={commitPercentDraft}
                     keyboardType="number-pad"
                     returnKeyType="done"
                     maxLength={3}
@@ -456,14 +474,18 @@ export default function ProductDetailModal({ route, navigation }) {
             ) : null}
           </View>
           <TouchableOpacity style={styles.deleteButton} onPress={confirmDelete}><Text style={styles.deleteButtonText}>Xoá sản phẩm</Text></TouchableOpacity>
-        </ScrollView>
+              </View>
+            </TouchableWithoutFeedback>
+        </KeyboardAwareScrollView>
       </View>
-    </SafeAreaView>
+    </KeyboardAvoidingView>
+  </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: Colors.overlay },
+  keyboardAvoid: { width: '100%', justifyContent: 'flex-end' },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: Colors.overlay },
   sheet: { maxHeight: '88%', minHeight: '76%', backgroundColor: Colors.background, borderTopLeftRadius: 34, borderTopRightRadius: 34, overflow: 'hidden' },
   handle: { width: 72, height: 7, borderRadius: 4, alignSelf: 'center', backgroundColor: Colors.borderDark, marginTop: 13 },
@@ -472,7 +494,7 @@ const styles = StyleSheet.create({
     leafIcon: { width: 39, height: 39, borderRadius: 20, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { flex: 1, color: Colors.text, fontSize: 14, letterSpacing: 0.2 },
   closeButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.surface, marginLeft: 10 },
-  content: { paddingHorizontal: 16, paddingBottom: 30 },
+  content: { paddingHorizontal: 16, paddingBottom: 30, flexGrow: 1 },
   heroCard: { borderRadius: 26, backgroundColor: Colors.surface, padding: 16, flexDirection: 'row', flexWrap: 'wrap', gap: 14, marginBottom: 16 },
   productPreview: { width: 128, height: 147, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: 16 },
   productPhotoImage: { width: '100%', height: '100%', borderRadius: 16 },

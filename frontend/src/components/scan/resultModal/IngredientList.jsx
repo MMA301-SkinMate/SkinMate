@@ -1,18 +1,36 @@
+import React, { useEffect, useRef } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Keyboard, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { COLORS } from '../../../constants/colors';
 import { SIZES } from '../../../constants/theme';
 
 const IngredientList = ({ ingredientList, editText, setEditText, saveCurrentEdit, handleBadgePress, handleBadgeLongPress, editingIndex, selectedForDelete, isEditing, handleAddNew }) => {
+    const scrollViewRef = useRef(null);
+
+    useEffect(() => {
+        if (editingIndex !== null) {
+            setTimeout(() => {
+                scrollViewRef.current?.scrollToEnd({ animated: true });
+            }, 100);
+        }
+    }, [editingIndex]);
     return (
-        <ScrollView
+        <KeyboardAwareScrollView
+            ref={scrollViewRef}
             style={styles.listContainer}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={true}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
             nestedScrollEnabled={true}
+            enableOnAndroid={true}
+            enableAutomaticScroll={true}
+            extraScrollHeight={Platform.OS === 'ios' ? 40 : 60}
+            extraHeight={Platform.OS === 'ios' ? 40 : 60}
+            enableResetScrollToCoords={true}
         >
-            <View style={styles.badgeContainer}>
+            <Pressable onPress={() => { if (isEditing) saveCurrentEdit(); Keyboard.dismiss(); }} style={styles.badgeContainer}>
                 {ingredientList.map((item, index) => {
                     const isCurrentlyEditing = isEditing && editingIndex === index;
                     const isMarkedForDelete = isEditing && selectedForDelete.includes(index);
@@ -75,8 +93,8 @@ const IngredientList = ({ ingredientList, editText, setEditText, saveCurrentEdit
                         <Ionicons name="add" size={16} color={COLORS.primary} />
                     </TouchableOpacity>
                 )}
-            </View>
-        </ScrollView>
+            </Pressable>
+        </KeyboardAwareScrollView>
     )
 }
 
@@ -85,17 +103,19 @@ export default IngredientList
 const styles = StyleSheet.create({
     listContainer: {
         flex: 1,
-        minHeight: 200,
-        maxHeight: 460,
+        minHeight: 100,
+        maxHeight: 360,
         marginBottom: SIZES.base,
     },
     scrollContent: {
         paddingVertical: 2,
+        flexGrow: 1,
     },
     badgeContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: SIZES.base - 2,
+        flex: 1,
     },
     badge: {
         backgroundColor: COLORS.surface,

@@ -9,6 +9,20 @@ const PAGE_SIZE = 20;
 
 const currentUserId = req => req.user?.id || req.userId || DEFAULT_USER_ID;
 
+const getSkinTypes = post => {
+  if (Array.isArray(post.skinTypes) && post.skinTypes.length) return post.skinTypes;
+  return post.skinType ? [post.skinType] : [];
+};
+
+const normalizeSkinTypes = (body, req) => {
+  if (Array.isArray(body.skinTypes)) {
+    return { ...body, skinTypes: body.skinTypes, skinType: body.skinTypes[0] || null };
+  }
+  const profileSkinType = req.user?.skinProfile?.skinType;
+  if (profileSkinType) return { ...body, skinTypes: [profileSkinType], skinType: profileSkinType };
+  return body;
+};
+
 const serialize = (post, userId) => ({
   id: post._id.toString(),
   authorId: post.userId.toString(),
@@ -17,6 +31,7 @@ const serialize = (post, userId) => ({
   images: post.images || [],
   tags: post.tags || [],
   skinType: post.skinType,
+  skinTypes: getSkinTypes(post),
   sharedRoutine: {
     morning: post.sharedRoutine?.morning || [],
     evening: post.sharedRoutine?.evening || [],
@@ -49,7 +64,7 @@ exports.list = async (req, res, next) => {
   try {
     const userId = currentUserId(req);
     const filter = { status: 'published' };
-    if (req.query.skinType) filter.skinType = req.query.skinType;
+    if (req.query.skinType) filter.$or = [{ skinTypes: req.query.skinType }, { skinType: req.query.skinType }];
     if (req.query.mine === 'true') {
       filter.userId = userId;
       if (req.query.status === 'draft') filter.status = 'draft';
@@ -80,7 +95,7 @@ exports.create = async (req, res, next) => {
   try {
     const userId = currentUserId(req);
     const post = await CommunityPost.create({
-      ...req.body,
+      ...normalizeSkinTypes(req.body, req),
       userId,
       authorName: req.user?.name || undefined,
     });
@@ -95,7 +110,7 @@ exports.update = async (req, res, next) => {
     const userId = currentUserId(req);
     const post = await CommunityPost.findOneAndUpdate(
       { _id: req.params.id, userId, status: 'draft' },
-      { $set: req.body },
+      { $set: normalizeSkinTypes(req.body, req) },
       { returnDocument: 'after', runValidators: true }
     ).lean();
     return post ? res.json({ post: serialize(post, userId) }) : notFound(res);

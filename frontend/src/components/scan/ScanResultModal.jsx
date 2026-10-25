@@ -60,7 +60,7 @@ const ScanResultModal = ({ ingredients, onClose }) => {
 
                 {/* Keyboard-aware wrapper — sits above backdrop */}
                 <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                     style={styles.keyboardAvoid}
                     pointerEvents="box-none"
                 >
@@ -137,8 +137,8 @@ const styles = StyleSheet.create({
         ...SHADOWS.medium,
     },
     modalWithIngredients: {
-        minHeight: 450,
-        maxHeight: '88%',
+        minHeight: 280,
+        maxHeight: '84%',
         justifyContent: 'space-between',
     },
 

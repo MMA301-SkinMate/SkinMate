@@ -6,10 +6,10 @@ import RootNavigator from './src/navigation/RootNavigator';
 import ExpiredProductAlertModal from './src/components/collection/ExpiredProductAlertModal';
 import { CollectionProvider } from './src/context/CollectionContext';
 import { CommunityProvider } from './src/context/CommunityContext';
-import { usePushNotifications } from './src/hooks/usePushNotifications';
+// import { usePushNotifications } from './src/hooks/usePushNotifications';
 
 function AppContent() {
-  usePushNotifications();
+  // usePushNotifications();
   return <RootNavigator />;
 }
 

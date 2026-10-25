@@ -15,6 +15,7 @@ const createSchema = Joi.object({
   images: Joi.array().items(Joi.string().uri({ scheme: ['https'] }).pattern(/^https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\//)).max(5),
   tags: Joi.array().items(Joi.string().trim().pattern(/^#[\p{L}\p{N}_]{1,30}$/u)).max(10),
   skinType: Joi.string().valid(...skinTypes).allow(null),
+  skinTypes: Joi.array().items(Joi.string().valid(...skinTypes)).unique().max(skinTypes.length),
   sharedRoutine: Joi.object({
     morning: Joi.array().items(routineStep).max(15),
     evening: Joi.array().items(routineStep).max(15),

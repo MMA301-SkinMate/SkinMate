@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, findNodeHandle, Image, Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -32,13 +33,64 @@ export default function CreatePostScreen({ navigation, route }) {
   const draftProducts = useMemo(() => draftDays.flatMap((day, dayIndex) => SLOTS.flatMap(slot => (day[slot.key] || []).map((step, index) => ({ ...step, id: `draft-${dayIndex}-${slot.key}-${index}`, status: 'active' })))), [draftDays]);
   const [content, setContent] = useState(draft?.content || '');
   const [tags, setTags] = useState(draft?.tags || []);
-  const [skinType, setSkinType] = useState(draft?.skinType || null);
+  const [skinTypes, setSkinTypes] = useState(() => {
+    if (Array.isArray(draft?.skinTypes)) return draft.skinTypes;
+    return draft?.skinType ? [draft.skinType] : [];
+  });
   const [images, setImages] = useState((draft?.images || []).map(uri => ({ uri, uploaded: true })));
   const [dayIndex, setDayIndex] = useState(0);
   const [routineDays, setRoutineDays] = useState(() => draftDays.map((day, index) => Object.fromEntries(SLOTS.map(slot => [slot.key, draftProducts.filter(product => product.id.startsWith(`draft-${index}-${slot.key}-`)).map(product => product.id)]))));
   const routine = routineDays[dayIndex];
   const [notes, setNotes] = useState(() => Object.fromEntries(draftDays.flatMap((day, index) => SLOTS.flatMap(slot => draftProducts.map(product => [`${index}:${slot.key}:${product.id}`, product.note || ''])))));
   const [isPublishing, setIsPublishing] = useState(false);
+  const scrollViewRef = useRef(null);
+  const inputRefs = useRef({});
+  const [inputHeights, setInputHeights] = useState({});
+  const getInputHeight = (inputKey, minHeight) => inputHeights[inputKey] || minHeight;
+
+  const resizeInput = (inputKey, contentHeight, minHeight) => {
+    const height = Math.max(minHeight, Math.ceil(contentHeight) + 12);
+    setInputHeights(current => current[inputKey] === height ? current : { ...current, [inputKey]: height });
+  };
+
+  const focusedInputKey = useRef(null);
+  const keyboardVisible = useRef(false);
+  const scrollTimer = useRef(null);
+
+  // Scroll only after the keyboard has opened and the window has resized.
+  const scrollFocusedInput = (inputKey, delay = 120) => {
+    if (scrollTimer.current) clearTimeout(scrollTimer.current);
+    scrollTimer.current = setTimeout(() => {
+      const input = inputRefs.current[inputKey];
+      const scrollView = scrollViewRef.current;
+      if (!input?.isFocused?.() || !scrollView) return;
+      const handle = findNodeHandle(input);
+      if (handle && typeof scrollView.scrollToFocusedInput === 'function') {
+        // This is a method supplied by KeyboardAwareScrollView.
+        scrollView.scrollToFocusedInput(handle, 110, 100);
+      }
+    }, delay);
+  };
+
+  const focusInput = inputKey => {
+    focusedInputKey.current = inputKey;
+    scrollFocusedInput(inputKey, keyboardVisible.current ? 80 : 300);
+  };
+
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => {
+      keyboardVisible.current = true;
+      if (focusedInputKey.current) scrollFocusedInput(focusedInputKey.current, 100);
+    });
+    const hide = Keyboard.addListener('keyboardDidHide', () => {
+      keyboardVisible.current = false;
+    });
+    return () => {
+      show.remove();
+      hide.remove();
+      if (scrollTimer.current) clearTimeout(scrollTimer.current);
+    };
+  }, []);
 
   const usableProducts = useMemo(() => [...draftProducts, ...collection.filter(product => product.status === 'active')], [collection, draftProducts]);
 
@@ -85,7 +137,7 @@ export default function CreatePostScreen({ navigation, route }) {
       }).filter(Boolean);
       const days = routineDays.map((day, index) => ({ morning: findProducts(day, index, 'morning'), evening: findProducts(day, index, 'evening') }));
       const payload = {
-        content: content.trim(), tags, skinType, status,
+        content: content.trim(), tags, skinTypes, skinType: skinTypes[0] || null, status,
         images: uploaded.map(image => image.uri),
         sharedRoutine: { ...days[0], days },
       };
@@ -106,18 +158,40 @@ export default function CreatePostScreen({ navigation, route }) {
   const canPublish = content.trim().length > 0 && !isPublishing;
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
+      <Pressable style={styles.header} onPress={Keyboard.dismiss}>
         <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button"><Text style={styles.cancel}>Hủy</Text></TouchableOpacity>
         <Text style={styles.headerTitle}>Chia Sẻ Routine</Text>
         <TouchableOpacity onPress={() => publish('published')} disabled={!canPublish} accessibilityRole="button">
           {isPublishing ? <ActivityIndicator color={Colors.primary} /> : <Text style={[styles.publish, !canPublish && styles.disabled]}>Đăng</Text>}
         </TouchableOpacity>
-      </View>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      </Pressable>
+      <KeyboardAwareScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
+        enableOnAndroid={true}
+        enableAutomaticScroll={true}
+        keyboardOpeningTime={0}
+        extraScrollHeight={80}
+        extraHeight={100}
+        enableResetScrollToCoords={false}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <View style={{ flex: 1 }}>
         <TextInput
-          style={styles.textArea}
+          ref={ref => { inputRefs.current.content = ref; }}
+          onFocus={() => focusInput('content')}
+          style={[styles.textArea, { height: getInputHeight('content', 110), flexShrink: 0 }]}
+          onContentSizeChange={event => {
+            resizeInput('content', event.nativeEvent.contentSize.height, 110);
+            if (keyboardVisible.current && focusedInputKey.current === 'content') scrollFocusedInput('content', 120);
+          }}
+          scrollEnabled={false}
           multiline
-          maxLength={2000}
+          submitBehavior="newline"
           value={content}
           onChangeText={setContent}
           placeholder="Bạn muốn chia sẻ điều gì hôm nay?"
@@ -134,11 +208,14 @@ export default function CreatePostScreen({ navigation, route }) {
 
         <Text style={styles.sectionTitle}>Loại da</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-          {SKIN_TYPES.map(type => (
-            <TouchableOpacity key={type} style={[styles.chip, skinType === type && styles.chipActive]} onPress={() => setSkinType(current => current === type ? null : type)} accessibilityState={{ selected: skinType === type }}>
-              <Text style={styles.chipText}>{type}</Text>
-            </TouchableOpacity>
-          ))}
+          {SKIN_TYPES.map(type => {
+            const isSelected = skinTypes.includes(type);
+            return (
+              <TouchableOpacity key={type} style={[styles.chip, isSelected && styles.chipActive]} onPress={() => setSkinTypes(current => current.includes(type) ? current.filter(item => item !== type) : [...current, type])} accessibilityState={{ selected: isSelected }}>
+                <Text style={styles.chipText}>{type}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
 
         <View style={styles.sectionRow}>
@@ -194,13 +271,24 @@ export default function CreatePostScreen({ navigation, route }) {
                 <View key={id} style={styles.instruction}>
                   <Text style={styles.sectionTitle}>{index + 1}. {usableProducts.find(product => product.id === id)?.productName}</Text>
                   <TextInput
-                    style={styles.noteInput}
+                    ref={ref => { inputRefs.current[`note-${dayIndex}-${slot.key}-${id}`] = ref; }}
+                    onFocus={() => focusInput(`note-${dayIndex}-${slot.key}-${id}`)}
+                    style={[styles.noteInput, { height: getInputHeight(`note-${dayIndex}-${slot.key}-${id}`, 64), flexShrink: 0 }]}
+                    onContentSizeChange={event => {
+                      resizeInput(`note-${dayIndex}-${slot.key}-${id}`, event.nativeEvent.contentSize.height, 64);
+                      if (keyboardVisible.current && focusedInputKey.current === `note-${dayIndex}-${slot.key}-${id}`) {
+                        scrollFocusedInput(`note-${dayIndex}-${slot.key}-${id}`, 120);
+                      }
+                    }}
+                    
+                    scrollEnabled={false}
                     multiline
-                    maxLength={300}
+                    submitBehavior="newline"
                     value={notes[`${dayIndex}:${slot.key}:${id}`] || ''}
                     onChangeText={text => setNotes(current => ({ ...current, [`${dayIndex}:${slot.key}:${id}`]: text }))}
                     placeholder="Cách sử dụng, lượng dùng và lưu ý..."
                     placeholderTextColor={Colors.textMuted}
+                    returnKeyType="default"
                     accessibilityLabel={`Cách sử dụng bước ${index + 1} ${slot.title}`}
                     editable={!isPublishing}
                   />
@@ -209,25 +297,28 @@ export default function CreatePostScreen({ navigation, route }) {
             </View>
           ))}
         </View>
-        <TouchableOpacity style={styles.draftButton} onPress={() => publish('draft')} disabled={isPublishing} accessibilityRole="button">
-          <Text style={styles.publish}>Lưu bản nháp</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+          <TouchableOpacity style={styles.draftButton} onPress={() => publish('draft')} disabled={isPublishing} accessibilityRole="button">
+            <Text style={styles.publish}>Lưu bản nháp</Text>
+          </TouchableOpacity>
+          </View>
+        </TouchableWithoutFeedback>
+        </KeyboardAwareScrollView>
+      </SafeAreaView>
   );
 }
 const styles = StyleSheet.create({
   instruction: { marginTop: 10 },
-  noteInput: { minHeight: 64, padding: 10, borderWidth: 1, borderColor: Colors.border, borderRadius: 10, color: Colors.text, backgroundColor: Colors.background, textAlignVertical: 'top', marginTop: 6 },
+  noteInput: { minHeight: 64, padding: 10, paddingBottom: 10, borderWidth: 1, borderColor: Colors.border, borderRadius: 10, color: Colors.text, backgroundColor: Colors.background, textAlignVertical: 'top', marginTop: 6 },
   draftButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', marginTop: 16, borderWidth: 1, borderColor: Colors.primary, borderRadius: 12 },
   safeArea: { flex: 1, backgroundColor: Colors.surface },
+  scrollView: { flex: 1 },
   header: { height: 58, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: Colors.border },
   cancel: { color: Colors.textSecondary, fontSize: 15 },
   headerTitle: { color: Colors.text, fontSize: 18, fontWeight: '600' },
   publish: { color: Colors.primary, fontSize: 16, fontWeight: '700' },
   disabled: { color: Colors.textMuted },
-  content: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 40 },
-  textArea: { minHeight: 110, color: Colors.text, fontSize: 16, lineHeight: 23, textAlignVertical: 'top' },
+  content: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 120, flexGrow: 1 },
+  textArea: { minHeight: 110, paddingBottom: 10, color: Colors.text, fontSize: 16, lineHeight: 23, textAlignVertical: 'top' },
   chips: { gap: 7, paddingVertical: 6 },
   chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 17, backgroundColor: Colors.surface },
   chipActive: { backgroundColor: Colors.primaryLight },

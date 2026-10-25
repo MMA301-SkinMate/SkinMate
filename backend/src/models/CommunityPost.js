@@ -54,6 +54,11 @@ const communityPostSchema = new mongoose.Schema(
       default: null,
     },
 
+    skinTypes: {
+      type: [{ type: String, enum: skinTypes }],
+      default: undefined,
+    },
+
     sharedRoutine: {
       morning: { type: [routineStepSchema], default: [] },
       evening: { type: [routineStepSchema], default: [] },
@@ -96,6 +101,7 @@ const communityPostSchema = new mongoose.Schema(
 );
 
 communityPostSchema.index({ status: 1, skinType: 1, createdAt: -1 });
+communityPostSchema.index({ status: 1, skinTypes: 1, createdAt: -1 });
 
 module.exports = mongoose.model('CommunityPost', communityPostSchema);
 module.exports.skinTypes = skinTypes;

@@ -13,7 +13,7 @@ export default function PostAuthorRow({ post, right }) {
         <Text style={styles.name} numberOfLines={1}>{post.authorName}</Text>
         <View style={styles.metaRow}>
           <Text style={styles.meta}>{formatRelativeTime(post.createdAt)}</Text>
-          {post.skinType && <Text style={styles.tag}>{post.skinType}</Text>}
+          {(post.skinTypes?.length ? post.skinTypes : post.skinType ? [post.skinType] : []).map(type => <Text key={type} style={styles.tag}>{type}</Text>)}
         </View>
       </View>
       {right}
@@ -27,7 +27,7 @@ const styles = StyleSheet.create({
   initials: { color: Colors.text, fontSize: 14, fontWeight: '700' },
   info: { flex: 1 },
   name: { color: Colors.text, fontSize: 15, fontWeight: '600' },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginTop: 3 },
   meta: { color: Colors.textSecondary, fontSize: 11 },
   tag: { color: Colors.primaryDark, fontSize: 10, backgroundColor: Colors.primaryLight, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 9, overflow: 'hidden' },
 });
