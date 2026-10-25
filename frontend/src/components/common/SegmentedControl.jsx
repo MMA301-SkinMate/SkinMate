@@ -17,7 +17,8 @@ export const SegmentedControl = ({
     style={[
       {
         flexDirection: "row",
-        backgroundColor: variant === "pill" ? "#ECECE4" : "transparent",
+        backgroundColor:
+          variant === "pill" ? COLORS.surface : COLORS.transparent,
         borderRadius: 24,
         padding: variant === "pill" ? 4 : 0,
         gap: 4,
@@ -46,11 +47,11 @@ export const SegmentedControl = ({
             justifyContent: "center",
             borderRadius: 20,
             borderBottomWidth: variant === "underline" ? 2 : 0,
-            borderBottomColor: selected ? COLORS.primary : "transparent",
+            borderBottomColor: selected ? COLORS.primary : COLORS.transparent,
             backgroundColor:
               variant === "pill" && selected
                 ? COLORS.background
-                : "transparent",
+                : COLORS.transparent,
             opacity: disabled || option.disabled ? 0.5 : pressed ? 0.75 : 1,
           })}
         >

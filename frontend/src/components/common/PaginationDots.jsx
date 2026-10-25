@@ -26,7 +26,8 @@ export const PaginationDots = ({
             width: index === activeIndex ? 20 : 8,
             height: 8,
             borderRadius: 999,
-            backgroundColor: index === activeIndex ? COLORS.primary : "#C5CEC0",
+            backgroundColor:
+              index === activeIndex ? COLORS.primary : COLORS.borderDark,
           }}
         />
       );

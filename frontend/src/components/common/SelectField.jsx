@@ -43,8 +43,8 @@ export const SelectField = ({
         gap: 8,
         borderWidth: 1,
         borderRadius: 12,
-        borderColor: error ? TONES.error.foreground : "#AAB4A4",
-        backgroundColor: disabled ? "#ECEEE7" : COLORS.card,
+        borderColor: error ? TONES.error.foreground : COLORS.borderDark,
+        backgroundColor: disabled ? COLORS.surface : COLORS.card,
         opacity: pressed ? 0.75 : 1,
       })}
     >

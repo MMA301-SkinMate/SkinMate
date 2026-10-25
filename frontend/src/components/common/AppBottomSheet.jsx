@@ -104,7 +104,7 @@ export const AppBottomSheet = ({
                 gap: 8,
                 backgroundColor: COLORS.background,
                 borderTopWidth: 1,
-                borderTopColor: "#DDE1D7",
+                borderTopColor: COLORS.borderDark,
               }}
             >
               {footer}
@@ -135,7 +135,7 @@ export const AppBottomSheet = ({
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
       }}
-      handleIndicatorStyle={{ backgroundColor: "#B8C0B2", width: 40 }}
+      handleIndicatorStyle={{ backgroundColor: COLORS.textMuted, width: 40 }}
       onChange={(index) => {
         if (index >= 0 && !focused.current) {
           focused.current = true;

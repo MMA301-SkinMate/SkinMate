@@ -1,3 +1,4 @@
+import { COLORS } from "../../constants/colors";
 import { useEffect } from "react";
 import Animated, {
   cancelAnimation,
@@ -33,7 +34,12 @@ export const Skeleton = ({
       accessible={false}
       importantForAccessibility="no"
       style={[
-        { width, height, borderRadius: radius, backgroundColor: "#DDE3D7" },
+        {
+          width,
+          height,
+          borderRadius: radius,
+          backgroundColor: COLORS.borderDark,
+        },
         animation,
         style,
       ]}

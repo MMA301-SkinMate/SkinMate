@@ -18,7 +18,7 @@ export const Accordion = ({
     style={[
       {
         borderWidth: 1,
-        borderColor: "#D8DCD2",
+        borderColor: COLORS.borderDark,
         borderRadius: 20,
         backgroundColor: COLORS.card,
       },

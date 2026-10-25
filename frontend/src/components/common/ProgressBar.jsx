@@ -34,7 +34,7 @@ export const ProgressBar = ({
         style={{
           height: 8,
           borderRadius: 999,
-          backgroundColor: "#E5E6DF",
+          backgroundColor: COLORS.border,
           overflow: "hidden",
         }}
       >
