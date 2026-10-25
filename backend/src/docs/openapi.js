@@ -14,8 +14,9 @@ const openApi = {
         description:
             'Tài liệu các API đang hoạt động của SkinMate. Chọn một API, bấm ' +
             'Try it out, nhập dữ liệu rồi bấm Execute để gọi trực tiếp. ' +
-            'Các API hiện tại đều công khai. Đăng ký cấp phiên ban đầu; ' +
-            'đăng nhập, refresh và logout sẽ được bổ sung sau.',
+            'Các API hiện tại đều công khai. Đăng ký và đăng nhập cấp phiên ' +
+            'với access token 15 phút, refresh token 30 ngày; ' +
+            'API refresh và logout sẽ được bổ sung sau.',
     },
     // Resolve against the browser origin, including a custom backend port.
     servers: [{ url: '/', description: 'Backend đang mở tài liệu này' }],
@@ -81,6 +82,46 @@ const openApi = {
                     400: response('BadRequest'),
                     409: {
                         description: 'EMAIL_ALREADY_EXISTS: email đã đăng ký.',
+                        content: json(schema('ApiError')),
+                    },
+                    413: response('BodyTooLarge'),
+                    429: response('RateLimited'),
+                    500: response('InternalError'),
+                },
+            },
+        },
+        '/api/auth/login': {
+            post: {
+                tags: ['Auth'],
+                operationId: 'loginUser',
+                summary: 'Đăng nhập tài khoản',
+                description:
+                    'Đăng nhập bằng email và mật khẩu. Mỗi lần thành công tạo ' +
+                    'một phiên mới, giữ nguyên các phiên cũ. Chưa yêu cầu xác minh ' +
+                    'email. Giới hạn 10 request/15 phút/IP, tính cả request ' +
+                    'thành công và thất bại.',
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: schema('LoginRequest'),
+                            example: {
+                                email: 'lananh@example.com',
+                                password: 'SkinMate2026!',
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    200: {
+                        description: 'Đăng nhập và tạo phiên mới thành công.',
+                        content: json(schema('LoginResponse')),
+                    },
+                    400: response('BadRequest'),
+                    401: {
+                        description:
+                            'INVALID_CREDENTIALS: Email hoặc mật khẩu không đúng. ' +
+                            'Dùng cùng thông báo cho email không tồn tại và mật khẩu sai.',
                         content: json(schema('ApiError')),
                     },
                     413: response('BodyTooLarge'),
@@ -206,6 +247,29 @@ const openApi = {
                     },
                 },
             },
+            LoginRequest: {
+                type: 'object',
+                additionalProperties: false,
+                required: ['email', 'password'],
+                properties: {
+                    email: {
+                        type: 'string',
+                        format: 'email',
+                        maxLength: 254,
+                        description:
+                            'Email được bỏ khoảng trắng đầu/cuối và chuyển thành chữ thường.',
+                    },
+                    password: {
+                        type: 'string',
+                        format: 'password',
+                        writeOnly: true,
+                        minLength: 1,
+                        maxLength: 128,
+                        description:
+                            'Mật khẩu hiện tại. Giữ nguyên khoảng trắng và ký tự tiếng Việt.',
+                    },
+                },
+            },
             PublicUser: {
                 type: 'object',
                 additionalProperties: false,
@@ -229,34 +293,47 @@ const openApi = {
                         type: 'string',
                         example: 'Đăng ký thành công.',
                     },
-                    data: {
-                        type: 'object',
-                        required: [
-                            'user',
-                            'accessToken',
-                            'refreshToken',
-                            'accessTokenExpiresAt',
-                            'refreshTokenExpiresAt',
-                        ],
-                        properties: {
-                            user: schema('PublicUser'),
-                            accessToken: {
-                                type: 'string',
-                                description: 'JWT có hạn 15 phút.',
-                            },
-                            refreshToken: {
-                                type: 'string',
-                                description: 'JWT có hạn 30 ngày.',
-                            },
-                            accessTokenExpiresAt: {
-                                type: 'string',
-                                format: 'date-time',
-                            },
-                            refreshTokenExpiresAt: {
-                                type: 'string',
-                                format: 'date-time',
-                            },
-                        },
+                    data: schema('AuthSessionData'),
+                },
+            },
+            LoginResponse: {
+                type: 'object',
+                required: ['success', 'message', 'data'],
+                properties: {
+                    success: { type: 'boolean', enum: [true] },
+                    message: {
+                        type: 'string',
+                        example: 'Đăng nhập thành công.',
+                    },
+                    data: schema('AuthSessionData'),
+                },
+            },
+            AuthSessionData: {
+                type: 'object',
+                required: [
+                    'user',
+                    'accessToken',
+                    'refreshToken',
+                    'accessTokenExpiresAt',
+                    'refreshTokenExpiresAt',
+                ],
+                properties: {
+                    user: schema('PublicUser'),
+                    accessToken: {
+                        type: 'string',
+                        description: 'JWT có hạn 15 phút.',
+                    },
+                    refreshToken: {
+                        type: 'string',
+                        description: 'JWT có hạn 30 ngày.',
+                    },
+                    accessTokenExpiresAt: {
+                        type: 'string',
+                        format: 'date-time',
+                    },
+                    refreshTokenExpiresAt: {
+                        type: 'string',
+                        format: 'date-time',
                     },
                 },
             },

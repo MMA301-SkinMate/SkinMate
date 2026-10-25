@@ -1,7 +1,10 @@
 const express = require('express');
 const authController = require('../controllers/authController');
-const { validateRegister } = require('../validations/authDto');
-const createRegisterRateLimiter = require('../middlewares/authRateLimitMiddleware');
+const { validateRegister, validateLogin } = require('../validations/authDto');
+const {
+    createRegisterRateLimiter,
+    createLoginRateLimiter,
+} = require('../middlewares/authRateLimitMiddleware');
 
 const createAuthRoutes = () => {
     const router = express.Router();
@@ -15,6 +18,12 @@ const createAuthRoutes = () => {
         createRegisterRateLimiter(),
         validateRegister,
         authController.register
+    );
+    router.post(
+        '/login',
+        createLoginRateLimiter(),
+        validateLogin,
+        authController.login
     );
 
     return router;

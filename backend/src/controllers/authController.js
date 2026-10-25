@@ -18,4 +18,18 @@ const register = async (req, res, next) => {
     }
 };
 
-module.exports = { register };
+const login = async (req, res, next) => {
+    try {
+        const data = await authService.login(req.body, req.app.locals.config);
+
+        return sendSuccess(res, {
+            statusCode: 200,
+            message: 'Đăng nhập thành công.',
+            data,
+        });
+    } catch (error) {
+        return next(error);
+    }
+};
+
+module.exports = { register, login };

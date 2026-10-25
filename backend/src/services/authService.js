@@ -4,6 +4,17 @@ const User = require('../models/User');
 const authSessionService = require('./authSessionService');
 const AppError = require('../utils/AppError');
 
+// Public dummy hash with the same Argon2id cost as registration. Unknown emails
+// still perform password verification instead of returning before the hash work.
+const DUMMY_PASSWORD_HASH =
+    '$argon2id$v=19$m=19456,p=1,t=2$/eeM6oeuJB3Mi9K3y+bdzw$ye6PUa0KUbW3G9z38oddTyYTAGY6zFzv4+87/MFBE18';
+
+const toPublicUser = (user) => ({
+    id: user.id,
+    fullName: user.fullName,
+    email: user.email,
+});
+
 const emailAlreadyExists = () =>
     new AppError(
         'Email này đã được đăng ký. Vui lòng đăng nhập.',
@@ -46,11 +57,7 @@ const register = async (input, config) => {
             );
 
             return {
-                user: {
-                    id: user.id,
-                    fullName: user.fullName,
-                    email: user.email,
-                },
+                user: toPublicUser(user),
                 ...tokens,
             };
         });
@@ -66,4 +73,25 @@ const register = async (input, config) => {
     }
 };
 
-module.exports = { register };
+const login = async (input, config) => {
+    const email = input.email.trim().toLowerCase();
+    const user = await User.findOne({ email }).select('+passwordHash');
+    const passwordMatches = await argon2.verify(
+        user ? user.passwordHash : DUMMY_PASSWORD_HASH,
+        input.password
+    );
+
+    if (!user || !passwordMatches) {
+        throw new AppError(
+            'Email hoặc mật khẩu không đúng.',
+            401,
+            'INVALID_CREDENTIALS'
+        );
+    }
+
+    const tokens = await authSessionService.createInitialSession(user, config);
+
+    return { user: toPublicUser(user), ...tokens };
+};
+
+module.exports = { register, login };

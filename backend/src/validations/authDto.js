@@ -53,8 +53,24 @@ const registerSchema = Joi.object({
         'object.unknown': 'Trường thông tin không được hỗ trợ.',
     });
 
-const validateRegister = (req, res, next) => {
-    const { error, value } = registerSchema.validate(req.body, {
+const loginSchema = Joi.object({
+    email: registerSchema.extract('email'),
+    password: Joi.string().max(128).required().messages({
+        'any.required': 'Vui lòng nhập mật khẩu.',
+        'string.base': 'Mật khẩu phải là chuỗi ký tự.',
+        'string.empty': 'Vui lòng nhập mật khẩu.',
+        'string.max': 'Mật khẩu không được vượt quá 128 ký tự.',
+    }),
+})
+    .required()
+    .messages({
+        'any.required': 'Vui lòng gửi thông tin đăng nhập.',
+        'object.base': 'Thông tin đăng nhập phải là một đối tượng JSON.',
+        'object.unknown': 'Trường thông tin không được hỗ trợ.',
+    });
+
+const validateAuthBody = (schema, message) => (req, res, next) => {
+    const { error, value } = schema.validate(req.body, {
         abortEarly: false,
         allowUnknown: false,
     });
@@ -62,7 +78,7 @@ const validateRegister = (req, res, next) => {
     if (error) {
         return next(
             new AppError(
-                'Thông tin đăng ký chưa hợp lệ.',
+                message,
                 400,
                 'VALIDATION_ERROR',
                 error.details.map((detail) => ({
@@ -77,4 +93,18 @@ const validateRegister = (req, res, next) => {
     return next();
 };
 
-module.exports = { registerSchema, validateRegister };
+const validateRegister = validateAuthBody(
+    registerSchema,
+    'Thông tin đăng ký chưa hợp lệ.'
+);
+const validateLogin = validateAuthBody(
+    loginSchema,
+    'Thông tin đăng nhập chưa hợp lệ.'
+);
+
+module.exports = {
+    registerSchema,
+    validateRegister,
+    loginSchema,
+    validateLogin,
+};
