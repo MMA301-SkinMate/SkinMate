@@ -4,19 +4,22 @@ import {
   StyleSheet,
   Modal,
   KeyboardAvoidingView,
-  TouchableWithoutFeedback,
+  Pressable,
   Keyboard,
   Platform,
 } from "react-native";
 
-import { COLORS, withOpacity } from "../../constants/colors";
+import { COLORS } from "../../constants/colors";
 import { SHADOWS, SIZES } from "../../constants/theme";
 import { useScanResultEdit } from "../../hooks/useScanResultEdit";
 import IngredientList from "./resultModal/IngredientList";
 import ResultFooter from "./resultModal/ResultFooter";
 import ResultHeader from "./resultModal/ResultHeader";
+import { OverlayBackdrop } from "../common/OverlayBackdrop";
+import { useOverlayBlurTarget } from "../common/CommonOverlayProvider";
 
 const ScanResultModal = ({ ingredients, onClose }) => {
+  const blurTarget = useOverlayBlurTarget();
   const {
     isEditing,
     ingredientList,
@@ -50,13 +53,18 @@ const ScanResultModal = ({ ingredients, onClose }) => {
         }
       }}
       statusBarTranslucent
+      navigationBarTranslucent
     >
       {/* Full-screen overlay */}
       <View style={styles.overlay}>
         {/* Backdrop: dismiss keyboard on tap outside card */}
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={StyleSheet.absoluteFill} />
-        </TouchableWithoutFeedback>
+        <Pressable
+          accessible={false}
+          onPress={Keyboard.dismiss}
+          style={StyleSheet.absoluteFill}
+        >
+          <OverlayBackdrop blurTarget={blurTarget} />
+        </Pressable>
 
         {/* Keyboard-aware wrapper — sits above backdrop */}
         <KeyboardAvoidingView
@@ -123,7 +131,6 @@ export default ScanResultModal;
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: withOpacity(COLORS.shadow, 0.65),
     justifyContent: "center",
     alignItems: "center",
   },

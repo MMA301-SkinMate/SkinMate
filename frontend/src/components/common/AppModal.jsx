@@ -9,10 +9,12 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { COLORS, withOpacity } from "../../constants/colors";
+import { COLORS } from "../../constants/colors";
 import { AppText } from "./AppText";
 import { IconButton } from "./IconButton";
 import { useOverlayFocus } from "./useOverlayFocus";
+import { useOverlayBlurTarget } from "./CommonOverlayProvider";
+import { OverlayBackdrop } from "./OverlayBackdrop";
 
 /** Controlled centered modal. onClose(reason) requests a parent state change. */
 /** @param {{visible?: boolean, title: string, onClose?: Function, children?: import('react').ReactNode, footer?: import('react').ReactNode, dismissible?: boolean, loading?: boolean, triggerRef?: object}} props */
@@ -32,6 +34,7 @@ export const AppModal = ({
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const { titleRef, focusTitle } = useOverlayFocus(visible, triggerRef);
+  const blurTarget = useOverlayBlurTarget();
   const canDismiss = dismissible && !loading;
   const requestClose = (reason) => {
     if (canDismiss) onClose?.(reason);
@@ -43,83 +46,86 @@ export const AppModal = ({
       transparent
       animationType="fade"
       statusBarTranslucent
+      navigationBarTranslucent
       onRequestClose={() => requestClose("back")}
       onShow={focusTitle}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={[
-          styles.container,
-          {
-            paddingTop: Math.max(20, insets.top),
-            paddingBottom: Math.max(20, insets.bottom),
-          },
-        ]}
-      >
+      <View style={styles.root}>
         <Pressable
           accessible={false}
           testID={testID ? `${testID}-backdrop` : "modal-backdrop"}
           onPress={() => requestClose("backdrop")}
-          style={styles.backdrop}
-        />
-        <View
-          testID={testID}
-          accessibilityViewIsModal
-          importantForAccessibility="yes"
-          onAccessibilityEscape={() => requestClose("escape")}
+          style={StyleSheet.absoluteFill}
+        >
+          <OverlayBackdrop blurTarget={blurTarget} />
+        </Pressable>
+        <KeyboardAvoidingView
+          pointerEvents="box-none"
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={[
-            styles.card,
+            styles.container,
             {
-              maxHeight: Math.max(
-                120,
-                height - insets.top - insets.bottom - 40,
-              ),
+              paddingTop: Math.max(20, insets.top),
+              paddingBottom: Math.max(20, insets.bottom),
             },
-            style,
           ]}
         >
-          <View style={styles.header}>
-            <AppText
-              ref={titleRef}
-              variant="section"
-              accessible
-              style={{ flex: 1 }}
-            >
-              {title}
-            </AppText>
-            {canDismiss && (
-              <IconButton
-                icon="close"
-                accessibilityLabel="Đóng hộp thoại"
-                onPress={() => requestClose("close")}
-              />
-            )}
-          </View>
-          <ScrollView
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            style={{ flexShrink: 1 }}
-            contentContainerStyle={{ padding: 20, paddingTop: 4 }}
+          <View
+            testID={testID}
+            accessibilityViewIsModal
+            importantForAccessibility="yes"
+            onAccessibilityEscape={() => requestClose("escape")}
+            style={[
+              styles.card,
+              {
+                maxHeight: Math.max(
+                  120,
+                  height - insets.top - insets.bottom - 40,
+                ),
+              },
+              style,
+            ]}
           >
-            {children}
-          </ScrollView>
-          {!!footer && <View style={styles.footer}>{footer}</View>}
-        </View>
-      </KeyboardAvoidingView>
+            <View style={styles.header}>
+              <AppText
+                ref={titleRef}
+                variant="section"
+                accessible
+                style={{ flex: 1 }}
+              >
+                {title}
+              </AppText>
+              {canDismiss && (
+                <IconButton
+                  icon="close"
+                  accessibilityLabel="Đóng hộp thoại"
+                  onPress={() => requestClose("close")}
+                />
+              )}
+            </View>
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              style={{ flexShrink: 1 }}
+              contentContainerStyle={{ padding: 20, paddingTop: 4 }}
+            >
+              {children}
+            </ScrollView>
+            {!!footer && <View style={styles.footer}>{footer}</View>}
+          </View>
+        </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
+  root: { flex: 1 },
   container: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 20,
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: withOpacity(COLORS.shadow, 0.55),
   },
   card: {
     width: "100%",

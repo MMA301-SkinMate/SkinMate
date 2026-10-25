@@ -13,7 +13,11 @@ import { AppText } from "./AppText";
 import { IconButton } from "./IconButton";
 import { SheetInputContext } from "./SheetInputContext";
 import { useOverlayFocus } from "./useOverlayFocus";
-import { useSheetAccessibility } from "./CommonOverlayProvider";
+import {
+  useOverlayBlurTarget,
+  useSheetAccessibility,
+} from "./CommonOverlayProvider";
+import { OverlayBackdrop } from "./OverlayBackdrop";
 
 /** Controlled draggable sheet. Requires the root providers documented in README. */
 /** @param {{visible?: boolean, title: string, onClose?: Function, onDismiss?: Function, children?: import('react').ReactNode, footer?: import('react').ReactNode, snapPoints?: Array<string|number>, dismissible?: boolean, loading?: boolean, triggerRef?: object}} props */
@@ -40,6 +44,7 @@ export const AppBottomSheet = ({
   const { height } = useWindowDimensions();
   const { titleRef, focusTitle } = useOverlayFocus(visible, triggerRef);
   useSheetAccessibility(visible);
+  const blurTarget = useOverlayBlurTarget();
   const canDismiss = dismissible && !loading;
 
   useEffect(() => {
@@ -82,14 +87,17 @@ export const AppBottomSheet = ({
         {...props}
         appearsOnIndex={0}
         disappearsOnIndex={-1}
-        opacity={0.5}
+        opacity={1}
+        style={[props.style, { backgroundColor: COLORS.transparent }]}
         pressBehavior={canDismiss ? "close" : "none"}
         onPress={() => {
           reasonRef.current = "backdrop";
         }}
-      />
+      >
+        <OverlayBackdrop blurTarget={blurTarget} />
+      </BottomSheetBackdrop>
     ),
-    [canDismiss],
+    [canDismiss, blurTarget],
   );
 
   const renderFooter = useCallback(
