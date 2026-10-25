@@ -106,7 +106,7 @@ export default function ExpiredProductAlertModal() {
           {/* Header icon & badge */}
           <View style={styles.headerRow}>
             <View style={styles.iconCircle}>
-              <AlertTriangle size={26} color="#DC2626" />
+              <AlertTriangle size={26} color={Colors.error} />
             </View>
             <View style={styles.badgeWrap}>
               <Text style={styles.badgeText}>
@@ -120,7 +120,7 @@ export default function ExpiredProductAlertModal() {
           {/* Product info banner */}
           <View style={styles.productCard}>
             <View style={styles.bottleMini}>
-              <ShieldAlert size={22} color="#DC2626" />
+              <ShieldAlert size={22} color={Colors.error} />
             </View>
             <View style={styles.productDetails}>
               <Text style={styles.productName} numberOfLines={2}>
@@ -130,7 +130,7 @@ export default function ExpiredProductAlertModal() {
                 {currentProduct.brand || 'Chưa rõ thương hiệu'} • {TYPE_LABELS[currentProduct.productType] || 'Mỹ phẩm'}
               </Text>
               <View style={styles.expiryBadgeRow}>
-                <Calendar size={13} color="#991B1B" />
+                <Calendar size={13} color={Colors.error} />
                 <Text style={styles.expiryDateText}>
                   Hết hạn: {expiryDateFormatted} (Quá hạn {daysOverdue} ngày)
                 </Text>
@@ -144,7 +144,7 @@ export default function ExpiredProductAlertModal() {
               Sản phẩm này đã hết hạn, bạn có muốn tiếp tục sử dụng?
             </Text>
             <View style={styles.noticeBox}>
-              <Clock size={15} color="#B45309" style={{ marginTop: 2 }} />
+              <Clock size={15} color={Colors.warning} style={{ marginTop: 2 }} />
               <Text style={styles.noticeText}>
                 Nếu tiếp tục dùng, sản phẩm sẽ được đánh dấu cảnh báo đỏ trên kệ để bạn chú ý an toàn da liễu.
               </Text>
@@ -160,7 +160,7 @@ export default function ExpiredProductAlertModal() {
               activeOpacity={0.8}
             >
               {isProcessing ? (
-                <ActivityIndicator size="small" color="#4B5563" />
+                <ActivityIndicator size="small" color={Colors.textSecondary} />
               ) : (
                 <>
                   <Text style={styles.rejectButtonText}>Không</Text>
@@ -176,7 +176,7 @@ export default function ExpiredProductAlertModal() {
               activeOpacity={0.8}
             >
               {isProcessing ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
+                <ActivityIndicator size="small" color={Colors.textLight} />
               ) : (
                 <>
                   <Text style={styles.continueButtonText}>Tiếp tục sử dụng</Text>
@@ -194,17 +194,17 @@ export default function ExpiredProductAlertModal() {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    backgroundColor: Colors.overlay,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
   },
   card: {
     width: Math.min(screenWidth - 36, 380),
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.background,
     borderRadius: 26,
     padding: 22,
-    shadowColor: '#000000',
+    shadowColor: Colors.shadow,
     shadowOpacity: 0.25,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 8 },
@@ -220,22 +220,22 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#FEE2E2',
+    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: '#FECACA',
+    borderColor: Colors.error,
   },
   badgeWrap: {
-    backgroundColor: '#FEF2F2',
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: '#FCA5A5',
+    borderColor: Colors.error,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,
   },
   badgeText: {
-    color: '#DC2626',
+    color: Colors.error,
     fontSize: 12,
     fontWeight: '700',
   },
@@ -243,9 +243,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#FFF5F5',
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: '#FED7D7',
+    borderColor: Colors.error,
     borderRadius: 18,
     padding: 14,
     marginBottom: 16,
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     width: 46,
     height: 52,
     borderRadius: 10,
-    backgroundColor: '#FEE2E2',
+    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -262,14 +262,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   productName: {
-    color: '#111629',
+    color: Colors.text,
     fontSize: 16,
     fontWeight: '700',
     lineHeight: 20,
     marginBottom: 3,
   },
   productBrand: {
-    color: '#64748B',
+    color: Colors.textSecondary,
     fontSize: 12,
     marginBottom: 5,
   },
@@ -279,15 +279,15 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   expiryDateText: {
-    color: '#991B1B',
+    color: Colors.error,
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   questionSection: {
     marginBottom: 20,
   },
   questionText: {
-    color: '#0F172A',
+    color: Colors.error,
     fontSize: 16,
     fontWeight: '700',
     lineHeight: 23,
@@ -297,15 +297,15 @@ const styles = StyleSheet.create({
   noticeBox: {
     flexDirection: 'row',
     gap: 8,
-    backgroundColor: '#FFFBEB',
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: Colors.warning,
     borderRadius: 12,
     padding: 10,
   },
   noticeText: {
     flex: 1,
-    color: '#92400E',
+    color: Colors.textSecondary,
     fontSize: 11.5,
     lineHeight: 16,
   },
@@ -317,20 +317,20 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 52,
     borderRadius: 18,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: Colors.borderDark,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 8,
   },
   rejectButtonText: {
-    color: '#334155',
+    color: Colors.text,
     fontSize: 14,
     fontWeight: '700',
   },
   rejectSubtext: {
-    color: '#64748B',
+    color: Colors.textSecondary,
     fontSize: 10,
     marginTop: 2,
   },
@@ -338,23 +338,23 @@ const styles = StyleSheet.create({
     flex: 1.25,
     minHeight: 52,
     borderRadius: 18,
-    backgroundColor: '#DC2626',
+    backgroundColor: Colors.error,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 8,
-    shadowColor: '#DC2626',
+    shadowColor: Colors.error,
     shadowOpacity: 0.35,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
     elevation: 4,
   },
   continueButtonText: {
-    color: '#FFFFFF',
+    color: Colors.textLight,
     fontSize: 14,
     fontWeight: '700',
   },
   continueSubtext: {
-    color: '#FEE2E2',
+    color: Colors.textLight,
     fontSize: 10,
     marginTop: 2,
   },

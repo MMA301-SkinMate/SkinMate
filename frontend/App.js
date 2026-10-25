@@ -5,10 +5,10 @@ import { StatusBar } from 'expo-status-bar';
 import RootNavigator from './src/navigation/RootNavigator';
 import ExpiredProductAlertModal from './src/components/collection/ExpiredProductAlertModal';
 import { CollectionProvider } from './src/context/CollectionContext';
-import { usePushNotifications } from './src/hooks/usePushNotifications';
+// import { usePushNotifications } from './src/hooks/usePushNotifications';
 
 function AppContent() {
-  usePushNotifications();
+  // usePushNotifications();
   return <RootNavigator />;
 }
 

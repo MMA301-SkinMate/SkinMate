@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Alert, ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Dimensions, Modal, FlatList, Image } from 'react-native';
+import { Alert, ActivityIndicator, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View, Dimensions, Modal, FlatList, Image } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import useKeyboardAwareInputs from '../../hooks/use-keyboard-aware-inputs';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Camera, Check, CheckCircle2, Leaf, Plus, Upload, X, AlertCircle, UserRound, ChevronDown, Calendar, Trash2 } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -45,6 +47,7 @@ const getRoutineValue = routineUsage => {
 };
 
 export default function AddProductScreen({ route, navigation }) {
+  const { scrollViewRef, inputProps, inputStyle } = useKeyboardAwareInputs();
   const product = route?.params?.product;
   const isEditing = Boolean(product?.id);
   const { addProductToCollection, updateProduct } = useCollection();
@@ -158,25 +161,41 @@ export default function AddProductScreen({ route, navigation }) {
   };
 
   const handleOpenedDateChange = (event, selectedDate) => {
-    if (selectedDate) {
-      setTempOpenedDate(selectedDate);
+    if (Platform.OS === 'android') {
+      setShowOpenedDatePicker(false);
+      if (event.type === 'set' && selectedDate) {
+        setTempOpenedDate(selectedDate);
+        applyOpenedDate(selectedDate);
+      }
+      return;
     }
+    if (selectedDate) setTempOpenedDate(selectedDate);
   };
 
   const handleExpiryDateChange = (event, selectedDate) => {
-    if (selectedDate) {
-      setTempExpiryDate(selectedDate);
+    if (Platform.OS === 'android') {
+      setShowExpiryDatePicker(false);
+      if (event.type === 'set' && selectedDate) {
+        setTempExpiryDate(selectedDate);
+        setExpiryDate(selectedDate);
+      }
+      return;
+    }
+    if (selectedDate) setTempExpiryDate(selectedDate);
+  };
+
+  const applyOpenedDate = date => {
+    setOpenedDate(date);
+    if (expiryMode === 'duration') {
+      setExpiryDate(addMonths(date, expiryMonths));
+    } else if (expiryDate < date) {
+      setExpiryDate(date);
+      setTempExpiryDate(date);
     }
   };
 
   const confirmOpenedDate = () => {
-    setOpenedDate(tempOpenedDate);
-    if (expiryMode === 'duration') {
-      setExpiryDate(addMonths(tempOpenedDate, expiryMonths));
-    } else if (expiryDate < tempOpenedDate) {
-      setExpiryDate(tempOpenedDate);
-      setTempExpiryDate(tempOpenedDate);
-    }
+    applyOpenedDate(tempOpenedDate);
     setShowOpenedDatePicker(false);
   };
 
@@ -328,11 +347,18 @@ export default function AddProductScreen({ route, navigation }) {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{isEditing ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm'}</Text>
         <View style={styles.profile}>
-          <UserRound size={19} color="#FFFFFF" />
+          <UserRound size={19} color={Colors.textLight} />
         </View>
       </View>
 
-      <ScrollView
+      <KeyboardAwareScrollView
+        ref={scrollViewRef}
+        enableOnAndroid
+        enableAutomaticScroll
+        keyboardOpeningTime={0}
+        extraScrollHeight={80}
+        extraHeight={100}
+        enableResetScrollToCoords={false}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -345,7 +371,7 @@ export default function AddProductScreen({ route, navigation }) {
             <View style={styles.imagePreviewWrapper}>
               <Image source={{ uri: selectedImage }} style={styles.imagePreview} resizeMode="cover" />
               <View style={styles.imageBadge}>
-                <Check size={14} color="#FFFFFF" strokeWidth={3} />
+                <Check size={14} color={Colors.textLight} strokeWidth={3} />
                 <Text style={styles.imageBadgeText}>Đã chụp ảnh</Text>
               </View>
               <View style={styles.imageActionRow}>
@@ -372,8 +398,8 @@ export default function AddProductScreen({ route, navigation }) {
                   onPress={removeSelectedImage}
                   activeOpacity={0.8}
                 >
-                  <Trash2 size={16} color="#DC2626" />
-                  <Text style={[styles.imageActionBtnText, { color: '#DC2626' }]}>Xoá</Text>
+                  <Trash2 size={16} color={Colors.error} />
+                  <Text style={[styles.imageActionBtnText, { color: Colors.error }]}>Xoá</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -414,6 +440,7 @@ export default function AddProductScreen({ route, navigation }) {
           <View style={styles.formGroup}>
             <Text style={styles.label}>Thương hiệu</Text>
             <TextInput
+              {...inputProps('brand')}
               style={styles.input}
               value={brand}
               onChangeText={setBrand}
@@ -425,6 +452,7 @@ export default function AddProductScreen({ route, navigation }) {
           <View style={styles.formGroup}>
             <Text style={styles.label}>Tên sản phẩm <Text style={styles.required}>*</Text></Text>
             <TextInput
+              {...inputProps('name')}
               style={styles.input}
               value={name}
               onChangeText={setName}
@@ -516,6 +544,7 @@ export default function AddProductScreen({ route, navigation }) {
               </View>
               <View style={styles.customDurationRow}>
                 <TextInput
+                  {...inputProps('expiryMonths')}
                   style={styles.customDurationInput}
                   value={expiryMonths ? String(expiryMonths) : ''}
                   onChangeText={changeExpiryDuration}
@@ -565,6 +594,7 @@ export default function AddProductScreen({ route, navigation }) {
 
           <View style={styles.ingredientInputGroup}>
             <TextInput
+              {...inputProps('newIngredient')}
               style={styles.ingredientInput}
               value={newIngredient}
               onChangeText={setNewIngredient}
@@ -578,7 +608,7 @@ export default function AddProductScreen({ route, navigation }) {
               onPress={addIngredient}
               disabled={!newIngredient.trim()}
             >
-              <Plus size={22} color="#FFFFFF" />
+              <Plus size={22} color={Colors.textLight} />
             </TouchableOpacity>
           </View>
         </View>
@@ -592,6 +622,7 @@ export default function AddProductScreen({ route, navigation }) {
             {isEditingPercent ? (
               <View style={styles.percentEditRow}>
                 <TextInput
+                  {...inputProps('percentDraft')}
                   style={[styles.percentDisplay, styles.percentInput]}
                   value={percentDraft}
                   onChangeText={text => setPercentDraft(text.replace(/[^0-9]/g, '').slice(0, 3))}
@@ -665,7 +696,8 @@ export default function AddProductScreen({ route, navigation }) {
           <View style={styles.formGroup}>
             <Text style={styles.label}>Ghi chú cá nhân</Text>
             <TextInput
-              style={[styles.input, styles.noteInput]}
+              {...inputProps('note', 100)}
+              style={[styles.input, styles.noteInput, inputStyle('note', 100)]}
               value={note}
               onChangeText={setNote}
               placeholder="VD: Bảo quản trong tủ lạnh..."
@@ -674,7 +706,7 @@ export default function AddProductScreen({ route, navigation }) {
             />
           </View>
         </View>
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
       {/* Save Button */}
       <View style={styles.bottomBar}>
@@ -684,9 +716,9 @@ export default function AddProductScreen({ route, navigation }) {
           disabled={isSaving}
         >
           {isSaving ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
+            <ActivityIndicator size="small" color={Colors.textLight} />
           ) : (
-            <Check size={20} color="#FFFFFF" />
+            <Check size={20} color={Colors.textLight} />
           )}
           <Text style={[styles.saveButtonText, { marginLeft: 8 }]}>
             {isSaving ? 'Đang lưu...' : isEditing ? 'Lưu thay đổi' : 'Lưu sản phẩm'}
@@ -742,8 +774,16 @@ export default function AddProductScreen({ route, navigation }) {
         </View>
       </Modal>
 
-      {/* Date Pickers Modal */}
-      <Modal
+      {/* Date Pickers */}
+      {Platform.OS === 'android' ? (
+        showOpenedDatePicker && <DateTimePicker
+          value={tempOpenedDate}
+          mode="date"
+          display="spinner"
+          onChange={handleOpenedDateChange}
+          maximumDate={new Date()}
+        />
+      ) : <Modal
         visible={showOpenedDatePicker}
         transparent
         animationType="fade"
@@ -778,9 +818,17 @@ export default function AddProductScreen({ route, navigation }) {
             </View>
           </View>
         </View>
-      </Modal>
+      </Modal>}
 
-      <Modal
+      {Platform.OS === 'android' ? (
+        showExpiryDatePicker && <DateTimePicker
+          value={tempExpiryDate}
+          mode="date"
+          display="spinner"
+          onChange={handleExpiryDateChange}
+          minimumDate={openedDate || undefined}
+        />
+      ) : <Modal
         visible={showExpiryDatePicker}
         transparent
         animationType="fade"
@@ -815,7 +863,7 @@ export default function AddProductScreen({ route, navigation }) {
             </View>
           </View>
         </View>
-      </Modal>
+      </Modal>}
     </SafeAreaView>
   );
 }
@@ -823,7 +871,7 @@ export default function AddProductScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FAFAFF'
+    backgroundColor: Colors.surface
   },
   header: {
     minHeight: 60,
@@ -832,11 +880,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#EEF0F7'
+    borderBottomColor: Colors.border
   },
   headerTitle: {
     flex: 1,
-    color: '#111629',
+    color: Colors.text,
     fontSize: 18,
     fontWeight: '600'
   },
@@ -860,19 +908,19 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#111629'
+    color: Colors.text
   },
 
   // Image Section
   imageSection: {
     minHeight: 180,
-    backgroundColor: '#F0F4FF',
+    backgroundColor: Colors.surface,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
     borderWidth: 1.5,
-    borderColor: '#DDE5FD',
+    borderColor: Colors.borderDark,
     borderStyle: 'dashed',
   },
   imageButtons: {
@@ -888,10 +936,10 @@ const styles = StyleSheet.create({
     width: 68,
     height: 68,
     borderRadius: 34,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.background,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#1A3BA8',
+    shadowColor: Colors.shadow,
     shadowOpacity: 0.08,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 8,
@@ -910,11 +958,11 @@ const styles = StyleSheet.create({
   },
   imagePreviewWrapper: {
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.background,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#000000',
+    borderColor: Colors.borderDark,
+    shadowColor: Colors.shadow,
     shadowOpacity: 0.06,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 10,
@@ -923,7 +971,7 @@ const styles = StyleSheet.create({
   imagePreview: {
     width: '100%',
     height: 220,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: Colors.surface,
   },
   imageBadge: {
     position: 'absolute',
@@ -936,14 +984,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 12,
-    shadowColor: '#000000',
+    shadowColor: Colors.shadow,
     shadowOpacity: 0.15,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
     elevation: 2,
   },
   imageBadgeText: {
-    color: '#FFFFFF',
+    color: Colors.textLight,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -953,9 +1001,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     paddingVertical: 12,
     paddingHorizontal: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.background,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: Colors.border,
   },
   imageActionBtn: {
     flexDirection: 'row',
@@ -964,10 +1012,10 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 10,
-    backgroundColor: '#F0F4FF',
+    backgroundColor: Colors.surface,
   },
   imageDeleteBtn: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: Colors.surface,
   },
   imageActionBtnText: {
     fontSize: 12,
@@ -982,17 +1030,17 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#111629'
+    color: Colors.text
   },
   required: {
-    color: '#FF6B6B'
+    color: Colors.error
   },
   input: {
     minHeight: 48,
     borderRadius: 12,
     paddingHorizontal: 14,
-    backgroundColor: '#F0F2FF',
-    color: '#111629',
+    backgroundColor: Colors.surface,
+    color: Colors.text,
     fontSize: 14
   },
   noteInput: {
@@ -1002,28 +1050,28 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 12,
-    color: '#FF6B6B',
+    color: Colors.error,
     marginTop: 4
   },
   selectButton: {
     minHeight: 48,
     borderRadius: 12,
     paddingHorizontal: 14,
-    backgroundColor: '#F0F2FF',
+    backgroundColor: Colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between'
   },
   selectButtonText: {
     fontSize: 14,
-    color: '#111629',
+    color: Colors.text,
     fontWeight: '500'
   },
   dateButton: {
     minHeight: 48,
     borderRadius: 12,
     paddingHorizontal: 14,
-    backgroundColor: '#F0F2FF',
+    backgroundColor: Colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10
@@ -1044,7 +1092,7 @@ const styles = StyleSheet.create({
     width: 48,
     minHeight: 48,
     borderRadius: 12,
-    backgroundColor: '#FEE2E2',
+    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1058,12 +1106,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F0F2FF',
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: Colors.borderDark,
   },
   expiryModeButtonActive: {
-    backgroundColor: '#9BEFD2',
+    backgroundColor: Colors.primaryLight,
     borderColor: Colors.primaryDark,
   },
   expiryModeText: {
@@ -1084,13 +1132,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 13,
     paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: '#F0F2FF',
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: Colors.borderDark,
     alignItems: 'center',
   },
   durationButtonActive: {
-    backgroundColor: '#9BEFD2',
+    backgroundColor: Colors.primaryLight,
     borderColor: Colors.primaryDark,
   },
   durationButtonText: {
@@ -1111,8 +1159,8 @@ const styles = StyleSheet.create({
     minHeight: 44,
     borderRadius: 12,
     paddingHorizontal: 14,
-    backgroundColor: '#F0F2FF',
-    color: '#111629',
+    backgroundColor: Colors.surface,
+    color: Colors.text,
     fontSize: 14,
     textAlign: 'center',
   },
@@ -1137,7 +1185,7 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: '#F0F2FF',
+    backgroundColor: Colors.surface,
     borderRadius: 10,
     borderLeftWidth: 3,
     borderLeftColor: Colors.primary
@@ -1145,7 +1193,7 @@ const styles = StyleSheet.create({
   ingredientItemText: {
     flex: 1,
     fontSize: 13,
-    color: '#111629'
+    color: Colors.text
   },
   emptyState: {
     alignItems: 'center',
@@ -1165,8 +1213,8 @@ const styles = StyleSheet.create({
     minHeight: 48,
     borderRadius: 12,
     paddingHorizontal: 14,
-    backgroundColor: '#F0F2FF',
-    color: '#111629',
+    backgroundColor: Colors.surface,
+    color: Colors.text,
     fontSize: 14
   },
   addButton: {
@@ -1202,7 +1250,7 @@ const styles = StyleSheet.create({
   progressBar: {
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#DCE2F6',
+    backgroundColor: Colors.borderDark,
     overflow: 'hidden',
     marginBottom: 12
   },
@@ -1219,11 +1267,11 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: '#F0F2FF',
+    backgroundColor: Colors.surface,
     alignItems: 'center'
   },
   percentButtonActive: {
-    backgroundColor: '#9BEFD2'
+    backgroundColor: Colors.primaryLight
   },
   percentButtonText: {
     fontSize: 12,
@@ -1241,11 +1289,11 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     borderRadius: 10,
-    backgroundColor: '#F0F2FF',
+    backgroundColor: Colors.surface,
     alignItems: 'center'
   },
   routineButtonActive: {
-    backgroundColor: '#9BEFD2'
+    backgroundColor: Colors.primaryLight
   },
   routineButtonText: {
     fontSize: 12,
@@ -1264,9 +1312,9 @@ const styles = StyleSheet.create({
     right: 0,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#FAFAFF',
+    backgroundColor: Colors.surface,
     borderTopWidth: 1,
-    borderTopColor: '#EEF0F7'
+    borderTopColor: Colors.border
   },
   saveButton: {
     minHeight: 48,
@@ -1282,17 +1330,17 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#FFFFFF'
+    color: Colors.textLight
   },
 
   // Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: Colors.overlay,
     justifyContent: 'flex-end'
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.background,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '80%'
@@ -1304,12 +1352,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#EEF0F7'
+    borderBottomColor: Colors.border
   },
   modalTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#111629'
+    color: Colors.text
   },
   modalItem: {
     flexDirection: 'row',
@@ -1318,10 +1366,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F2FF'
+    borderBottomColor: Colors.border
   },
   modalItemActive: {
-    backgroundColor: '#F9FFFD'
+    backgroundColor: Colors.surface
   },
   modalItemText: {
     fontSize: 14,
@@ -1335,14 +1383,14 @@ const styles = StyleSheet.create({
   // DateTimePicker
   datePickerOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: Colors.overlay,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
   },
   datePickerContainer: {
     width: '100%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.background,
     borderRadius: 20,
     overflow: 'hidden',
     maxWidth: 320,
@@ -1350,7 +1398,7 @@ const styles = StyleSheet.create({
   datePickerHeader: {
     paddingVertical: 16,
     paddingHorizontal: 16,
-    backgroundColor: '#F0F2FF',
+    backgroundColor: Colors.surface,
     alignItems: 'center',
   },
   datePickerTitle: {
@@ -1364,7 +1412,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: '#EEF0F7',
+    borderTopColor: Colors.border,
   },
   datePickerButton: {
     flex: 1,
@@ -1373,7 +1421,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   datePickerButtonCancel: {
-    backgroundColor: '#F0F2FF',
+    backgroundColor: Colors.surface,
   },
   datePickerButtonCancelText: {
     fontSize: 13,
@@ -1386,6 +1434,6 @@ const styles = StyleSheet.create({
   datePickerButtonOKText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: Colors.textLight,
   },
 });

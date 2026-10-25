@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import useKeyboardAwareInputs from '../../hooks/use-keyboard-aware-inputs';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   AlertTriangle,
@@ -51,6 +53,7 @@ function formatPao(paoDays) {
 }
 
 export default function ProductDetailModal({ route, navigation }) {
+  const { scrollViewRef, inputProps } = useKeyboardAwareInputs();
   const { product } = route.params;
   const { deleteProduct, markAsEmpty, updateProduct, restoreProduct } = useCollection();
   const [remaining, setRemaining] = useState(product.remainingPercent ?? 100);
@@ -237,7 +240,7 @@ export default function ProductDetailModal({ route, navigation }) {
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <KeyboardAwareScrollView ref={scrollViewRef} enableOnAndroid enableAutomaticScroll keyboardOpeningTime={0} extraScrollHeight={80} extraHeight={100} enableResetScrollToCoords={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.heroCard}>
             <View style={styles.productPreview}>
               <View style={styles.paoBadge}><ShieldCheck size={13} color={Colors.primaryDark} /><Text style={styles.paoText}>{formatPao(product.paoDays)}</Text></View>
@@ -266,7 +269,7 @@ export default function ProductDetailModal({ route, navigation }) {
                 </View>
               ) : isExpired ? (
                 <View style={[styles.openBadge, styles.expiredActiveBadge]}>
-                  <AlertTriangle size={12} color="#DC2626" />
+                  <AlertTriangle size={12} color={Colors.error} />
                   <Text style={styles.expiredActiveBadgeText}>
                     Đã hết hạn ({daysLeft !== null ? Math.abs(daysLeft) : 0} ngày) • Tiếp tục dùng
                   </Text>
@@ -283,13 +286,13 @@ export default function ProductDetailModal({ route, navigation }) {
             <TouchableOpacity style={styles.routineRow}>
               <View style={styles.routineIcon}><Sun size={22} color={Colors.primaryDark} /></View>
               <View style={styles.routineCopy}><Text style={styles.routineTitle}>Quy trình: {routineTimeText}</Text><Text style={styles.routineText}>{routineStepText}</Text></View>
-              <ChevronRight size={21} color="#A6B7AE" />
+              <ChevronRight size={21} color={Colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
           {isExpired && !isFinished ? (
             <View style={styles.redWarningBox}>
-              <AlertTriangle size={20} color="#DC2626" style={{ marginTop: 2 }} />
+              <AlertTriangle size={20} color={Colors.error} style={{ marginTop: 2 }} />
               <View style={styles.redWarningCopy}>
                 <Text style={styles.redWarningTitle}>Trạng thái cảnh báo đỏ</Text>
                 <Text style={styles.redWarningText}>
@@ -352,7 +355,7 @@ export default function ProductDetailModal({ route, navigation }) {
           {Array.isArray(product.ingredients) && product.ingredients.length > 0 ? (
             <View style={styles.ingredientsCard}>
               <View style={styles.sectionHeading}>
-                <FlaskConical size={19} color="#64776D" />
+                <FlaskConical size={19} color={Colors.textSecondary} />
                 <Text style={styles.sectionTitle}>Thành phần nổi bật ({product.ingredients.length})</Text>
               </View>
               <View style={styles.ingredientsWrap}>
@@ -372,6 +375,7 @@ export default function ProductDetailModal({ route, navigation }) {
               {isEditingPercent ? (
                 <View style={styles.percentEditRow}>
                   <TextInput
+                    {...inputProps('remainingPercent')}
                     style={[styles.percentage, styles.percentInput]}
                     value={percentDraft}
                     onChangeText={text => setPercentDraft(text.replace(/[^0-9]/g, '').slice(0, 3))}
@@ -406,19 +410,19 @@ export default function ProductDetailModal({ route, navigation }) {
           </View>
 
           <View style={styles.trackingCard}>
-            <View style={styles.sectionHeading}><CalendarDays size={21} color="#64776D" /><Text style={styles.sectionTitle}>Theo dõi Hạn dùng & Mở nắp</Text></View>
+            <View style={styles.sectionHeading}><CalendarDays size={21} color={Colors.textSecondary} /><Text style={styles.sectionTitle}>Theo dõi Hạn dùng & Mở nắp</Text></View>
             <View style={styles.trackingRow}>
               <View style={styles.trackingIcon}><LockKeyhole size={21} color={Colors.primaryDark} /></View>
               <View style={styles.trackingCopy}><Text style={styles.trackingLabel}>Ngày mở nắp</Text><Text style={styles.trackingValue}>{openedDate}</Text></View>
               <View style={styles.neutralBadge}><Text style={styles.neutralText}>{product.openedDate ? 'Đã mở nắp' : 'Chưa cập nhật'}</Text></View>
             </View>
             <View style={[styles.trackingRow, styles.warningRow]}>
-              <View style={styles.trackingIcon}><AlertTriangle size={22} color="#A8470A" /></View>
+              <View style={styles.trackingIcon}><AlertTriangle size={22} color={Colors.warning} /></View>
               <View style={styles.trackingCopy}><Text style={styles.warningLabel}>Hạn sử dụng (PAO / EXP)</Text><Text style={styles.warningValue}>{expiryDate}</Text></View>
               {daysLeft !== null ? <View style={styles.daysBadge}><Text style={styles.daysText}>{isExpired ? 'Đã quá hạn' : `Còn ${Math.max(0, daysLeft)} ngày`}</Text></View> : null}
             </View>
             <View style={styles.trackingRow}>
-              <View style={styles.trackingIcon}><ShieldCheck size={21} color="#64776D" /></View>
+              <View style={styles.trackingIcon}><ShieldCheck size={21} color={Colors.textSecondary} /></View>
               <View style={styles.trackingCopy}><Text style={styles.trackingLabel}>Hạn niêm phong (EXP)</Text><Text style={styles.trackingValue}>{manufacturerExpiry}</Text></View>
               <View style={styles.safeBadge}><Text style={styles.safeText}>Nguyên vẹn</Text></View>
             </View>
@@ -435,7 +439,7 @@ export default function ProductDetailModal({ route, navigation }) {
               onPress={() => navigation.navigate('AddProduct', { product })}
               activeOpacity={0.8}
             >
-              <Pencil size={16} color="#FFFFFF" />
+              <Pencil size={16} color={Colors.textLight} />
               <Text style={styles.editButtonText}>Chỉnh sửa thông tin</Text>
             </TouchableOpacity>
           </View>
@@ -456,115 +460,115 @@ export default function ProductDetailModal({ route, navigation }) {
             ) : null}
           </View>
           <TouchableOpacity style={styles.deleteButton} onPress={confirmDelete}><Text style={styles.deleteButtonText}>Xoá sản phẩm</Text></TouchableOpacity>
-        </ScrollView>
+        </KeyboardAwareScrollView>
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(10, 16, 28, 0.62)' },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10, 16, 28, 0.62)' },
-  sheet: { maxHeight: '88%', minHeight: '76%', backgroundColor: '#FFFFFF', borderTopLeftRadius: 34, borderTopRightRadius: 34, overflow: 'hidden' },
-  handle: { width: 72, height: 7, borderRadius: 4, alignSelf: 'center', backgroundColor: '#D6E0DB', marginTop: 13 },
+  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: Colors.overlay },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: Colors.overlay },
+  sheet: { maxHeight: '88%', minHeight: '76%', backgroundColor: Colors.background, borderTopLeftRadius: 34, borderTopRightRadius: 34, overflow: 'hidden' },
+  handle: { width: 72, height: 7, borderRadius: 4, alignSelf: 'center', backgroundColor: Colors.borderDark, marginTop: 13 },
   header: { minHeight: 69, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20 },
   headerTitleRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  leafIcon: { width: 39, height: 39, borderRadius: 20, backgroundColor: '#9BEFD2', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { flex: 1, color: '#34433E', fontSize: 14, letterSpacing: 0.2 },
-  closeButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F0F2FF', marginLeft: 10 },
+  leafIcon: { width: 39, height: 39, borderRadius: 20, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { flex: 1, color: Colors.text, fontSize: 14, letterSpacing: 0.2 },
+  closeButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.surface, marginLeft: 10 },
   content: { paddingHorizontal: 16, paddingBottom: 30 },
-  heroCard: { borderRadius: 26, backgroundColor: '#F0F2FF', padding: 16, flexDirection: 'row', flexWrap: 'wrap', gap: 14, marginBottom: 16 },
-  productPreview: { width: 128, height: 147, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: 16 },
+  heroCard: { borderRadius: 26, backgroundColor: Colors.surface, padding: 16, flexDirection: 'row', flexWrap: 'wrap', gap: 14, marginBottom: 16 },
+  productPreview: { width: 128, height: 147, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: 16 },
   productPhotoImage: { width: '100%', height: '100%', borderRadius: 16 },
   productTypeIcon: { width: '72%', height: '72%' },
-  paoBadge: { position: 'absolute', top: 9, left: 9, zIndex: 2, flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 13, backgroundColor: '#FFFFFF', paddingHorizontal: 8, paddingVertical: 5 },
+  paoBadge: { position: 'absolute', top: 9, left: 9, zIndex: 2, flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 13, backgroundColor: Colors.background, paddingHorizontal: 8, paddingVertical: 5 },
   paoText: { color: Colors.primaryDark, fontSize: 10 },
   heroCopy: { flex: 1, minWidth: 150, justifyContent: 'center' },
-  categoryBadge: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 16, backgroundColor: '#8FEFC9', paddingHorizontal: 11, paddingVertical: 6, marginBottom: 7 },
+  categoryBadge: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 16, backgroundColor: Colors.primaryLight, paddingHorizontal: 11, paddingVertical: 6, marginBottom: 7 },
   categoryText: { color: Colors.primaryDark, fontSize: 12 },
-  productName: { color: '#111629', fontSize: 22, lineHeight: 26, fontWeight: '700' },
-  brandText: { color: '#425049', fontSize: 14, marginTop: 3 },
-  openBadge: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 7, borderRadius: 17, backgroundColor: '#FFD9C7', paddingHorizontal: 12, paddingVertical: 7, marginTop: 12 },
-  expiredBadge: { backgroundColor: '#F9DADA' },
-  statusDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#A8470A' },
+  productName: { color: Colors.text, fontSize: 22, lineHeight: 26, fontWeight: '700' },
+  brandText: { color: Colors.textSecondary, fontSize: 14, marginTop: 3 },
+  openBadge: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 7, borderRadius: 17, backgroundColor: Colors.borderDark, paddingHorizontal: 12, paddingVertical: 7, marginTop: 12 },
+  expiredBadge: { backgroundColor: Colors.surface },
+  statusDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.success },
   expiredDot: { backgroundColor: Colors.danger },
-  openText: { color: '#502A1B', fontSize: 12, fontWeight: '500' },
-  routineRow: { width: '100%', minHeight: 66, flexDirection: 'row', alignItems: 'center', gap: 11, backgroundColor: '#FFFFFF', paddingHorizontal: 12, marginTop: 2 },
-  routineIcon: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#E9EDFF', alignItems: 'center', justifyContent: 'center' },
+  openText: { color: Colors.text, fontSize: 12, fontWeight: '500' },
+  routineRow: { width: '100%', minHeight: 66, flexDirection: 'row', alignItems: 'center', gap: 11, backgroundColor: Colors.background, paddingHorizontal: 12, marginTop: 2 },
+  routineIcon: { width: 42, height: 42, borderRadius: 21, backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center' },
   routineCopy: { flex: 1 },
-  routineTitle: { color: '#111629', fontSize: 13, fontWeight: '700' },
-  routineText: { color: '#52615A', fontSize: 12, marginTop: 2 },
-  volumeCard: { borderRadius: 26, backgroundColor: '#FFFFFF', padding: 16, shadowColor: '#A8AEBB', shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2, marginBottom: 16 },
+  routineTitle: { color: Colors.text, fontSize: 13, fontWeight: '700' },
+  routineText: { color: Colors.textSecondary, fontSize: 12, marginTop: 2 },
+  volumeCard: { borderRadius: 26, backgroundColor: Colors.background, padding: 16, shadowColor: Colors.shadow, shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2, marginBottom: 16 },
   volumeHeader: { flexDirection: 'row', alignItems: 'center', gap: 11 },
-  metricIcon: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#9BEFD2', alignItems: 'center', justifyContent: 'center' },
+  metricIcon: { width: 42, height: 42, borderRadius: 21, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
   metricCopy: { flex: 1 },
-  metricTitle: { color: '#111629', fontSize: 15, fontWeight: '600' },
-  metricText: { color: '#52615A', fontSize: 12, marginTop: 2 },
+  metricTitle: { color: Colors.text, fontSize: 15, fontWeight: '600' },
+  metricText: { color: Colors.textSecondary, fontSize: 12, marginTop: 2 },
   percentage: { color: Colors.primaryDark, fontSize: 28, fontWeight: '800' },
   percentEditRow: { flexDirection: 'row', alignItems: 'center' },
   percentInput: { minWidth: 56, paddingVertical: 0, textAlign: 'right', borderBottomWidth: 2, borderBottomColor: Colors.primary },
-  progressTrack: { height: 12, borderRadius: 6, backgroundColor: '#E6E9FC', overflow: 'hidden', marginTop: 15 },
+  progressTrack: { height: 12, borderRadius: 6, backgroundColor: Colors.borderDark, overflow: 'hidden', marginTop: 15 },
   progressFill: { height: '100%', borderRadius: 6, backgroundColor: Colors.primary },
   quickControls: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 14 },
-  quickButton: { flex: 1, minHeight: 42, borderRadius: 21, backgroundColor: '#F0F2FF', alignItems: 'center', justifyContent: 'center' },
-  quickButtonText: { color: '#111629', fontSize: 16, fontWeight: '600' },
-  quickLabel: { color: '#52615A', fontSize: 12 },
-  trackingCard: { borderRadius: 26, backgroundColor: '#FFFFFF', padding: 16, shadowColor: '#A8AEBB', shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2, marginBottom: 16 },
+  quickButton: { flex: 1, minHeight: 42, borderRadius: 21, backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center' },
+  quickButtonText: { color: Colors.text, fontSize: 16, fontWeight: '600' },
+  quickLabel: { color: Colors.textSecondary, fontSize: 12 },
+  trackingCard: { borderRadius: 26, backgroundColor: Colors.background, padding: 16, shadowColor: Colors.shadow, shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2, marginBottom: 16 },
   sectionHeading: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  sectionTitle: { color: '#111629', fontSize: 16, fontWeight: '600' },
-  trackingRow: { minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: 11, paddingHorizontal: 10, backgroundColor: '#F0F2FF', marginBottom: 7 },
-  trackingIcon: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
+  sectionTitle: { color: Colors.text, fontSize: 16, fontWeight: '600' },
+  trackingRow: { minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: 11, paddingHorizontal: 10, backgroundColor: Colors.surface, marginBottom: 7 },
+  trackingIcon: { width: 38, height: 38, borderRadius: 19, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center' },
   trackingCopy: { flex: 1 },
-  trackingLabel: { color: '#52615A', fontSize: 11 },
-  trackingValue: { color: '#111629', fontSize: 15, fontWeight: '600', marginTop: 2 },
-  neutralBadge: { borderRadius: 14, backgroundColor: '#E4E9FB', paddingHorizontal: 10, paddingVertical: 6 },
-  neutralText: { color: '#425049', fontSize: 10 },
-  warningRow: { backgroundColor: '#FFD9C7' },
-  warningLabel: { color: '#8C3B15', fontSize: 11 },
-  warningValue: { color: '#A8470A', fontSize: 16, fontWeight: '700', marginTop: 2 },
-  daysBadge: { borderRadius: 14, backgroundColor: '#FFFFFF', paddingHorizontal: 10, paddingVertical: 6 },
-  daysText: { color: '#A8470A', fontSize: 10, fontWeight: '600' },
-  safeBadge: { borderRadius: 14, backgroundColor: '#9BEFD2', paddingHorizontal: 10, paddingVertical: 6 },
+  trackingLabel: { color: Colors.textSecondary, fontSize: 11 },
+  trackingValue: { color: Colors.text, fontSize: 15, fontWeight: '600', marginTop: 2 },
+  neutralBadge: { borderRadius: 14, backgroundColor: Colors.borderDark, paddingHorizontal: 10, paddingVertical: 6 },
+  neutralText: { color: Colors.text, fontSize: 10 },
+  warningRow: { backgroundColor: Colors.surface },
+  warningLabel: { color: Colors.warning, fontSize: 11 },
+  warningValue: { color: Colors.warning, fontSize: 16, fontWeight: '700', marginTop: 2 },
+  daysBadge: { borderRadius: 14, backgroundColor: Colors.background, paddingHorizontal: 10, paddingVertical: 6 },
+  daysText: { color: Colors.warning, fontSize: 10, fontWeight: '600' },
+  safeBadge: { borderRadius: 14, backgroundColor: Colors.primaryLight, paddingHorizontal: 10, paddingVertical: 6 },
   safeText: { color: Colors.primaryDark, fontSize: 10 },
-  storageNote: { flexDirection: 'row', gap: 11, backgroundColor: '#F0F2FF', padding: 15, marginBottom: 14 },
+  storageNote: { flexDirection: 'row', gap: 11, backgroundColor: Colors.surface, padding: 15, marginBottom: 14 },
   actionRow: { flexDirection: 'row', gap: 10, marginBottom: 10, justifyContent: 'center' },
   editButton: { flex: 1, minHeight: 46, borderRadius: 23, backgroundColor: Colors.primaryDark, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  editButtonText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
-  finishButton: { flex: 1, minHeight: 46, borderRadius: 23, backgroundColor: '#D1F6EA', alignItems: 'center', justifyContent: 'center' },
+  editButtonText: { color: Colors.textLight, fontSize: 13, fontWeight: '700' },
+  finishButton: { flex: 1, minHeight: 46, borderRadius: 23, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
   finishButtonText: { color: Colors.primaryDark, fontSize: 13, fontWeight: '700' },
-  restoreButton: { flex: 1, minHeight: 46, borderRadius: 23, backgroundColor: '#D4F5E8', alignItems: 'center', justifyContent: 'center' },
-  restoreButtonText: { color: '#047857', fontSize: 13, fontWeight: '700' },
-  archiveButton: { flex: 1, minHeight: 46, borderRadius: 23, backgroundColor: '#E7ECFF', alignItems: 'center', justifyContent: 'center' },
-  archiveButtonText: { color: '#33423D', fontSize: 13, fontWeight: '700' },
+  restoreButton: { flex: 1, minHeight: 46, borderRadius: 23, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
+  restoreButtonText: { color: Colors.primaryDark, fontSize: 13, fontWeight: '700' },
+  archiveButton: { flex: 1, minHeight: 46, borderRadius: 23, backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center' },
+  archiveButtonText: { color: Colors.text, fontSize: 13, fontWeight: '700' },
   deleteButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   deleteButtonText: { color: Colors.danger, fontSize: 13, fontWeight: '700' },
-  finishedBadge: { backgroundColor: '#E2E8F0' },
-  finishedDot: { backgroundColor: '#64748B' },
-  finishedBadgeText: { color: '#334155', fontSize: 12, fontWeight: '600' },
-  expiredActiveBadge: { backgroundColor: '#FEE2E2', borderWidth: 1, borderColor: '#FCA5A5', gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16 },
-  expiredActiveBadgeText: { color: '#B91C1C', fontSize: 11.5, fontWeight: '700' },
-  redWarningBox: { flexDirection: 'row', gap: 10, backgroundColor: '#FEF2F2', borderWidth: 1.5, borderColor: '#F87171', borderRadius: 18, padding: 14, marginBottom: 16, shadowColor: '#DC2626', shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
+  finishedBadge: { backgroundColor: Colors.borderDark },
+  finishedDot: { backgroundColor: Colors.textSecondary },
+  finishedBadgeText: { color: Colors.text, fontSize: 12, fontWeight: '600' },
+  expiredActiveBadge: { backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.error, gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16 },
+  expiredActiveBadgeText: { color: Colors.error, fontSize: 11.5, fontWeight: '700' },
+  redWarningBox: { flexDirection: 'row', gap: 10, backgroundColor: Colors.surface, borderWidth: 1.5, borderColor: Colors.error, borderRadius: 18, padding: 14, marginBottom: 16, shadowColor: Colors.error, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
   redWarningCopy: { flex: 1 },
-  redWarningTitle: { color: '#991B1B', fontSize: 14, fontWeight: '800', marginBottom: 3 },
-  redWarningText: { color: '#B91C1C', fontSize: 12, lineHeight: 17 },
+  redWarningTitle: { color: Colors.error, fontSize: 14, fontWeight: '800', marginBottom: 3 },
+  redWarningText: { color: Colors.error, fontSize: 12, lineHeight: 17 },
   noteCopy: { flex: 1 },
-  noteTitle: { color: '#111629', fontSize: 13, fontWeight: '700', marginBottom: 4 },
-  noteText: { color: '#425049', fontSize: 12, lineHeight: 18 },
-  analysisCard: { borderRadius: 26, backgroundColor: '#FFFFFF', padding: 16, shadowColor: '#A8AEBB', shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2, marginBottom: 16 },
+  noteTitle: { color: Colors.text, fontSize: 13, fontWeight: '700', marginBottom: 4 },
+  noteText: { color: Colors.textSecondary, fontSize: 12, lineHeight: 18 },
+  analysisCard: { borderRadius: 26, backgroundColor: Colors.background, padding: 16, shadowColor: Colors.shadow, shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2, marginBottom: 16 },
   scoreRow: { flexDirection: 'row', gap: 12, marginBottom: 14 },
-  scoreBox: { flex: 1, backgroundColor: '#F0FDF4', borderRadius: 16, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: '#BBF7D0' },
-  contextScoreBox: { backgroundColor: '#F0F9FF', borderColor: '#BAE6FD' },
-  scoreNumber: { fontSize: 24, fontWeight: '800', color: '#166534' },
-  contextScoreNumber: { color: '#0369A1' },
-  scoreLabel: { fontSize: 11, color: '#64748B', fontWeight: '600', marginTop: 2 },
-  analysisItem: { backgroundColor: '#F8FAFC', borderRadius: 14, padding: 12, marginBottom: 8 },
-  analysisItemTitle: { fontSize: 12, fontWeight: '700', color: '#334155', marginBottom: 4 },
-  analysisItemText: { fontSize: 13, color: '#475569', lineHeight: 18 },
-  analysisItemWarning: { backgroundColor: '#FFFBEB', borderRadius: 14, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: '#FDE68A' },
-  analysisItemWarningTitle: { fontSize: 12, fontWeight: '700', color: '#B45309', marginBottom: 4 },
-  analysisItemWarningText: { fontSize: 13, color: '#92400E', lineHeight: 18 },
-  ingredientsCard: { borderRadius: 26, backgroundColor: '#FFFFFF', padding: 16, shadowColor: '#A8AEBB', shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2, marginBottom: 16 },
+  scoreBox: { flex: 1, backgroundColor: Colors.surface, borderRadius: 16, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: Colors.borderDark },
+  contextScoreBox: { backgroundColor: Colors.surface, borderColor: Colors.borderDark },
+  scoreNumber: { fontSize: 24, fontWeight: '800', color: Colors.primaryDark },
+  contextScoreNumber: { color: Colors.info },
+  scoreLabel: { fontSize: 11, color: Colors.textSecondary, fontWeight: '600', marginTop: 2 },
+  analysisItem: { backgroundColor: Colors.surface, borderRadius: 14, padding: 12, marginBottom: 8 },
+  analysisItemTitle: { fontSize: 12, fontWeight: '700', color: Colors.text, marginBottom: 4 },
+  analysisItemText: { fontSize: 13, color: Colors.textSecondary, lineHeight: 18 },
+  analysisItemWarning: { backgroundColor: Colors.surface, borderRadius: 14, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: Colors.warning },
+  analysisItemWarningTitle: { fontSize: 12, fontWeight: '700', color: Colors.warning, marginBottom: 4 },
+  analysisItemWarningText: { fontSize: 13, color: Colors.textSecondary, lineHeight: 18 },
+  ingredientsCard: { borderRadius: 26, backgroundColor: Colors.background, padding: 16, shadowColor: Colors.shadow, shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2, marginBottom: 16 },
   ingredientsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  ingredientTag: { backgroundColor: '#F1F5F9', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 5 },
-  ingredientTagText: { fontSize: 11, color: '#475569', fontWeight: '500' },
+  ingredientTag: { backgroundColor: Colors.surface, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 5 },
+  ingredientTagText: { fontSize: 11, color: Colors.textSecondary, fontWeight: '500' },
 });
