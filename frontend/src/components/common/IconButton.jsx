@@ -40,7 +40,7 @@ export const IconButton = forwardRef(function IconButton(
             ? COLORS.primary
             : variant === "soft"
               ? COLORS.pink
-              : "transparent",
+              : COLORS.transparent,
         },
         typeof style === "function" ? style({ pressed }) : style,
       ]}

@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const createApp = require('./app');
 const { loadConfig } = require('./src/config/env');
 const connectDB = require('./src/config/db');
+const User = require('./src/models/User');
+const AuthSession = require('./src/models/AuthSession');
 
 let server;
 let shutdownPromise;
@@ -58,6 +60,8 @@ const startServer = async () => {
         const app = createApp(config);
 
         await connectDB(config.mongoUri);
+        // Collections and the unique email index must exist before transactions.
+        await Promise.all([User.init(), AuthSession.init()]);
         console.log('Database connected successfully.');
 
         await new Promise((resolve, reject) => {
@@ -73,6 +77,9 @@ const startServer = async () => {
         process.on('SIGTERM', handleSignal);
         console.log(
             `Server is running on http://0.0.0.0:${server.address().port}`
+        );
+        console.log(
+            `Swagger UI: http://localhost:${server.address().port}/api-docs`
         );
 
         return server;

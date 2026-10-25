@@ -49,22 +49,32 @@ const schema = Joi.object({
             }
         }),
     RATE_LIMIT_MAX: Joi.number().integer().positive().default(100),
+    JWT_ACCESS_SECRET: Joi.string().trim().min(32).required(),
+    JWT_REFRESH_SECRET: Joi.string()
+        .trim()
+        .min(32)
+        .invalid(Joi.ref('JWT_ACCESS_SECRET'))
+        .required(),
+    TERMS_VERSION: Joi.string()
+        .trim()
+        .max(100)
+        .required()
+        .when('NODE_ENV', {
+            is: 'production',
+            then: Joi.invalid('development-only'),
+        }),
+    PRIVACY_VERSION: Joi.string()
+        .trim()
+        .max(100)
+        .required()
+        .when('NODE_ENV', {
+            is: 'production',
+            then: Joi.invalid('development-only'),
+        }),
 });
 
-const loadConfig = () => {
-    const result = dotenv.config({
-        path: path.resolve(__dirname, '../../.env'),
-        quiet: true,
-        override: false,
-    });
-
-    if (result.error && result.error.code !== 'ENOENT') {
-        const error = new Error('Unable to read backend/.env.');
-        error.code = 'ENV_READ_ERROR';
-        throw error;
-    }
-
-    const { error, value } = schema.validate(process.env, {
+const parseConfig = (environment) => {
+    const { error, value } = schema.validate(environment, {
         abortEarly: false,
         allowUnknown: true,
     });
@@ -87,7 +97,27 @@ const loadConfig = () => {
         logLevel: value.LOG_LEVEL,
         corsOrigins: Object.freeze(parseOrigins(value.CORS_ORIGINS)),
         rateLimitMax: value.RATE_LIMIT_MAX,
+        jwtAccessSecret: value.JWT_ACCESS_SECRET,
+        jwtRefreshSecret: value.JWT_REFRESH_SECRET,
+        termsVersion: value.TERMS_VERSION,
+        privacyVersion: value.PRIVACY_VERSION,
     });
 };
 
-module.exports = { loadConfig };
+const loadConfig = () => {
+    const result = dotenv.config({
+        path: path.resolve(__dirname, '../../.env'),
+        quiet: true,
+        override: false,
+    });
+
+    if (result.error && result.error.code !== 'ENOENT') {
+        const error = new Error('Unable to read backend/.env.');
+        error.code = 'ENV_READ_ERROR';
+        throw error;
+    }
+
+    return parseConfig(process.env);
+};
+
+module.exports = { loadConfig, parseConfig };

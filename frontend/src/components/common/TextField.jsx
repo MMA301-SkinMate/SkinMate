@@ -51,8 +51,8 @@ export const TextField = forwardRef(function TextField(
             ? TONES.error.foreground
             : focused
               ? COLORS.primary
-              : "#AAB4A4",
-          backgroundColor: disabled ? "#ECEEE7" : COLORS.card,
+              : COLORS.borderDark,
+          backgroundColor: disabled ? COLORS.surface : COLORS.card,
           paddingHorizontal: 12,
           gap: 8,
         }}

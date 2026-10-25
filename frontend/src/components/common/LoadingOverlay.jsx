@@ -1,6 +1,6 @@
 import { StyleSheet, View } from "react-native";
 import { LoadingState } from "./LoadingState";
-import { COLORS } from "../../constants/colors";
+import { COLORS, withOpacity } from "../../constants/colors";
 
 /** @param {{visible?: boolean, message?: string}} props */
 export const LoadingOverlay = ({
@@ -18,7 +18,7 @@ export const LoadingOverlay = ({
         StyleSheet.absoluteFillObject,
         {
           zIndex: 100,
-          backgroundColor: "rgba(41,56,45,0.45)",
+          backgroundColor: withOpacity(COLORS.shadow, 0.45),
           alignItems: "center",
           justifyContent: "center",
         },

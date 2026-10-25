@@ -46,14 +46,17 @@ export const ListRow = ({
     gap: 12,
     padding: 12,
     borderRadius: 12,
-    backgroundColor: selected ? COLORS.sage : "transparent",
+    backgroundColor: selected ? COLORS.sage : COLORS.transparent,
     opacity: disabled ? 0.5 : 1,
   };
   return onPress ? (
     <Pressable
       {...props}
       accessibilityRole="button"
-      accessibilityLabel={props.accessibilityLabel || [title, description].filter(Boolean).join(', ')}
+      accessibilityLabel={
+        props.accessibilityLabel ||
+        [title, description].filter(Boolean).join(", ")
+      }
       accessibilityState={{ disabled, selected }}
       disabled={disabled}
       onPress={onPress}
