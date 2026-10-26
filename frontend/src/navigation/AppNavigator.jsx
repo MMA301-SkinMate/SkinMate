@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useAuth } from "../hooks/useAuth";
 import AuthStackNav from "./AuthStackNav";
 import BottomTabNav from "./BottomTabNav";
+import IntroScreen from "../screens/intro";
 import { AppText } from "../components/common/AppText";
 import { Button } from "../components/common/Button";
 import { Snackbar } from "../components/common/Snackbar";
@@ -47,6 +48,8 @@ export default function AppNavigator() {
           <Root.Screen name="Bootstrap" component={BootstrapScreen} />
         ) : auth.isAuthenticated ? (
           <Root.Screen name="MainTabs" component={BottomTabNav} />
+        ) : !auth.introCompleted ? (
+          <Root.Screen name="Intro" component={IntroScreen} />
         ) : (
           <Root.Screen name="Auth" component={AuthStackNav} />
         )}
