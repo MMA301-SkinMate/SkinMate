@@ -7,6 +7,10 @@ import {
   saveSession,
 } from "../services/authStorage";
 import { AUTH_MESSAGES } from "../constants/auth";
+import {
+  loadIntroCompleted,
+  markIntroCompleted,
+} from "../services/introStorage";
 
 export const AuthContext = createContext(null);
 
@@ -14,6 +18,7 @@ export function AuthProvider({ children }) {
   const [booting, setBooting] = useState(true);
   const [bootstrapError, setBootstrapError] = useState(null);
   const [session, setSession] = useState(null);
+  const [introCompleted, setIntroCompleted] = useState(false);
   const [notice, setNotice] = useState(null);
   const mounted = useRef(true);
   const restoreVersion = useRef(0);
@@ -31,10 +36,18 @@ export function AuthProvider({ children }) {
     setBooting(true);
     setBootstrapError(null);
     try {
-      const restored = await enqueue(loadAuthentication);
+      const [restored, completed] = await Promise.all([
+        enqueue(loadAuthentication),
+        loadIntroCompleted(),
+      ]);
       if (!mounted.current || version !== restoreVersion.current) return;
       sessionRef.current = restored.session;
       setSession(restored.session);
+      setIntroCompleted(completed || Boolean(restored.session));
+      if (restored.session && !completed) {
+        // Existing authenticated users skip Intro even if its flag cannot be saved.
+        enqueue(markIntroCompleted).catch(() => {});
+      }
     } catch {
       if (mounted.current && version === restoreVersion.current) {
         setBootstrapError(AUTH_MESSAGES.restoreFailed);
@@ -54,6 +67,11 @@ export function AuthProvider({ children }) {
     };
   }, [restore]);
 
+  const completeIntro = useCallback(async () => {
+    await enqueue(markIntroCompleted);
+    if (mounted.current) setIntroCompleted(true);
+  }, [enqueue]);
+
   const establishSession = useCallback(
     async (payload, message) => {
       const saved = await enqueue(() => saveSession(payload));
@@ -61,7 +79,9 @@ export function AuthProvider({ children }) {
       if (mounted.current) {
         sessionRef.current = saved;
         setSession(saved);
+        setIntroCompleted(true);
         setNotice({ id: Date.now(), message });
+        enqueue(markIntroCompleted).catch(() => {});
       }
     },
     [enqueue],
@@ -98,6 +118,8 @@ export function AuthProvider({ children }) {
         session,
         user: session?.user ?? null,
         isAuthenticated: Boolean(session),
+        introCompleted,
+        completeIntro,
         restore,
         establishSession,
         notice,
