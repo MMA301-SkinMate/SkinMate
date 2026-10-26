@@ -85,7 +85,7 @@ const AddProductScreen = ({ route, navigation }) => {
 
             if (result) {
                 Alert.alert('Success', 'Added product to your collection successfully!', [
-                    { text: 'OK', onPress: () => navigation.navigate('MyCollection') }
+                    { text: 'OK', onPress: () => navigation.navigate('Collection') }
                 ]);
             }
         } catch (error) {

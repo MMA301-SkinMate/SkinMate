@@ -9,7 +9,7 @@ export const COLORS = {
     primaryLight: '#2dd4bf',
 
     // Backgrounds & Surfaces
-    background: '#FEFAF3',
+    background: '#ffffff',
     surface: '#f8fafc',
     card: '#ffffff',
 

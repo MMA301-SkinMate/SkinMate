@@ -5,5 +5,6 @@ const collectionController = require('../controllers/collectionController');
 router.post('/analyze', collectionController.analyzeProduct);
 router.post('/draft', collectionController.saveDraft);
 router.post('/add', collectionController.addProduct);
+router.get('/history', collectionController.getScanHistory);
 
 module.exports = router;

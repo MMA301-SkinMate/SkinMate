@@ -199,5 +199,27 @@ const addProduct = async (req, res) => {
     }
 };
 
+const getScanHistory = async (req, res) => {
+    try {
+        const userId = req.query.userId || req.params.userId || '65b123456789abcdef123456';
 
-module.exports = { analyzeProduct, saveDraft, addProduct };
+        if (!userId) {
+            return res.status(400).json({ success: false, message: 'User ID is required' });
+        }
+
+        const historyList = await Collection.find({ userId, status: 'draft' })
+            .sort({ createdAt: -1 })
+            .select('productName productType productIcon ingredients createdAt analysisResult');
+
+        res.status(200).json({
+            success: true,
+            count: historyList.length,
+            data: historyList,
+        });
+    } catch (error) {
+        console.error('Error getting scan history:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+module.exports = { analyzeProduct, saveDraft, addProduct, getScanHistory };

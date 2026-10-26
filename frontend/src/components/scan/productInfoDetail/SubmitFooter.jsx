@@ -36,7 +36,7 @@ const SubmitFooter = ({ onSubmit, loading, analysisResult, productData, handleSa
 
                         <TouchableOpacity
                             style={styles.primaryBtn}
-                            onPress={() => navigation.navigate('AddProductScreen', { productData, analysisResult })}
+                            onPress={() => navigation.navigate('AddProduct', { productData, analysisResult })}
                         >
                             <Text style={styles.btnText}>Add to My Collection</Text>
                         </TouchableOpacity>

@@ -43,32 +43,35 @@ const ProductInfoDetailScreen = ({ route, navigation }) => {
         };
 
         try {
-            const result = await analyze(productPayload);
-            console.log(result)
-            // const result = {
-            //     "baseScore": 80,
-            //     "conflictResolution":
-            //     {
-            //         "details": "Tủ đồ hiện tại của bạn chưa có sản phẩm nào, do đó hoàn toàn không có xung đột hoạt chất. Toner này rất lành tính và dễ dàng tích hợp vào chu trình chăm sóc da cơ bản.",
-            //         "hasConflict": false
-            //     },
-            //     "contextualScore": 100,
-            //     "futurePlan": {
-            //         "frequency": "Sử dụng hàng ngày, 2 lần/ngày (Sáng và Tối)",
-            //         "notes": "Nên vỗ nhẹ để toner thẩm thấu tốt hơn vào da. Ban ngày nhớ sử dụng kem chống nắng có phổ rộng để bảo vệ da toàn diện.",
-            //         "timing": "Sáng và Tối, ngay sau bước làm sạch (tẩy trang và sữa rửa mặt)"
-            //     },
-            //     "pairingRecommendation": {
-            //         "advice": "Vì da đang ở trạng thái bình thường, bạn nên kết hợp toner này với các sản phẩm cấp ẩm sâu chứa Hyaluronic Acid hoặc kem dưỡng chứa Ceramide để duy trì làn da khỏe mạnh, căng bóng.",
-            //         "ingredientsToAdd": ["Hyaluronic Acid", "Ceramides", "Peptides"],
-            //         "ingredientsToAvoid": ["Retinoids nồng độ cao (nếu da chưa quen)", "AHA/BHA liều lượng quá mạnh dùng cùng lúc"],
-            //         "matchedProductInCloset": null
-            //     },
-            //     "verdict": {
-            //         "badgeLevel": "success",
-            //         "text": "Sản phẩm toner Emmié by Happy Skin rất phù hợp với làn da thường và tình trạng da ổn định hiện tại. Công thức giàu dưỡng chất lên men và Niacinamide giúp cân bằng độ ẩm, làm sáng và củng cố hàng rào bảo vệ da hiệu quả."
-            //     }
-            // }
+            // const result = await analyze(productPayload);
+
+            const result = {
+                "data": {
+                    "baseScore": 80,
+                    "conflictResolution":
+                    {
+                        "details": "Tủ đồ hiện tại của bạn chưa có sản phẩm nào, do đó hoàn toàn không có xung đột hoạt chất. Toner này rất lành tính và dễ dàng tích hợp vào chu trình chăm sóc da cơ bản.",
+                        "hasConflict": false
+                    },
+                    "contextualScore": 100,
+                    "futurePlan": {
+                        "frequency": "Sử dụng hàng ngày, 2 lần/ngày (Sáng và Tối)",
+                        "notes": "Nên vỗ nhẹ để toner thẩm thấu tốt hơn vào da. Ban ngày nhớ sử dụng kem chống nắng có phổ rộng để bảo vệ da toàn diện.",
+                        "timing": "Sáng và Tối, ngay sau bước làm sạch (tẩy trang và sữa rửa mặt)"
+                    },
+                    "pairingRecommendation": {
+                        "advice": "Vì da đang ở trạng thái bình thường, bạn nên kết hợp toner này với các sản phẩm cấp ẩm sâu chứa Hyaluronic Acid hoặc kem dưỡng chứa Ceramide để duy trì làn da khỏe mạnh, căng bóng.",
+                        "ingredientsToAdd": ["Hyaluronic Acid", "Ceramides", "Peptides"],
+                        "ingredientsToAvoid": ["Retinoids nồng độ cao (nếu da chưa quen)", "AHA/BHA liều lượng quá mạnh dùng cùng lúc"],
+                        "matchedProductInCloset": null
+                    },
+                    "verdict": {
+                        "badgeLevel": "success",
+                        "text": "Sản phẩm toner Emmié by Happy Skin rất phù hợp với làn da thường và tình trạng da ổn định hiện tại. Công thức giàu dưỡng chất lên men và Niacinamide giúp cân bằng độ ẩm, làm sáng và củng cố hàng rào bảo vệ da hiệu quả."
+                    }
+                }
+            }
+
             if (result && result.data) {
                 setAnalysisResult(result.data);
                 setTimeout(() => {

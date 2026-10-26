@@ -11,12 +11,21 @@ export const collectionApi = {
 
     addProduct: (data) => {
         return axiosClient.post('/collections/add', data);
+    },
+
+    getScanHistory: (userId) => {
+        return axiosClient.get(`/collections/history?userId=${userId || '65b123456789abcdef123456'}`);
     }
 
-    // saveToCloset: (productId, data = {}) => {
-    //     return axiosClient.patch(`/collections/${productId}/status`, {
-    //         status: 'active',
-    //         ...data
-    //     });
-    // }
+    // getCloset: (params = {}) => {
+    //     return axiosClient.get('/collections/closet', { params });
+    // },
+
+    // moveFromDraft: (id, data = {}) => {
+    //     return axiosClient.patch(`/collections/move-from-draft/${id}`, data);
+    // },
+
+    // removeProduct: (id, data = {}) => {
+    //     return axiosClient.patch(`/collections/remove-product/${id}`, data);
+    // },
 };

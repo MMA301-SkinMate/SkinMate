@@ -69,7 +69,7 @@ const useScan = (navigation) => {
     };
 
     const handleScanHistory = () => {
-        Alert.alert('Scan History', 'View your previously scanned cosmetic products.');
+        navigation.navigate('ScanHistory');
     };
 
     return {
