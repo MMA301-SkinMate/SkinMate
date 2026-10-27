@@ -26,7 +26,17 @@
         {
           "cameraPermission": "Ứng dụng cần truy cập camera để quét bảng thành phần mỹ phẩm."
         }
-      ]
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Ứng dụng cần truy cập thư viện ảnh để chọn ảnh thành phần mỹ phẩm."
+        }
+      ],
+      "expo-secure-store",
+      "expo-font",
+      "expo-splash-screen",
+      "@react-native-community/datetimepicker"
     ]
   }
 }

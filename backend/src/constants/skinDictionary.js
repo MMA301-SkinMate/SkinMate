@@ -1,14 +1,14 @@
-﻿/**
- * SKINCARE DICTIONARY & COMPATIBILITY MATRIX
- * 1. Từ điển Hồ sơ da (Skin_Dictionary):
- *    - Da_Dầu: Do's [Niacinamide, BHA, Clay], Don'ts [Mineral Oil, Shea Butter, Coconut Oil]
- * 2. Từ điển Trạng thái da (Condition_Dictionary):
- *    - Kích_Ứng: Trị liệu [B5, Ceramide, Centella], Cấm kỵ [AHA, BHA, Retinol, Vitamin C]
- *    - Nổi_Mụn: Trị liệu [Salicylic Acid, Tea Tree, Benzoyl Peroxide], Cấm kỵ [Silicone, Mineral Oil]
- * 3. Ma trận Xung đột (Conflict_Matrix):
- *    - AHA kỵ [Retinol, BHA, Vitamin C]
- *    - BHA kỵ [Retinol, AHA]
- */
+﻿
+// SKINCARE DICTIONARY & COMPATIBILITY MATRIX
+// 1. Từ điển Hồ sơ da (Skin_Dictionary):
+//     - Da_Dầu: Do's [Niacinamide, BHA, Clay], Don'ts [Mineral Oil, Shea Butter, Coconut Oil]
+// 2. Từ điển Trạng thái da (Condition_Dictionary):
+//     - Kích_Ứng: Trị liệu [B5, Ceramide, Centella], Cấm kỵ [AHA, BHA, Retinol, Vitamin C]
+//     - Nổi_Mụn: Trị liệu [Salicylic Acid, Tea Tree, Benzoyl Peroxide], Cấm kỵ [Silicone, Mineral Oil]
+// 3. Ma trận Xung đột (Conflict_Matrix):
+//     - AHA kỵ [Retinol, BHA, Vitamin C]
+//     - BHA kỵ [Retinol, AHA]
+
 
 const SKIN_DICTIONARY = {
   Da_Dau: {
