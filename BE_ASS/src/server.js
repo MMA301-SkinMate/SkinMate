@@ -9,7 +9,8 @@ const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
 
-// Import các routes của Trần Quang
+const communityRoutes = require('./routes/communityRoutes');
+const collectionRoutes = require('./routes/collectionRoutes');
 const skinProfileRoutes = require('./routes/skinProfileRoutes');
 const routineRoutes = require('./routes/routineRoutes');
 
@@ -24,6 +25,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // 3. Khai báo các API Endpoints
+app.use('/api/community', communityRoutes);
+app.use('/api/collection', collectionRoutes);
 app.use('/api/skin-profile', skinProfileRoutes);
 app.use('/api/routines', routineRoutes);
 

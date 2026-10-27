@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 
 exports.forgotPassword = async (req, res, next) => {
   try {
-    const { email } = req.body;
+    const { email } = req.body || {};
     if (!email) return res.status(400).json({ success: false, message: 'Vui lòng cung cấp email' });
 
     const result = await authService.forgotPassword(email);
@@ -15,7 +15,7 @@ exports.forgotPassword = async (req, res, next) => {
 
 exports.resetPassword = async (req, res, next) => {
   try {
-    const { token, newPassword } = req.body;
+    const { token, newPassword } = req.body || {};
     if (!token || !newPassword) {
       return res.status(400).json({ success: false, message: 'Thiếu mã token hoặc mật khẩu mới' });
     }

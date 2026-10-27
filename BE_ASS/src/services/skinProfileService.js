@@ -3,13 +3,32 @@ const SkinDictionary = require('../models/SkinDictionary');
 const MyCollection = require('../models/MyCollection');
 const TreatmentPlan = require('../models/TreatmentPlan');
 
+exports.getSkinProfile = async (userId) => {
+  const user = await User.findById(userId);
+  if (!user) throw new Error('Không tìm thấy người dùng');
+
+  return {
+    id: user._id,
+    fullName: user.fullName,
+    email: user.email,
+    skinProfile: user.skinProfile,
+  };
+};
+
 /**
  * 1. Lấy thông tin cẩm nang da (Do's & Don'ts) dựa trên loại da và dị ứng
  */
 exports.getSkinGuide = async (userId) => {
   const user = await User.findById(userId);
   if (!user || !user.skinProfile?.skinType) {
-    return { dos: [], donts: user?.skinProfile?.allergies || [] };
+    return {
+      skinType: user?.skinProfile?.skinType || null,
+      dos: [],
+      donts: (user?.skinProfile?.allergies || []).map((ingredientName) => ({
+        ingredientName,
+        reason: 'Dị ứng cá nhân trong hồ sơ',
+      })),
+    };
   }
 
   const dictionary = await SkinDictionary.findOne({ skinType: user.skinProfile.skinType });
@@ -39,25 +58,22 @@ exports.updateSkinProfile = async (userId, { skinType, allergies, currentConcern
   const oldSkinType = user.skinProfile?.skinType;
   const isSkinTypeChanged = oldSkinType && oldSkinType !== skinType;
 
-  // Kiểm tra phác đồ đang chạy nếu có thay đổi loại da
-  let activePlanWarning = null;
   if (isSkinTypeChanged) {
     const activePlan = await TreatmentPlan.findOne({ userId, status: 'active' });
     if (activePlan) {
-      if (cancelActivePlan) {
-        activePlan.status = 'canceled';
-        await activePlan.save();
-      } else {
+      if (!cancelActivePlan) {
         activePlanWarning = {
           hasActivePlan: true,
           planId: activePlan._id,
           message: 'Việc đổi loại da sẽ tác động đến phác đồ điều trị đang chạy. Vui lòng xác nhận hủy phác đồ cũ.',
         };
+        return { activePlanWarning };
       }
+      activePlan.status = 'canceled';
+      await activePlan.save();
     }
   }
 
-  // Cập nhật User
   user.skinProfile = {
     skinType,
     allergies: allergies || [],
@@ -65,27 +81,24 @@ exports.updateSkinProfile = async (userId, { skinType, allergies, currentConcern
   };
   await user.save();
 
-  // Đánh giá lại độ phù hợp của các sản phẩm trong tủ đồ
-  const closetProducts = await MyCollection.find({ userId, status: { $in: ['active', 'expiring'] } });
+  const closetProducts = await MyCollection.find({ userId, status: { $nin: ['archived', 'finished'] } });
   const dictionary = await SkinDictionary.findOne({ skinType });
   const dontList = dictionary ? dictionary.donts.map((d) => d.ingredientName.toLowerCase()) : [];
+  const userAllergies = (allergies || []).map((allergy) => allergy.toLowerCase());
 
   const evaluatedCloset = closetProducts.map((p) => {
-    let hasConflict = false;
-    const conflictingIngredients = [];
-
-    p.ingredientsList.forEach((ing) => {
-      const lower = ing.toLowerCase();
-      if (dontList.some((dont) => lower.includes(dont)) || (allergies || []).some((a) => lower.includes(a.toLowerCase()))) {
-        hasConflict = true;
-        conflictingIngredients.push(ing);
-      }
+    const conflictingIngredients = p.ingredientsList.filter((ingredient) => {
+      const lower = ingredient.toLowerCase();
+      return dontList.some((dont) => lower.includes(dont) || dont.includes(lower))
+        || userAllergies.some((allergy) => lower.includes(allergy) || allergy.includes(lower));
     });
+    const compatibilityScore = conflictingIngredients.length ? 30 : 100;
 
     return {
       productId: p._id,
       productName: p.productName,
-      suitable: !hasConflict,
+      compatibilityScore,
+      suitable: compatibilityScore >= 70,
       conflictingIngredients,
     };
   });
@@ -96,7 +109,6 @@ exports.updateSkinProfile = async (userId, { skinType, allergies, currentConcern
       fullName: user.fullName,
       skinProfile: user.skinProfile,
     },
-    activePlanWarning,
     evaluatedCloset,
   };
 };

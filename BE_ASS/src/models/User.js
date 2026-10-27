@@ -51,6 +51,10 @@ const userSchema = new mongoose.Schema(
         type: [String],
         default: [],
       },
+      currentConcerns: {
+        type: [String],
+        default: [],
+      },
     },
     isActive: {
       type: Boolean,

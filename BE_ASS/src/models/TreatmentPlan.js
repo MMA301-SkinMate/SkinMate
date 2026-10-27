@@ -44,6 +44,10 @@ const treatmentPlanSchema = new mongoose.Schema(
       default: 'draft',
       index: true,
     },
+    isSkipped: {
+      type: Boolean,
+      default: false,
+    },
     startDate: {
       type: Date,
       default: null,

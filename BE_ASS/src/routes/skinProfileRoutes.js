@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const skinProfileController = require('../controllers/skinProfileController');
-const authMiddleware = require('../middlewares/authMiddleware'); // Middleware giải mã JWT xác thực user
+const singleUserMiddleware = require('../middlewares/singleUserMiddleware');
 
-router.use(authMiddleware);
+router.use(singleUserMiddleware);
+
+router.get('/profile', skinProfileController.getSkinProfile);
 
 // ID 6, 10: Lấy cẩm nang da Do's & Don'ts cho FAB Guide & Popup
 router.get('/guide', skinProfileController.getSkinGuide);

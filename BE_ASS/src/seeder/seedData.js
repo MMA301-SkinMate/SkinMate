@@ -66,6 +66,37 @@ const seedDatabase = async () => {
           { ingredientName: 'Salicylic Acid nồng độ cao', reason: 'Gây bong tróc da' },
         ],
       },
+      {
+        skinType: 'da_hon_hop',
+        dos: [
+          { ingredientName: 'Niacinamide', purpose: 'Cân bằng dầu và hỗ trợ hàng rào da' },
+          { ingredientName: 'Hyaluronic Acid', purpose: 'Cấp nước nhẹ cho vùng da khô' },
+        ],
+        donts: [
+          { ingredientName: 'Alcohol Denat', reason: 'Có thể làm khô vùng da thiếu ẩm' },
+        ],
+      },
+      {
+        skinType: 'da_nhay_cam',
+        dos: [
+          { ingredientName: 'Ceramide', purpose: 'Hỗ trợ hàng rào bảo vệ da' },
+          { ingredientName: 'Panthenol', purpose: 'Làm dịu và dưỡng ẩm' },
+        ],
+        donts: [
+          { ingredientName: 'Fragrance', reason: 'Có thể gây kích ứng da nhạy cảm' },
+          { ingredientName: 'Alcohol Denat', reason: 'Có thể gây khô và kích ứng' },
+        ],
+      },
+      {
+        skinType: 'da_thuong',
+        dos: [
+          { ingredientName: 'Niacinamide', purpose: 'Duy trì hàng rào da khỏe mạnh' },
+          { ingredientName: 'Hyaluronic Acid', purpose: 'Duy trì độ ẩm' },
+        ],
+        donts: [
+          { ingredientName: 'Fragrance', reason: 'Có thể gây kích ứng tùy cơ địa' },
+        ],
+      },
     ]);
     console.log('Đã nạp Từ điển Hồ sơ da (SkinDictionary)');
 
