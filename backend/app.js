@@ -10,6 +10,7 @@ const { notFound, errorHandler } = require('./src/middlewares/errorMiddleware');
 const createApp = (config) => {
     // Module routes are loaded after server.js has loaded the environment.
     const scanRoutes = require('./src/routes/scanRoutes');
+    const collectionRoutes = require('./src/routes/collectionRoutes');
     const authRoutes = require('./src/routes/authRoutes');
     const app = express();
     app.locals.config = config;
@@ -34,10 +35,14 @@ const createApp = (config) => {
     });
     app.use('/api-docs', createDocsRoutes(config));
 
-    app.use('/api/scan', scanRoutes);
     app.use('/api/auth', authRoutes());
+
+    app.use('/api/scan', scanRoutes);
+    app.use('/api/collections', collectionRoutes);
+
     app.use(notFound);
     app.use(errorHandler);
+
 
     return app;
 };
