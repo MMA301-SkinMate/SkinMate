@@ -48,6 +48,19 @@ const schema = Joi.object({
                 return helpers.error('any.invalid');
             }
         }),
+    RESET_EMAIL_API_KEY: Joi.string().trim().allow('').default(''),
+    RESET_EMAIL_FROM: Joi.string().trim().max(254).allow('').default(''),
+    PASSWORD_RESET_URL: Joi.string().trim().allow('').default('').custom((value, helpers) => {
+        if (!value) return value;
+        try {
+            const url = new URL(value);
+            if (!['exp:', 'exps:', 'https:', 'skinmate:'].includes(url.protocol) ||
+                url.username || url.password || url.search || url.hash) {
+                return helpers.error('any.invalid');
+            }
+            return value;
+        } catch { return helpers.error('any.invalid'); }
+    }),
     RATE_LIMIT_MAX: Joi.number().integer().positive().default(100),
     JWT_ACCESS_SECRET: Joi.string().trim().min(32).required(),
     JWT_REFRESH_SECRET: Joi.string()
@@ -91,6 +104,9 @@ const parseConfig = (environment) => {
     }
 
     return Object.freeze({
+        passwordResetUrl: value.PASSWORD_RESET_URL,
+        resetEmailApiKey: value.RESET_EMAIL_API_KEY,
+        resetEmailFrom: value.RESET_EMAIL_FROM,
         nodeEnv: value.NODE_ENV,
         port: value.PORT,
         mongoUri: value.MONGO_URI,

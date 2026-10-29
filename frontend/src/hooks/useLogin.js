@@ -82,7 +82,9 @@ export default function useLogin({ navigation, route }) {
               ) {
                 setError(detail.field, {
                   type: "server",
-                  message: detail.message,
+                  message: detail.field === "email"
+                    ? LOGIN_COPY.validation.email
+                    : LOGIN_COPY.validation.loginPassword,
                 });
               }
             });

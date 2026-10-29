@@ -6,7 +6,7 @@ import { IconButton } from "../common/IconButton";
 import { AppModal } from "../common/AppModal";
 import { Button } from "../common/Button";
 import { COLORS } from "../../constants/colors";
-import { RADIUS, SPACING } from "../../constants/theme";
+import { RADIUS, SHADOWS, SPACING } from "../../constants/theme";
 import { AUTH_LAYOUT_COPY as COPY } from "../../constants/auth";
 
 export default function AuthLayout({
@@ -30,18 +30,6 @@ export default function AuthLayout({
       paddingHorizontal={SPACING.screen}
       contentContainerStyle={styles.content}
     >
-      <View
-        pointerEvents="none"
-        accessible={false}
-        importantForAccessibility="no-hide-descendants"
-        style={styles.pinkShape}
-      />
-      <View
-        pointerEvents="none"
-        accessible={false}
-        importantForAccessibility="no-hide-descendants"
-        style={styles.sageShape}
-      />
       <View style={styles.header}>
         {onBack ? (
           <IconButton
@@ -55,25 +43,22 @@ export default function AuthLayout({
           <View style={styles.spacer} />
         )}
         <View style={styles.brand}>
-          <Icon icon="leaf-outline" size={24} color={COLORS.primary} />
-          <AppText color={COLORS.primary} variant="brand">
-            {COPY.brand}
-          </AppText>
+          <Icon icon="leaf-outline" size={30} color={COLORS.primary} />
         </View>
         <View style={styles.spacer} />
       </View>
       <View style={styles.hero}>
         {!!badge && (
           <View style={styles.badge}>
-            <Icon icon="leaf-outline" color={COLORS.success} size={16} />
-            <AppText variant="caption" color={COLORS.success}>
+            <Icon icon="leaf-outline" color={COLORS.primaryDark} size={16} />
+            <AppText variant="caption" color={COLORS.primaryDark}>
               {badge}
             </AppText>
           </View>
         )}
-        <AppText variant="hero">{title}</AppText>
+        <AppText variant="hero" align="center">{title}</AppText>
         {!!description && (
-          <AppText variant="bodySmall" color={COLORS.textSecondary}>
+          <AppText variant="bodySmall" color={COLORS.textSecondary} align="center">
             {description}
           </AppText>
         )}
@@ -117,73 +102,55 @@ export default function AuthLayout({
 
 const styles = StyleSheet.create({
   content: {
-    gap: SPACING.xl,
+    gap: SPACING.lg,
     paddingTop: SPACING.sm,
-    paddingBottom: SPACING.md,
+    paddingBottom: SPACING.lg,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    minHeight: 48,
+    minHeight: 64,
   },
-  brand: { flexDirection: "row", alignItems: "center", gap: SPACING.xs },
+  brand: {
+    ...SHADOWS.light,
+    width: 58,
+    height: 58,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.card,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   spacer: { width: 48 },
-  backButton: {
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  hero: { gap: SPACING.sm },
+  backButton: { backgroundColor: COLORS.card },
+  hero: { gap: SPACING.xs, alignItems: "center" },
   badge: {
     flexDirection: "row",
-    gap: SPACING.xs,
+    gap: SPACING.xxs,
     alignItems: "center",
-    alignSelf: "flex-start",
+    alignSelf: "center",
     backgroundColor: COLORS.sage,
     paddingHorizontal: SPACING.sm,
     paddingVertical: SPACING.xxs,
     borderRadius: RADIUS.pill,
   },
-  form: { gap: SPACING.md },
-  footer: {
-    marginTop: "auto",
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    paddingTop: SPACING.md,
-    gap: SPACING.sm,
-  },
+  form: { gap: SPACING.sm },
+  footer: { gap: SPACING.sm },
   footerBottom: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     gap: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
+    borderRadius: RADIUS.card,
+    backgroundColor: COLORS.surface,
   },
   trust: {
     flexDirection: "row",
-    gap: SPACING.xxs,
+    gap: SPACING.xs,
     alignItems: "center",
     flexShrink: 1,
   },
-  helpButton: { backgroundColor: COLORS.pink },
-  pinkShape: {
-    position: "absolute",
-    right: -60,
-    top: -40,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: COLORS.pink,
-    opacity: 0.3,
-  },
-  sageShape: {
-    position: "absolute",
-    left: -110,
-    top: 300,
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: COLORS.sage,
-    opacity: 0.25,
-  },
+  helpButton: { backgroundColor: COLORS.card },
 });

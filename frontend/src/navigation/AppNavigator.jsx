@@ -1,8 +1,12 @@
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Linking, StyleSheet, View } from "react-native";
+import { PasswordRecoveryScreen } from '../screens/auth/password-recovery';
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useAuth } from "../hooks/useAuth";
 import AuthStackNav from "./AuthStackNav";
-import BottomTabNav from "./BottomTabNav";
+import RootNavigator from "./RootNavigator";
+import { CollectionProvider } from "../context/CollectionContext";
+import ExpiredProductAlertModal from "../components/collection/ExpiredProductAlertModal";
 import { AppText } from "../components/common/AppText";
 import { Button } from "../components/common/Button";
 import { Snackbar } from "../components/common/Snackbar";
@@ -35,9 +39,37 @@ function BootstrapScreen() {
   );
 }
 
+function AuthenticatedApp() {
+  return (
+    <CollectionProvider>
+      <RootNavigator />
+      <ExpiredProductAlertModal />
+    </CollectionProvider>
+  );
+}
+
 export default function AppNavigator() {
   const auth = useAuth();
   const { isCheckingIntro, hasSeenIntro, handleFinishIntro } = useIntro();
+  const [recovery, setRecovery] = useState(null);
+  useEffect(() => {
+    let active = true;
+    let received = false;
+    const receive = (url) => {
+      if (!active || !url) return;
+      try {
+        const parsed = new URL(url);
+        const path = `${parsed.hostname}/${parsed.pathname}`.replace(/\/+$/, '');
+        if (!['exp:', 'exps:', 'https:', 'skinmate:'].includes(parsed.protocol) ||
+            !/(^|\/)reset-password$/.test(path)) return;
+        setRecovery({ token: parsed.searchParams.get('token') || '', id: Date.now() });
+      } catch { /* Ignore unrelated or malformed links. */ }
+    };
+    const subscription = Linking.addEventListener('url', ({ url }) => { received = true; receive(url); });
+    Linking.getInitialURL().then(url => { if (!received) receive(url); }).catch(() => {});
+    return () => { active = false; subscription.remove(); };
+  }, []);
+  if (recovery) return <PasswordRecoveryScreen key={recovery.id} token={recovery.token} onDone={() => setRecovery(null)} />;
   return (
     <>
       <Root.Navigator
@@ -52,12 +84,11 @@ export default function AppNavigator() {
           <Root.Screen name="Intro">
             {(props) => <IntroScreen {...props} onFinish={handleFinishIntro} />}
           </Root.Screen>
-        ) :
-          auth.isAuthenticated ? (
-            <Root.Screen name="MainTabs" component={BottomTabNav} />
-          ) : (
-            <Root.Screen name="Auth" component={AuthStackNav} />
-          )}
+        ) : auth.isAuthenticated ? (
+          <Root.Screen name="MainTabs" component={AuthenticatedApp} />
+        ) : (
+          <Root.Screen name="Auth" component={AuthStackNav} />
+        )}
       </Root.Navigator>
       {auth.notice && (
         <Snackbar

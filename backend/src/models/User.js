@@ -17,6 +17,20 @@ const userSchema = new mongoose.Schema(
             maxlength: 254,
         },
         passwordHash: { type: String, required: true, select: false },
+        avatarUrl: { type: String, default: null },
+        googleSubject: { type: String, default: null },
+        passwordResetTokenHash: { type: String, default: null, select: false },
+        passwordResetExpiresAt: { type: Date, default: null },
+        googleExchangeCodeHash: { type: String, default: null, select: false },
+        googleExchangeCodeExpiresAt: { type: Date, default: null },
+        skinProfile: {
+            skinType: { type: String, default: null },
+            allergies: { type: [String], default: [] },
+            currentConcerns: { type: [String], default: [] },
+        },
+        isActive: { type: Boolean, default: true },
+        lastLoginAt: { type: Date, default: null },
+        passwordChangedAt: { type: Date, default: null },
         emailVerified: { type: Boolean, default: false },
         termsAcceptedAt: { type: Date, required: true },
         termsVersion: { type: String, required: true },
@@ -27,6 +41,8 @@ const userSchema = new mongoose.Schema(
         toJSON: {
             transform(_document, value) {
                 delete value.passwordHash;
+                delete value.passwordResetTokenHash;
+                delete value.googleExchangeCodeHash;
                 return value;
             },
         },
@@ -34,5 +50,12 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.index({ email: 1 }, { unique: true });
+userSchema.index(
+    { googleSubject: 1 },
+    {
+        unique: true,
+        partialFilterExpression: { googleSubject: { $type: 'string' } },
+    }
+);
 
 module.exports = mongoose.model('User', userSchema);

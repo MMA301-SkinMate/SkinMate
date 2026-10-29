@@ -9,7 +9,7 @@ export const COLORS = {
   primaryLight: '#2dd4bf',
 
   // Backgrounds & Surfaces
-  background: '#ffffff',
+  background: '#FEFAF3',
   surface: '#f8fafc',
   card: '#ffffff',
 
@@ -20,9 +20,10 @@ export const COLORS = {
   textLight: '#ffffff',
 
   // Borders & Dividers
-  border: '#e2e8f0',
+  border: '#f1f5f9',
   borderDark: '#e2e8f0',
 
+  overlay: 'rgba(15, 23, 42, 0.62)',
   // Status & Feedback
   success: '#10b981',
   warning: '#f59e0b',

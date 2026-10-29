@@ -11,6 +11,8 @@ const createApp = (config) => {
     // Module routes are loaded after server.js has loaded the environment.
     const scanRoutes = require('./src/routes/scanRoutes');
     const authRoutes = require('./src/routes/authRoutes');
+    const collectionRoutes = require('./src/routes/collectionRoutes');
+    const notificationRoutes = require('./src/routes/notificationRoutes');
     const app = express();
     app.locals.config = config;
 
@@ -34,6 +36,8 @@ const createApp = (config) => {
     });
     app.use('/api-docs', createDocsRoutes(config));
 
+    app.use('/api/collections', collectionRoutes);
+    app.use('/api/notifications', notificationRoutes);
     app.use('/api/scan', scanRoutes);
     app.use('/api/auth', authRoutes());
     app.use(notFound);

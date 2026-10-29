@@ -90,6 +90,18 @@ export function AuthProvider({ children }) {
     };
   }, [session, enqueue]);
 
+  const logout = useCallback(async () => {
+    await enqueue(clearStoredSession);
+    restoreVersion.current += 1;
+    if (mounted.current) {
+      sessionRef.current = null;
+      setSession(null);
+      setBootstrapError(null);
+      setBooting(false);
+      setNotice({ id: Date.now(), message: "Signed out." });
+    }
+  }, [enqueue]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -100,6 +112,7 @@ export function AuthProvider({ children }) {
         isAuthenticated: Boolean(session),
         restore,
         establishSession,
+        logout,
         notice,
         dismissNotice: () => setNotice(null),
       }}

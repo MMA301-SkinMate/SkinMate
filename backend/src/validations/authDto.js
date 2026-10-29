@@ -22,10 +22,14 @@ const registerSchema = Joi.object({
             'string.email': 'Địa chỉ email chưa đúng định dạng.',
             'string.max': 'Email không được vượt quá 254 ký tự.',
         }),
-    password: Joi.string().min(8).max(128).required().messages({
+    password: Joi.string().min(8).max(128)
+        .pattern(/[A-Z]/)
+        .pattern(/[^\p{L}\p{N}\s]/u)
+        .required().messages({
         'any.required': 'Vui lòng nhập mật khẩu.',
         'string.base': 'Mật khẩu phải là chuỗi ký tự.',
         'string.empty': 'Vui lòng nhập mật khẩu.',
+        'string.pattern.base': 'Mật khẩu cần ít nhất một chữ in hoa và một ký tự đặc biệt.',
         'string.min': 'Mật khẩu cần ít nhất 8 ký tự.',
         'string.max': 'Mật khẩu không được vượt quá 128 ký tự.',
     }),
@@ -102,7 +106,22 @@ const validateLogin = validateAuthBody(
     'Thông tin đăng nhập chưa hợp lệ.'
 );
 
+const validateForgotPassword = validateAuthBody(
+    Joi.object({ email: registerSchema.extract('email') }).required(),
+    'Vui lòng nhập email hợp lệ.'
+);
+const validateResetPassword = validateAuthBody(
+    Joi.object({
+        token: Joi.string().pattern(/^[a-f0-9]{64}$/).required(),
+        password: Joi.string().min(8).max(128).required(),
+        confirmPassword: registerSchema.extract('confirmPassword'),
+    }).required(),
+    'Thông tin đặt lại mật khẩu chưa hợp lệ.'
+);
+
 module.exports = {
+    validateForgotPassword,
+    validateResetPassword,
     registerSchema,
     validateRegister,
     loginSchema,

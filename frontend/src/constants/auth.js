@@ -1,16 +1,16 @@
 export const AUTH_MESSAGES = {
-  retry: "Thử lại",
-  restoring: "Đang chuẩn bị SkinMAte…",
-  restoreFailed: "Chưa đọc được thông tin trên máy. Vui lòng thử lại.",
-  expired: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+  retry: "Try again",
+  restoring: "Preparing SkinMate…",
+  restoreFailed: "We couldn't read the information stored on this device. Please try again.",
+  expired: "Your session has expired. Please sign in again.",
 };
 
 export const AUTH_LAYOUT_COPY = {
-  brand: "SkinMAte",
-  help: "Trợ giúp",
-  helpTitle: "Hỗ trợ tài khoản",
+  brand: "SkinMate",
+  help: "Help",
+  helpTitle: "Account help",
   helpBody:
-    "Nhập email đúng định dạng. Mật khẩu đăng ký cần từ 8 đến 128 ký tự và phần xác nhận phải giống hoàn toàn. Nếu kết nối bị gián đoạn, bạn có thể thử lại hoặc đăng nhập bằng tài khoản vừa tạo.",
-  understood: "Đã hiểu",
-  trust: "Thông tin tài khoản được bảo vệ",
+    "Enter a valid email address. Registration passwords must be 8 to 128 characters, and the confirmation must match exactly. If the connection is interrupted, try again or sign in with the account you just created.",
+  understood: "Got it",
+  trust: "Your account information is protected",
 };

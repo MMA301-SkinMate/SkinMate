@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { ENV } from '../constants/env';
+import { loadAuthentication } from '../services/authStorage';
 
 const axiosClient = axios.create({
     baseURL: ENV.API_URL,
@@ -59,9 +60,13 @@ axiosClient.interceptors.request.use(
                 config.headers.delete('content-type');
             }
         }
-        if (__DEV__) {
-            console.log(`[API Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+
+        const authentication = await loadAuthentication();
+        const accessToken = authentication.session?.accessToken;
+        if (accessToken) {
+            config.headers.Authorization = `Bearer ${accessToken}`;
         }
+
         return config;
     },
     (error) => {

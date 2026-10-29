@@ -6,3 +6,5 @@ node_modules/
 .cache/
 coverage/
 *.log
+.claude
+test/
