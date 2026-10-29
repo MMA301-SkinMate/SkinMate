@@ -1,12 +1,12 @@
 import { Pressable, StyleSheet, View } from "react-native";
 import { Controller } from "react-hook-form";
-import { AppText } from "../../../components/common/AppText";
-import { Icon } from "../../../components/common/Icon";
-import { AppModal } from "../../../components/common/AppModal";
-import { COLORS as C } from "../../../constants/colors";
-import { REGISTER_COPY as COPY, POLICIES } from "../../../constants/register";
-import { SPACING } from "../../../constants/theme";
-import { TONES } from "../../../components/common/commonTheme";
+import { AppText } from "../common/AppText";
+import { Icon } from "../common/Icon";
+import { AppModal } from "../common/AppModal";
+import { COLORS as C } from "../../constants/colors";
+import { REGISTER_COPY as COPY, POLICIES } from "../../constants/register";
+import { SPACING } from "../../constants/theme";
+import { TONES } from "../common/commonTheme";
 
 export default function TermsConsent({
   control,

@@ -1,3 +1,9 @@
+export const PASSWORD_REQUIREMENTS = [
+  { id: "length", label: "8 to 128 characters", test: (value) => value.length >= 8 && value.length <= 128 },
+  { id: "uppercase", label: "At least one uppercase letter (A–Z)", test: (value) => /[A-Z]/.test(value) },
+  { id: "special", label: "At least one special character (e.g. ! @ # $)", test: (value) => /[^\p{L}\p{N}\s]/u.test(value) },
+];
+
 export const REGISTER_COPY = {
   registerEmail: "Email address",
   fullName: "Full name",
@@ -37,7 +43,7 @@ export const REGISTER_COPY = {
     name: "Please enter a full name between 2 and 100 characters.",
     email: "Please enter a valid email address.",
     emailLong: "Email must not exceed 254 characters.",
-    password: "Password must be 8 to 128 characters.",
+    password: "Use 8 to 128 characters, including an uppercase letter and a special character.",
     confirmation: "Passwords do not match.",
     consent: "You must agree to the Terms of Service and Privacy Policy.",
   },

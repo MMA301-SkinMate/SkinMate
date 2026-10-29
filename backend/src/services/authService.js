@@ -39,7 +39,7 @@ const register = async (input, config) => {
     });
 
     try {
-        const createAccount = async (transaction) => {
+        return await mongoose.connection.transaction(async (transaction) => {
             const user = new User({
                 fullName: input.fullName,
                 email,
@@ -50,39 +50,17 @@ const register = async (input, config) => {
             });
             await user.save({ session: transaction });
 
-            let tokens;
-            try {
-                tokens = await authSessionService.createInitialSession(
-                    user,
-                    config,
-                    transaction
-                );
-            } catch (error) {
-                if (!transaction) {
-                    const sessionError = new AppError(
-                        'Tài khoản đã được tạo. Vui lòng chuyển sang đăng nhập.',
-                        409,
-                        'ACCOUNT_CREATED_SESSION_FAILED'
-                    );
-                    sessionError.cause = error;
-                    throw sessionError;
-                }
-                throw error;
-            }
+            const tokens = await authSessionService.createInitialSession(
+                user,
+                config,
+                transaction
+            );
 
             return {
                 user: toPublicUser(user),
                 ...tokens,
             };
-        };
-
-        if (config.nodeEnv === 'development') {
-            const topology = await mongoose.connection.db.admin().command({ hello: 1 });
-            const supportsTransactions = Boolean(topology.setName) || topology.msg === 'isdbgrid';
-            if (!supportsTransactions) return await createAccount();
-        }
-
-        return await mongoose.connection.transaction(createAccount);
+        });
     } catch (error) {
         // The unique index is authoritative when registrations race each other.
         if (

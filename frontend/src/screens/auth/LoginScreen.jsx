@@ -2,9 +2,9 @@ import AuthLayout from "../../components/layout/AuthLayout";
 import { AlertBanner } from "../../components/common/AlertBanner";
 import { Button } from "../../components/common/Button";
 import { LOGIN_COPY as COPY } from "../../constants/login";
-import LoginForm from "./components/LoginForm";
-import LoginFooter from "./components/LoginFooter";
-import useLogin from "./hooks/useLogin";
+import LoginForm from "../../components/login/LoginForm";
+import LoginFooter from "../../components/login/LoginFooter";
+import useLogin from "../../hooks/useLogin";
 
 export default function LoginScreen(props) {
   const login = useLogin(props);

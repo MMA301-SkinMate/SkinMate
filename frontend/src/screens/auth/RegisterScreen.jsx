@@ -2,10 +2,10 @@ import AuthLayout from "../../components/layout/AuthLayout";
 import { AlertBanner } from "../../components/common/AlertBanner";
 import { Button } from "../../components/common/Button";
 import { REGISTER_COPY as COPY, CAN_REGISTER } from "../../constants/register";
-import RegisterForm from "./components/RegisterForm";
-import TermsConsent from "./components/TermsConsent";
-import RegisterFooter from "./components/RegisterFooter";
-import useRegister from "./hooks/useRegister";
+import RegisterForm from "../../components/register/RegisterForm";
+import TermsConsent from "../../components/register/TermsConsent";
+import RegisterFooter from "../../components/register/RegisterFooter";
+import useRegister from "../../hooks/useRegister";
 
 export default function RegisterScreen(props) {
   const register = useRegister(props);
@@ -28,7 +28,6 @@ export default function RegisterScreen(props) {
       <RegisterForm
         form={register.form}
         disabled={register.disabled}
-        passwordHelperText={register.passwordHelperText}
         confirmationHelperText={register.confirmationHelperText}
       />
       <TermsConsent

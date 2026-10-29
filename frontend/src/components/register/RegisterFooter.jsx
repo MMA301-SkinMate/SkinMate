@@ -1,21 +1,21 @@
 import { StyleSheet, View } from "react-native";
-import { AppText } from "../../../components/common/AppText";
-import { Button } from "../../../components/common/Button";
-import { COLORS } from "../../../constants/colors";
-import { SPACING } from "../../../constants/theme";
-import { LOGIN_COPY as COPY } from "../../../constants/login";
+import { AppText } from "../common/AppText";
+import { Button } from "../common/Button";
+import { COLORS } from "../../constants/colors";
+import { SPACING } from "../../constants/theme";
+import { REGISTER_COPY as COPY } from "../../constants/register";
 
-export default function LoginFooter({ busy, onRegister }) {
+export default function RegisterFooter({ busy, onLogin }) {
   return (
     <View style={styles.row}>
       <AppText variant="bodySmall" color={COLORS.textSecondary}>
-        {COPY.noAccount}
+        {COPY.hasAccount}
       </AppText>
       <Button
-        title={COPY.openRegister}
+        title={COPY.loginAction}
         variant="ghost"
         disabled={busy}
-        onPress={onRegister}
+        onPress={onLogin}
         size="sm"
       />
     </View>

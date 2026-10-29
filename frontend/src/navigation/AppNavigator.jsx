@@ -13,6 +13,8 @@ import { Snackbar } from "../components/common/Snackbar";
 import { AUTH_MESSAGES as COPY } from "../constants/auth";
 import { COLORS as C } from "../constants/colors";
 import { SPACING } from "../constants/theme";
+import { useIntro } from "../hooks/useIntro";
+import IntroScreen from "../screens/intro/IntroScreen";
 
 const Root = createNativeStackNavigator();
 
@@ -48,6 +50,7 @@ function AuthenticatedApp() {
 
 export default function AppNavigator() {
   const auth = useAuth();
+  const { isCheckingIntro, hasSeenIntro, handleFinishIntro } = useIntro();
   const [recovery, setRecovery] = useState(null);
   useEffect(() => {
     let active = true;
@@ -75,8 +78,12 @@ export default function AppNavigator() {
           contentStyle: { backgroundColor: C.background },
         }}
       >
-        {auth.booting || auth.bootstrapError ? (
+        {isCheckingIntro || auth.booting || auth.bootstrapError ? (
           <Root.Screen name="Bootstrap" component={BootstrapScreen} />
+        ) : !hasSeenIntro ? (
+          <Root.Screen name="Intro">
+            {(props) => <IntroScreen {...props} onFinish={handleFinishIntro} />}
+          </Root.Screen>
         ) : auth.isAuthenticated ? (
           <Root.Screen name="MainTabs" component={AuthenticatedApp} />
         ) : (

@@ -3,9 +3,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { usePreventRemove } from "@react-navigation/native";
 import { z } from "zod";
-import authApi from "../../../api/authApi";
-import { useAuth } from "../../../hooks/useAuth";
-import { LOGIN_COPY } from "../../../constants/login";
+import authApi from "../api/authApi";
+import { useAuth } from "../hooks/useAuth";
+import { LOGIN_COPY } from "../constants/login";
 
 const loginSchema = z.object({
   email: z
@@ -40,7 +40,7 @@ export default function useLogin({ navigation, route }) {
   });
   const { setValue, setError, clearErrors, getValues } = form;
 
-  usePreventRemove(networkBusy, () => {});
+  usePreventRemove(networkBusy, () => { });
   useEffect(() => {
     mounted.current = true;
     return () => {

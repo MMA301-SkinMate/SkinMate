@@ -3,12 +3,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { usePreventRemove } from "@react-navigation/native";
 import { z } from "zod";
-import authApi from "../../../api/authApi";
-import { useAuth } from "../../../hooks/useAuth";
+import authApi from "../api/authApi";
+import { useAuth } from "./useAuth";
 import {
   REGISTER_COPY as COPY,
   CAN_REGISTER,
-} from "../../../constants/register";
+  PASSWORD_REQUIREMENTS,
+} from "../constants/register";
 
 const registerSchema = z
   .object({
@@ -26,7 +27,8 @@ const registerSchema = z
     password: z
       .string()
       .min(8, COPY.validation.password)
-      .max(128, COPY.validation.password),
+      .max(128, COPY.validation.password)
+      .refine((value) => PASSWORD_REQUIREMENTS.every((rule) => rule.test(value)), COPY.validation.password),
     confirmPassword: z.string(),
     acceptedTerms: z
       .boolean()
@@ -66,7 +68,7 @@ export default function useRegister({ navigation, route }) {
   const password = watch("password");
   const confirmation = watch("confirmPassword");
 
-  usePreventRemove(networkBusy, () => {});
+  usePreventRemove(networkBusy, () => { });
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -126,8 +128,6 @@ export default function useRegister({ navigation, route }) {
               }
             });
           setFeedback(COPY.errors.validation);
-        } else if (error.data?.error?.code === 'ACCOUNT_CREATED_SESSION_FAILED') {
-          setFeedback('Your account was created, but sign-in could not be completed. Please switch to Sign in.');
         } else if (error.status === 409) {
           setError("email", { type: "server", message: COPY.errors.duplicate });
           setFeedback(COPY.errors.duplicate);
@@ -188,10 +188,6 @@ export default function useRegister({ navigation, route }) {
     policy,
     helpVisible,
     disabled: busy || Boolean(pendingSession),
-    passwordHelperText:
-      password.length >= 8 && password.length <= 128
-        ? COPY.passwordValid
-        : COPY.passwordHint,
     confirmationHelperText: confirmation
       ? confirmation === password
         ? COPY.passwordsMatch

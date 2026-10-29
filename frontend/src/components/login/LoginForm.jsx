@@ -1,8 +1,8 @@
 import { Controller } from "react-hook-form";
-import { AuthTextField, AuthPasswordField } from "../../../components/layout/auth-field";
-import { Icon } from "../../../components/common/Icon";
-import { COLORS as C } from "../../../constants/colors";
-import { LOGIN_COPY as COPY } from "../../../constants/login";
+import { AuthTextField, AuthPasswordField } from "../layout/auth-field";
+import { Icon } from "../common/Icon";
+import { COLORS as C } from "../../constants/colors";
+import { LOGIN_COPY as COPY } from "../../constants/login";
 
 const LoginField = ({ form, name, password, next, ...props }) => {
   const Field = password ? AuthPasswordField : AuthTextField;

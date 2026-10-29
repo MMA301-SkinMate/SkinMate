@@ -40,7 +40,7 @@ export default function BottomTabNav() {
       <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: 'Home', tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} /> }} />
       <Tab.Screen name="Collection" component={MyCollectionScreen} options={{ tabBarLabel: 'Collection', tabBarIcon: ({ color, size }) => <Ionicons name="albums-outline" size={size} color={color} /> }} />
       <Tab.Screen name="Scan" component={ScanScreen} options={{ tabBarLabel: () => null, tabBarButton: props => <CustomScanButton {...props} /> }} />
-      <Tab.Screen name="Community" component={CommunityScreen} options={{ tabBarLabel: 'Communityg', tabBarIcon: ({ color, size }) => <Ionicons name="grid-outline" size={size} color={color} /> }} />
+      <Tab.Screen name="Community" component={CommunityScreen} options={{ tabBarLabel: 'Community', tabBarIcon: ({ color, size }) => <Ionicons name="grid-outline" size={size} color={color} /> }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: 'Profile', tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} /> }} />
     </Tab.Navigator>
   );
