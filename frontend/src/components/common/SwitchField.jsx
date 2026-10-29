@@ -39,8 +39,8 @@ export const SwitchField = ({
       disabled={disabled}
       accessibilityLabel={props.accessibilityLabel || label}
       accessibilityState={{ disabled, checked: value }}
-      trackColor={{ false: "#AAB4A4", true: COLORS.primary }}
-      thumbColor="#FFFFFF"
+      trackColor={{ false: COLORS.borderDark, true: COLORS.primary }}
+      thumbColor={COLORS.textLight}
     />
   </View>
 );

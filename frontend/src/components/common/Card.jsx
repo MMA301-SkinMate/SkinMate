@@ -15,7 +15,7 @@ export const Card = ({
     padding,
     borderRadius: RADIUS.card,
     borderWidth: 1,
-    borderColor: "#E1E3DA",
+    borderColor: COLORS.borderDark,
     backgroundColor:
       { cream: COLORS.background, pink: COLORS.pink, sage: COLORS.sage }[
         variant

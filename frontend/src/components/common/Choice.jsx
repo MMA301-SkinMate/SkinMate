@@ -35,7 +35,7 @@ export const Choice = ({
           ? TONES.error.foreground
           : checked
             ? COLORS.primary
-            : "#AAB4A4",
+            : COLORS.borderDark,
         backgroundColor: checked ? COLORS.sage : COLORS.card,
         opacity: disabled ? 0.5 : pressed ? 0.75 : 1,
       },

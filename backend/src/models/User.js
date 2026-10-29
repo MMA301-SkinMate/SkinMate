@@ -2,46 +2,25 @@ const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema(
     {
-        email: {
-            type: String,
-            required: true,
-            unique: true,
-            lowercase: true,
-            trim: true,
-        },
-        passwordHash: {
-            type: String,
-            required: true,
-        },
         fullName: {
             type: String,
             required: true,
             trim: true,
+            minlength: 2,
+            maxlength: 100,
         },
-        avatarUrl: {
+        email: {
             type: String,
-            default: null,
+            required: true,
+            trim: true,
+            lowercase: true,
+            maxlength: 254,
         },
-        googleSubject: {
-            type: String,
-            default: null,
-        },
-        passwordResetTokenHash: {
-            type: String,
-            default: null,
-        },
-        passwordResetExpiresAt: {
-            type: Date,
-            default: null,
-        },
-        googleExchangeCodeHash: {
-            type: String,
-            default: null,
-        },
-        googleExchangeCodeExpiresAt: {
-            type: Date,
-            default: null,
-        },
+        passwordHash: { type: String, required: true, select: false },
+        emailVerified: { type: Boolean, default: false },
+        termsAcceptedAt: { type: Date, required: true },
+        termsVersion: { type: String, required: true },
+        privacyVersion: { type: String, required: true },
         skinProfile: {
             skinType: {
                 type: String,
@@ -64,25 +43,18 @@ const userSchema = new mongoose.Schema(
                 default: [],
             }
         },
-        isActive: {
-            type: Boolean,
-            default: true,
-        },
-        lastLoginAt: {
-            type: Date,
-            default: null,
-        },
-        passwordChangedAt: {
-            type: Date,
-            default: null,
-        },
     },
-    { timestamps: true }
-);
+    {
+        timestamps: true,
+        toJSON: {
+            transform(_document, value) {
+                delete value.passwordHash;
+                return value;
+            },
+        },
+    }
+)
 
-userSchema.index(
-    { googleSubject: 1 },
-    { unique: true, sparse: true }
-);
+userSchema.index({ email: 1 }, { unique: true });
 
 module.exports = mongoose.model('User', userSchema);

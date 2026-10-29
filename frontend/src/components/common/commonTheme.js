@@ -3,36 +3,36 @@ import { isLoaded } from "expo-font";
 import { COLORS } from "../../constants/colors";
 import { FONT_FAMILIES } from "../../constants/fonts";
 
-// Accessible foregrounds for new common components; legacy colors stay intact.
+// Feedback components use the same palette as every screen.
 export const TONES = {
   neutral: {
-    background: "#F2F0E9",
+    background: COLORS.surface,
     foreground: COLORS.textSecondary,
-    border: "#D8DCD2",
+    border: COLORS.borderDark,
     icon: "information-circle-outline",
   },
   success: {
-    background: "#E6F0E1",
-    foreground: "#31583A",
-    border: "#B8CFB3",
+    background: COLORS.sage,
+    foreground: COLORS.primaryDark,
+    border: COLORS.olive,
     icon: "checkmark-circle-outline",
   },
   warning: {
-    background: "#FFF0DC",
-    foreground: "#845000",
-    border: "#D6B780",
+    background: COLORS.background,
+    foreground: COLORS.textMain,
+    border: COLORS.warning,
     icon: "warning-outline",
   },
   error: {
-    background: "#FCE8E9",
-    foreground: "#A7283D",
-    border: "#D98C98",
+    background: COLORS.pink,
+    foreground: COLORS.error,
+    border: COLORS.error,
     icon: "alert-circle-outline",
   },
   info: {
-    background: "#E8EFF4",
-    foreground: "#34556B",
-    border: "#A9BECD",
+    background: COLORS.surface,
+    foreground: COLORS.primaryDark,
+    border: COLORS.info,
     icon: "information-circle-outline",
   },
 };

@@ -16,7 +16,7 @@ const safeParseJson = (rawText) => {
     if (mdMatch && mdMatch[1]) {
         try {
             return JSON.parse(mdMatch[1].trim());
-        } catch (_) {}
+        } catch (_) { }
     }
     // 2. Try outermost braces {}
     const firstBrace = text.indexOf('{');
@@ -24,7 +24,7 @@ const safeParseJson = (rawText) => {
     if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
         try {
             return JSON.parse(text.slice(firstBrace, lastBrace + 1));
-        } catch (_) {}
+        } catch (_) { }
     }
     // 3. Try outermost brackets []
     const firstBracket = text.indexOf('[');
@@ -32,7 +32,7 @@ const safeParseJson = (rawText) => {
     if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
         try {
             return JSON.parse(text.slice(firstBracket, lastBracket + 1));
-        } catch (_) {}
+        } catch (_) { }
     }
     // 4. Direct parse safely
     try {
@@ -145,8 +145,21 @@ const readIngredientsFromImage = async (file) => {
                 return normalized;
             }
         } catch (error) {
-            console.warn(`[geminiService] Model ${model} failed in readIngredientsFromImage:`, error.message || error);
+            console.warn(
+                `[geminiService] Model ${model} failed:`,
+                error.message || error
+            );
             lastError = error;
+            // If rate-limited or unavailable, continue to next model
+            if (
+                error.status === 429 ||
+                error.status === 503 ||
+                error.message?.includes('quota') ||
+                error.message?.includes('high demand')
+            ) {
+                continue;
+            }
+            // For other critical errors, rethrow or try next model
             continue;
         }
     }
@@ -168,7 +181,7 @@ const analyzeProductByScores = async ({
         ? userClosetProducts.map(p => `- ${p.productName} (${p.productType}): [${(p.ingredients || []).join(', ')}]`).join('\n')
         : 'There is no product in the closet.';
 
-    const ingredientsStr = ingredients.length > 0 
+    const ingredientsStr = ingredients.length > 0
         ? ingredients.join(', ')
         : 'Chưa có thông tin thành phần cụ thể (phân tích dựa trên tên và phân loại sản phẩm)';
 
@@ -212,7 +225,7 @@ const analyzeProductByScores = async ({
 
     const normalizeResult = (parsed = {}) => {
         const defaultBadge = contextualScore >= 80 ? 'success' : contextualScore >= 50 ? 'warning' : 'danger';
-        
+
         const verdict = typeof parsed.verdict === 'object' && parsed.verdict !== null
             ? {
                 text: parsed.verdict.text || `Sản phẩm có độ phù hợp bối cảnh là ${contextualScore}%.`,

@@ -1,4 +1,4 @@
-import { COLORS } from './colors';
+import { COLORS, withOpacity } from './colors';
 import { FONT_FAMILIES } from './fonts';
 
 export { FONT_FAMILIES } from './fonts';
@@ -23,6 +23,11 @@ export const RADIUS = {
     card: 20,
     cardLarge: 24,
     pill: 999,
+};
+
+export const OVERLAY = {
+    backdropColor: withOpacity(COLORS.shadow, 0.4),
+    blurIntensity: 35,
 };
 
 // Inter is the safe default for Vietnamese. Use getHeadingStyle for Poppins
@@ -95,5 +100,6 @@ export const THEME = {
     SPACING,
     TYPOGRAPHY,
     RADIUS,
+    OVERLAY,
     FONT_FAMILIES,
 };

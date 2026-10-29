@@ -59,6 +59,9 @@ axiosClient.interceptors.request.use(
                 config.headers.delete('content-type');
             }
         }
+        if (__DEV__) {
+            console.log(`[API Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+        }
         return config;
     },
     (error) => {
@@ -71,6 +74,9 @@ axiosClient.interceptors.response.use(
         return response.data;
     },
     (error) => {
+        if (__DEV__) {
+            console.warn(`[API Error] ${error.config?.baseURL}${error.config?.url}:`, error.message, error.response?.status || 'No Response');
+        }
         const customError = {
             status: error.response?.status || (error.request ? 0 : 500),
             message:

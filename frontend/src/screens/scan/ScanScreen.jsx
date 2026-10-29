@@ -11,130 +11,130 @@ import ScanResultModal from '../../components/scan/ScanResultModal';
 import { Ionicons } from '@expo/vector-icons';
 
 const ScanScreen = ({ navigation }) => {
-    const {
-        cameraRef,
-        facing,
-        flash,
-        permission,
-        isLoading,
-        isModalVisible,
-        scannedData,
-        capturedImageUri,
-        requestPermission,
-        toggleFlash,
-        toggleFacing,
-        handleCapture,
-        handleCloseModal,
-        handleUploadImage,
-        handleScanHistory,
-    } = useScan(navigation);
+  const {
+    cameraRef,
+    facing,
+    flash,
+    permission,
+    isLoading,
+    isModalVisible,
+    scannedData,
+    capturedImageUri,
+    requestPermission,
+    toggleFlash,
+    toggleFacing,
+    handleCapture,
+    handleCloseModal,
+    handleUploadImage,
+    handleScanHistory,
+  } = useScan(navigation);
 
-    const insets = useSafeAreaInsets();
+  const insets = useSafeAreaInsets();
 
-    // Loading permission state
-    if (!permission) {
-        return <View style={styles.container} />;
-    }
+  // Loading permission state
+  if (!permission) {
+    return <View style={styles.container} />;
+  }
 
-    // Permission not granted -> Request access view
-    if (!permission.granted) {
-        return (
-            <ScanPermissionView
-                permission={permission}
-                requestPermission={requestPermission}
-            />
-        );
-    }
-
-    const handleTestWithMockData = () => {
-        const mockIngredients = [
-            'Water',
-            'Glycerin',
-            'Niacinamide',
-            'Hyaluronic Acid',
-            'Salicylic Acid',
-            'Phenoxyethanol'
-        ];
-
-        navigation.navigate('ProductInfoDetail', { ingredientList: mockIngredients });
-    };
+  // Permission not granted -> Request access view
+  if (!permission.granted) {
     return (
-        <View style={styles.container}>
-            <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-
-            {/* ── Top Header ── */}
-            <ScanHeader
-                insets={insets}
-                flash={flash}
-                toggleFlash={toggleFlash}
-                toggleFacing={toggleFacing}
-            />
-
-            {/* ── Center Camera Area ── */}
-            <CameraViewfinder
-                cameraRef={cameraRef}
-                facing={facing}
-                flash={flash}
-                capturedImageUri={capturedImageUri}
-            />
-
-            {/* ── Bottom Controls Bar ── */}
-            <ScanControls
-                insets={insets}
-                handleUploadImage={handleUploadImage}
-                handleCapture={handleCapture}
-                handleScanHistory={handleScanHistory}
-            />
-
-            <ScanLoadingOverlay visible={isLoading} />
-
-            {isModalVisible && (
-                <ScanResultModal
-                    ingredients={
-                        Array.isArray(scannedData)
-                            ? scannedData
-                            : (scannedData?.ingredients || scannedData?.ingredientList || [])
-                    }
-                    onClose={handleCloseModal}
-                />
-            )}
-
-            <TouchableOpacity
-                style={styles.devMockBtn}
-                onPress={handleTestWithMockData}
-                activeOpacity={0.8}
-            >
-                <Ionicons name="bug-outline" size={18} color="#FFF" />
-                <Text style={styles.devMockText}>Test Nhanh (Mock Data)</Text>
-            </TouchableOpacity>
-        </View>
+      <ScanPermissionView
+        permission={permission}
+        requestPermission={requestPermission}
+      />
     );
+  }
+
+  const handleTestWithMockData = () => {
+    const mockIngredients = [
+      'Water',
+      'Glycerin',
+      'Niacinamide',
+      'Hyaluronic Acid',
+      'Salicylic Acid',
+      'Phenoxyethanol'
+    ];
+
+    navigation.navigate('ProductInfoDetail', { ingredientList: mockIngredients });
+  }
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+
+      {/* ── Top Header ── */}
+      <ScanHeader
+        insets={insets}
+        flash={flash}
+        toggleFlash={toggleFlash}
+        toggleFacing={toggleFacing}
+      />
+
+      {/* ── Center Camera Area ── */}
+      <CameraViewfinder
+        cameraRef={cameraRef}
+        facing={facing}
+        flash={flash}
+        capturedImageUri={capturedImageUri}
+      />
+
+      {/* ── Bottom Controls Bar ── */}
+      <ScanControls
+        insets={insets}
+        handleUploadImage={handleUploadImage}
+        handleCapture={handleCapture}
+        handleScanHistory={handleScanHistory}
+      />
+
+      <ScanLoadingOverlay visible={isLoading} />
+
+      {isModalVisible && (
+        <ScanResultModal
+          ingredients={
+            Array.isArray(scannedData)
+              ? scannedData
+              : (scannedData?.ingredients || scannedData?.ingredientList || [])
+          }
+          onClose={handleCloseModal}
+        />
+      )}
+
+      <TouchableOpacity
+        style={styles.devMockBtn}
+        onPress={handleTestWithMockData}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="bug-outline" size={18} color="#FFF" />
+        <Text style={styles.devMockText}>Test Nhanh (Mock Data)</Text>
+      </TouchableOpacity>
+    </View>
+  );
 }
 
 export default ScanScreen;
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: COLORS.shadow,
-        justifyContent: 'space-between',
-    },
-    devMockBtn: {
-        position: 'absolute',
-        top: 60,
-        right: 20,
-        flexDirection: 'row',
-        backgroundColor: 'rgba(239, 68, 68, 0.85)', // Màu đỏ nổi bật cho chế độ dev
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 20,
-        alignItems: 'center',
-        gap: 6,
-        zIndex: 999,
-    },
-    devMockText: {
-        color: '#FFF',
-        fontSize: 12,
-        fontWeight: '700',
-    },
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.shadow,
+    justifyContent: 'space-between',
+  },
+  devMockBtn: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    flexDirection: 'row',
+    backgroundColor: 'rgba(239, 68, 68, 0.85)', // Màu đỏ nổi bật cho chế độ dev
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    alignItems: 'center',
+    gap: 6,
+    zIndex: 999,
+  },
+  devMockText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
 });

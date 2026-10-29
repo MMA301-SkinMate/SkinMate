@@ -75,7 +75,7 @@ const BottomTabNav = () => {
         name="Community"
         component={CommunityScreen}
         options={{
-          tabBarLabel: "Communityg",
+          tabBarLabel: "Community",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="grid-outline" size={size} color={color} />
           ),
