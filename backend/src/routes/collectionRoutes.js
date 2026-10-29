@@ -1,8 +1,11 @@
 const express = require('express');
 const controller = require('../controllers/collectionController');
 const validate = require('../validations/collectionDto');
+const authenticate = require('../middlewares/authMiddleware');
 const uploadProductImage = require('../middlewares/productImageUploadMiddleware');
 const router = express.Router();
+
+router.use(authenticate);
 router.get('/', controller.list);
 router.post('/image', (req, res, next) => {
   uploadProductImage.single('image')(req, res, error => {

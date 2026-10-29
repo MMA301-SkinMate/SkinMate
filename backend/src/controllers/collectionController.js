@@ -1,8 +1,6 @@
 const Collection = require('../models/Collection');
 const { uploadToCloudinary } = require('../services/cloudinaryService');
 
-const DEFAULT_USER_ID = '6ad620492ae8913ed1eb2871';
-
 const fields = [
   'productName',
   'productType',
@@ -47,8 +45,7 @@ exports.uploadImage = async (req, res, next) => {
 
 exports.list = async (req, res, next) => {
   try {
-    const userId = req.user?.id || req.userId || DEFAULT_USER_ID;
-    const filter = userId ? { userId } : {};
+    const filter = { userId: req.user.id };
     if (req.query.status) {
       filter.status = req.query.status;
     }
@@ -61,11 +58,10 @@ exports.list = async (req, res, next) => {
 
 exports.create = async (req, res, next) => {
   try {
-    const userId = req.user?.id || req.userId || DEFAULT_USER_ID;
     const product = await Collection.create({
       status: req.body.status || 'active',
       ...req.body,
-      userId,
+      userId: req.user.id,
     });
     res.status(201).json({ product: serialize(product) });
   } catch (error) {
@@ -75,7 +71,7 @@ exports.create = async (req, res, next) => {
 
 exports.get = async (req, res, next) => {
   try {
-    const product = await Collection.findById(req.params.id).lean();
+    const product = await Collection.findOne({ _id: req.params.id, userId: req.user.id }).lean();
     return product ? res.json({ product: serialize(product) }) : notFound(res);
   } catch (error) {
     next(error);
@@ -84,7 +80,11 @@ exports.get = async (req, res, next) => {
 
 exports.update = async (req, res, next) => {
   try {
-    const product = await Collection.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after', runValidators: true });
+    const product = await Collection.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user.id },
+      req.body,
+      { returnDocument: 'after', runValidators: true }
+    );
     return product ? res.json({ product: serialize(product) }) : notFound(res);
   } catch (error) {
     next(error);
@@ -93,7 +93,9 @@ exports.update = async (req, res, next) => {
 
 exports.remove = async (req, res, next) => {
   try {
-    return await Collection.findByIdAndDelete(req.params.id) ? res.status(204).send() : notFound(res);
+    return await Collection.findOneAndDelete({ _id: req.params.id, userId: req.user.id })
+      ? res.status(204).send()
+      : notFound(res);
   } catch (error) {
     next(error);
   }

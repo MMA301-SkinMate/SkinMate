@@ -22,23 +22,23 @@ import { getProductIcon } from '../../constants/product-icons';
 import { useCollection } from '../../context/CollectionContext';
 
 const TYPE_LABELS = {
-  cleanser: 'Sữa rửa mặt',
+  cleanser: 'Cleanser',
   toner: 'Toner',
-  essences: 'Tinh chất (Essence)',
-  cream: 'Kem dưỡng',
-  oil: 'Dầu dưỡng (Oil)',
-  serum: 'Serum & Tinh chất',
-  treatment: 'Đặc trị (Treatment)',
-  moisturizer: 'Dưỡng ẩm (Moisturizer)',
-  sunscreen: 'Chống nắng',
-  mask: 'Mặt nạ',
-  exfoliant: 'Tẩy tế bào chết',
-  others: 'Khác',
-  other: 'Khác',
+  essences: 'Essence',
+  cream: 'Cream',
+  oil: 'Face oil',
+  serum: 'Serum',
+  treatment: 'Treatment',
+  moisturizer: 'Moisturizer',
+  sunscreen: 'Sunscreen',
+  mask: 'Face mask',
+  exfoliant: 'Exfoliant',
+  others: 'Other',
+  other: 'Other',
 };
 
 function formatDate(value) {
-  return value ? new Intl.DateTimeFormat('vi-VN').format(new Date(value)) : 'Chưa cập nhật';
+  return value ? new Intl.DateTimeFormat('en-US').format(new Date(value)) : 'Not updated';
 }
 
 function getDaysLeft(expirationDate) {
@@ -47,9 +47,9 @@ function getDaysLeft(expirationDate) {
 }
 
 function formatPao(paoDays) {
-  if (!paoDays) return 'Chưa cập nhật PAO';
+  if (!paoDays) return 'PAO not set';
   if (paoDays % 30 === 0) return `PAO ${paoDays / 30}M`;
-  return `PAO ${paoDays} ngày`;
+  return `PAO ${paoDays} days`;
 }
 
 export default function ProductDetailModal({ route, navigation }) {
@@ -91,31 +91,31 @@ export default function ProductDetailModal({ route, navigation }) {
 
     if (nextRemaining === 0) {
       Alert.alert(
-        'Đã dùng hết sản phẩm?',
-        'Dung tích đã về 0%. Bạn có muốn chuyển sản phẩm sang danh sách "Đã dùng hết"?',
+        'Product used up?',
+        'The amount remaining is 0%. Move this product to the "Used up" list?',
         [
           {
-            text: 'Chỉ đặt 0%',
+            text: 'Only set to 0%',
             onPress: async () => {
               setIsSaving(true);
               try {
                 await updateProduct(product.id, { remainingPercent: 0 });
                 setRemaining(0);
               } catch (error) {
-                Alert.alert('Không thể cập nhật', error.message || 'Vui lòng thử lại.');
+                Alert.alert('Unable to update', error.message || 'Please try again.');
               } finally {
                 setIsSaving(false);
               }
             },
           },
           {
-            text: 'Đánh dấu dùng hết',
+            text: 'Mark as used up',
             onPress: async () => {
               try {
                 await markAsEmpty(product.id);
                 navigation.goBack();
               } catch (error) {
-                Alert.alert('Không thể cập nhật', error.message || 'Vui lòng thử lại.');
+                Alert.alert('Unable to update', error.message || 'Please try again.');
               }
             },
           },
@@ -129,23 +129,23 @@ export default function ProductDetailModal({ route, navigation }) {
       await updateProduct(product.id, { remainingPercent: nextRemaining });
       setRemaining(nextRemaining);
     } catch (error) {
-      Alert.alert('Không thể cập nhật', error.message || 'Vui lòng thử lại.');
+      Alert.alert('Unable to update', error.message || 'Please try again.');
     } finally {
       setIsSaving(false);
     }
   };
 
   const confirmFinish = () => {
-    Alert.alert('Đánh dấu đã dùng hết?', 'Sản phẩm sẽ chuyển sang danh sách đã dùng hết và đặt dung tích về 0%.', [
-      { text: 'Huỷ', style: 'cancel' },
+    Alert.alert('Mark as used up?', 'The product will move to the used-up list with 0% remaining.', [
+      { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Đánh dấu hết',
+        text: 'Mark as used up',
         onPress: async () => {
           try {
             await markAsEmpty(product.id);
             navigation.goBack();
           } catch (error) {
-            Alert.alert('Không thể cập nhật', error.message || 'Vui lòng thử lại.');
+            Alert.alert('Unable to update', error.message || 'Please try again.');
           }
         },
       },
@@ -153,16 +153,16 @@ export default function ProductDetailModal({ route, navigation }) {
   };
 
   const confirmRestore = () => {
-    Alert.alert('Dùng lại sản phẩm?', 'Sản phẩm sẽ được khôi phục về danh sách "Đang sử dụng".', [
-      { text: 'Huỷ', style: 'cancel' },
+    Alert.alert('Use this product again?', 'The product will be restored to the "Currently using" list.', [
+      { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Khôi phục',
+        text: 'Restore',
         onPress: async () => {
           try {
             await restoreProduct(product.id, 100);
             navigation.goBack();
           } catch (error) {
-            Alert.alert('Không thể khôi phục', error.message || 'Vui lòng thử lại.');
+            Alert.alert('Unable to restore', error.message || 'Please try again.');
           }
         },
       },
@@ -170,16 +170,16 @@ export default function ProductDetailModal({ route, navigation }) {
   };
 
   const confirmArchive = () => {
-    Alert.alert('Lưu trữ sản phẩm?', 'Sản phẩm sẽ được chuyển vào danh sách đã hoàn tất.', [
-      { text: 'Huỷ', style: 'cancel' },
+    Alert.alert('Archive product?', 'The product will move to the completed list.', [
+      { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Lưu trữ',
+        text: 'Archive',
         onPress: async () => {
           try {
             await updateProduct(product.id, { status: 'archived' });
             navigation.goBack();
           } catch (error) {
-            Alert.alert('Không thể lưu trữ', error.message || 'Vui lòng thử lại.');
+            Alert.alert('Unable to archive', error.message || 'Please try again.');
           }
         },
       },
@@ -187,17 +187,17 @@ export default function ProductDetailModal({ route, navigation }) {
   };
 
   const confirmDelete = () => {
-    Alert.alert('Xoá sản phẩm?', 'Thao tác này không thể hoàn tác.', [
-      { text: 'Huỷ', style: 'cancel' },
+    Alert.alert('Delete product?', 'This action cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Xoá',
+        text: 'Delete',
         style: 'destructive',
         onPress: async () => {
           try {
             await deleteProduct(product.id);
             navigation.goBack();
           } catch (error) {
-            Alert.alert('Không thể xoá', error.message || 'Vui lòng thử lại.');
+            Alert.alert('Unable to delete', error.message || 'Please try again.');
           }
         },
       },
@@ -208,15 +208,15 @@ export default function ProductDetailModal({ route, navigation }) {
   const productIcon = getProductIcon(product.productIcon || product.iconId, productType);
   const routineTimeText =
     product.routineUsage?.morning && product.routineUsage?.evening
-      ? 'Sáng (AM) & Tối (PM)'
+      ? 'Morning (AM) & Evening (PM)'
       : product.routineUsage?.morning
-      ? 'Buổi sáng (AM)'
+      ? 'Morning (AM)'
       : product.routineUsage?.evening
-      ? 'Buổi tối (PM)'
-      : product.routine || 'Chưa thiết lập';
+      ? 'Evening (PM)'
+      : product.routine || 'Not set';
   const routineStepText = product.routineUsage?.step
-    ? `Bước ${product.routineUsage.step} trong quy trình`
-    : 'Chưa thiết lập thứ tự routine';
+    ? `Step ${product.routineUsage.step} in your routine`
+    : 'Routine order not set';
   const hasAnalysis = product.analysisResult && (
     product.analysisResult.verdict ||
     product.analysisResult.conflictResolution ||
@@ -233,7 +233,7 @@ export default function ProductDetailModal({ route, navigation }) {
         <View style={styles.header}>
           <View style={styles.headerTitleRow}>
             <View style={styles.leafIcon}><Leaf size={21} color={Colors.primaryDark} /></View>
-            <Text style={styles.headerTitle} numberOfLines={1}>VANITY SHELF • NGĂN {TYPE_LABELS[productType]?.toUpperCase() || 'SKINCARE'}</Text>
+            <Text style={styles.headerTitle} numberOfLines={1}>VANITY SHELF •{TYPE_LABELS[productType]?.toUpperCase() || 'SKINCARE'}</Text>
           </View>
           <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
             <X size={24} color={Colors.text} />
@@ -259,33 +259,33 @@ export default function ProductDetailModal({ route, navigation }) {
               )}
             </View>
             <View style={styles.heroCopy}>
-              <View style={styles.categoryBadge}><FlaskConical size={15} color={Colors.primaryDark} /><Text style={styles.categoryText}>{TYPE_LABELS[productType] || 'Chăm sóc da'}</Text></View>
+              <View style={styles.categoryBadge}><FlaskConical size={15} color={Colors.primaryDark} /><Text style={styles.categoryText}>{TYPE_LABELS[productType] || 'Skincare'}</Text></View>
               <Text style={styles.productName} numberOfLines={2}>{product.name || product.productName}</Text>
-              <Text style={styles.brandText} numberOfLines={1}>{product.brand || 'Tủ đồ SkinMate'} • {product.size || 'Dung tích chuẩn'}</Text>
+              <Text style={styles.brandText} numberOfLines={1}>{product.brand || 'SkinMate Collection'} • {product.size || 'Standard size'}</Text>
               {isFinished ? (
                 <View style={[styles.openBadge, styles.finishedBadge]}>
                   <View style={[styles.statusDot, styles.finishedDot]} />
-                  <Text style={styles.finishedBadgeText}>Đã dùng hết</Text>
+                  <Text style={styles.finishedBadgeText}>Used up</Text>
                 </View>
               ) : isExpired ? (
                 <View style={[styles.openBadge, styles.expiredActiveBadge]}>
                   <AlertTriangle size={12} color={Colors.error} />
                   <Text style={styles.expiredActiveBadgeText}>
-                    Đã hết hạn ({daysLeft !== null ? Math.abs(daysLeft) : 0} ngày) • Tiếp tục dùng
+                    Expired ({daysLeft !== null ? Math.abs(daysLeft) : 0} days) • Still in use
                   </Text>
                 </View>
               ) : (
                 <View style={styles.openBadge}>
                   <View style={styles.statusDot} />
                   <Text style={styles.openText}>
-                    {daysLeft === null ? 'Chưa thiết lập hạn dùng' : `Đang mở nắp • ${Math.max(0, daysLeft)} ngày còn lại`}
+                    {daysLeft === null ? 'Expiry not set' : `Opened • ${Math.max(0, daysLeft)} days left`}
                   </Text>
                 </View>
               )}
             </View>
             <TouchableOpacity style={styles.routineRow}>
               <View style={styles.routineIcon}><Sun size={22} color={Colors.primaryDark} /></View>
-              <View style={styles.routineCopy}><Text style={styles.routineTitle}>Quy trình: {routineTimeText}</Text><Text style={styles.routineText}>{routineStepText}</Text></View>
+              <View style={styles.routineCopy}><Text style={styles.routineTitle}>Routine: {routineTimeText}</Text><Text style={styles.routineText}>{routineStepText}</Text></View>
               <ChevronRight size={21} color={Colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -294,9 +294,9 @@ export default function ProductDetailModal({ route, navigation }) {
             <View style={styles.redWarningBox}>
               <AlertTriangle size={20} color={Colors.error} style={{ marginTop: 2 }} />
               <View style={styles.redWarningCopy}>
-                <Text style={styles.redWarningTitle}>Trạng thái cảnh báo đỏ</Text>
+                <Text style={styles.redWarningTitle}>Red alert status</Text>
                 <Text style={styles.redWarningText}>
-                  Sản phẩm này đã quá hạn {daysLeft !== null ? Math.abs(daysLeft) : ''} ngày nhưng bạn chọn tiếp tục sử dụng. Hãy kiểm tra kết cấu, mùi và ngừng dùng ngay nếu có dấu hiệu bất thường.
+                  This product expired {daysLeft !== null ? Math.abs(daysLeft) : ''} days ago, but you chose to keep using it. Check its texture and smell, and stop using it immediately if anything seems unusual.
                 </Text>
               </View>
             </View>
@@ -307,44 +307,44 @@ export default function ProductDetailModal({ route, navigation }) {
             <View style={styles.analysisCard}>
               <View style={styles.sectionHeading}>
                 <Sparkles size={20} color={Colors.primaryDark} />
-                <Text style={styles.sectionTitle}>Kết quả phân tích SkinMate AI</Text>
+                <Text style={styles.sectionTitle}>SkinMate AI analysis</Text>
               </View>
 
               <View style={styles.scoreRow}>
                 <View style={styles.scoreBox}>
                   <Text style={styles.scoreNumber}>{product.analysisResult.baseScore ?? 70}</Text>
-                  <Text style={styles.scoreLabel}>Điểm nền tảng</Text>
+                  <Text style={styles.scoreLabel}>Base score</Text>
                 </View>
                 <View style={[styles.scoreBox, styles.contextScoreBox]}>
                   <Text style={[styles.scoreNumber, styles.contextScoreNumber]}>{product.analysisResult.contextualScore ?? 70}</Text>
-                  <Text style={styles.scoreLabel}>Điểm tương thích</Text>
+                  <Text style={styles.scoreLabel}>Compatibility score</Text>
                 </View>
               </View>
 
               {product.analysisResult.verdict ? (
                 <View style={styles.analysisItem}>
-                  <Text style={styles.analysisItemTitle}>Đánh giá tổng quan</Text>
+                  <Text style={styles.analysisItemTitle}>Overall assessment</Text>
                   <Text style={styles.analysisItemText}>{product.analysisResult.verdict}</Text>
                 </View>
               ) : null}
 
               {product.analysisResult.bestPairingInCloset ? (
                 <View style={styles.analysisItem}>
-                  <Text style={styles.analysisItemTitle}>Kết hợp tối ưu trong tủ đồ</Text>
+                  <Text style={styles.analysisItemTitle}>Best pairing in your collection</Text>
                   <Text style={styles.analysisItemText}>{product.analysisResult.bestPairingInCloset}</Text>
                 </View>
               ) : null}
 
               {product.analysisResult.conflictResolution ? (
                 <View style={styles.analysisItemWarning}>
-                  <Text style={styles.analysisItemWarningTitle}>Lưu ý tương tác & xung đột</Text>
+                  <Text style={styles.analysisItemWarningTitle}>Interactions & conflicts</Text>
                   <Text style={styles.analysisItemWarningText}>{product.analysisResult.conflictResolution}</Text>
                 </View>
               ) : null}
 
               {product.analysisResult.futurePlan ? (
                 <View style={styles.analysisItem}>
-                  <Text style={styles.analysisItemTitle}>Kế hoạch sử dụng gợi ý</Text>
+                  <Text style={styles.analysisItemTitle}>Suggested usage plan</Text>
                   <Text style={styles.analysisItemText}>{product.analysisResult.futurePlan}</Text>
                 </View>
               ) : null}
@@ -356,7 +356,7 @@ export default function ProductDetailModal({ route, navigation }) {
             <View style={styles.ingredientsCard}>
               <View style={styles.sectionHeading}>
                 <FlaskConical size={19} color={Colors.textSecondary} />
-                <Text style={styles.sectionTitle}>Thành phần nổi bật ({product.ingredients.length})</Text>
+                <Text style={styles.sectionTitle}>Key ingredients ({product.ingredients.length})</Text>
               </View>
               <View style={styles.ingredientsWrap}>
                 {product.ingredients.map((ing, idx) => (
@@ -371,7 +371,7 @@ export default function ProductDetailModal({ route, navigation }) {
           <View style={styles.volumeCard}>
             <View style={styles.volumeHeader}>
               <View style={styles.metricIcon}><CircleGauge size={24} color={Colors.primaryDark} /></View>
-              <View style={styles.metricCopy}><Text style={styles.metricTitle}>Dung tích ước lượng</Text><Text style={styles.metricText}>Khoảng {Math.round((Number.parseInt(product.size, 10) || 30) * remaining / 100)}ml</Text></View>
+              <View style={styles.metricCopy}><Text style={styles.metricTitle}>Estimated amount</Text><Text style={styles.metricText}>About {Math.round((Number.parseInt(product.size, 10) || 30) * remaining / 100)}ml</Text></View>
               {isEditingPercent ? (
                 <View style={styles.percentEditRow}>
                   <TextInput
@@ -385,12 +385,12 @@ export default function ProductDetailModal({ route, navigation }) {
                     maxLength={3}
                     autoFocus
                     selectTextOnFocus
-                    accessibilityLabel="Nhập phần trăm dung tích còn lại"
+                    accessibilityLabel="Enter remaining percentage"
                   />
                   <Text style={styles.percentage}>%</Text>
                 </View>
               ) : (
-                <TouchableOpacity onPress={startEditPercent} disabled={isFinished || isSaving} accessibilityRole="button" accessibilityLabel={`Dung tích còn ${remaining}%, chạm để nhập`}>
+                <TouchableOpacity onPress={startEditPercent} disabled={isFinished || isSaving} accessibilityRole="button" accessibilityLabel={`Amount remaining ${remaining}%, tap to edit`}>
                   <Text style={styles.percentage}>{remaining}%</Text>
                 </TouchableOpacity>
               )}
@@ -399,38 +399,38 @@ export default function ProductDetailModal({ route, navigation }) {
             {!isFinished ? (
               <View style={styles.quickControls}>
                 <TouchableOpacity style={styles.quickButton} onPress={() => updateRemaining(-10)} disabled={isSaving}><Text style={styles.quickButtonText}>− 10%</Text></TouchableOpacity>
-                <Text style={styles.quickLabel}>{isSaving ? 'Đang lưu...' : 'Cập nhật nhanh'}</Text>
+                <Text style={styles.quickLabel}>{isSaving ? 'Saving...' : 'Quick update'}</Text>
                 <TouchableOpacity style={styles.quickButton} onPress={() => updateRemaining(10)} disabled={isSaving}><Text style={styles.quickButtonText}>＋ 10%</Text></TouchableOpacity>
               </View>
             ) : (
               <View style={styles.finishedNoticeWrap}>
-                <Text style={styles.finishedNoticeText}>Sản phẩm này đã được đánh dấu dùng hết (0%)</Text>
+                <Text style={styles.finishedNoticeText}>This product is marked as used up (0%)</Text>
               </View>
             )}
           </View>
 
           <View style={styles.trackingCard}>
-            <View style={styles.sectionHeading}><CalendarDays size={21} color={Colors.textSecondary} /><Text style={styles.sectionTitle}>Theo dõi Hạn dùng & Mở nắp</Text></View>
+            <View style={styles.sectionHeading}><CalendarDays size={21} color={Colors.textSecondary} /><Text style={styles.sectionTitle}>Expiry & opening dates</Text></View>
             <View style={styles.trackingRow}>
               <View style={styles.trackingIcon}><LockKeyhole size={21} color={Colors.primaryDark} /></View>
-              <View style={styles.trackingCopy}><Text style={styles.trackingLabel}>Ngày mở nắp</Text><Text style={styles.trackingValue}>{openedDate}</Text></View>
-              <View style={styles.neutralBadge}><Text style={styles.neutralText}>{product.openedDate ? 'Đã mở nắp' : 'Chưa cập nhật'}</Text></View>
+              <View style={styles.trackingCopy}><Text style={styles.trackingLabel}>Opening date</Text><Text style={styles.trackingValue}>{openedDate}</Text></View>
+              <View style={styles.neutralBadge}><Text style={styles.neutralText}>{product.openedDate ? 'Opened' : 'Not updated'}</Text></View>
             </View>
             <View style={[styles.trackingRow, styles.warningRow]}>
               <View style={styles.trackingIcon}><AlertTriangle size={22} color={Colors.warning} /></View>
-              <View style={styles.trackingCopy}><Text style={styles.warningLabel}>Hạn sử dụng (PAO / EXP)</Text><Text style={styles.warningValue}>{expiryDate}</Text></View>
-              {daysLeft !== null ? <View style={styles.daysBadge}><Text style={styles.daysText}>{isExpired ? 'Đã quá hạn' : `Còn ${Math.max(0, daysLeft)} ngày`}</Text></View> : null}
+              <View style={styles.trackingCopy}><Text style={styles.warningLabel}>Expiry date (PAO / EXP)</Text><Text style={styles.warningValue}>{expiryDate}</Text></View>
+              {daysLeft !== null ? <View style={styles.daysBadge}><Text style={styles.daysText}>{isExpired ? 'Overdue' : `${Math.max(0, daysLeft)} days left`}</Text></View> : null}
             </View>
             <View style={styles.trackingRow}>
               <View style={styles.trackingIcon}><ShieldCheck size={21} color={Colors.textSecondary} /></View>
-              <View style={styles.trackingCopy}><Text style={styles.trackingLabel}>Hạn niêm phong (EXP)</Text><Text style={styles.trackingValue}>{manufacturerExpiry}</Text></View>
-              <View style={styles.safeBadge}><Text style={styles.safeText}>Nguyên vẹn</Text></View>
+              <View style={styles.trackingCopy}><Text style={styles.trackingLabel}>Unopened expiry (EXP)</Text><Text style={styles.trackingValue}>{manufacturerExpiry}</Text></View>
+              <View style={styles.safeBadge}><Text style={styles.safeText}>Sealed</Text></View>
             </View>
           </View>
 
           <View style={styles.storageNote}>
             <Sparkles size={23} color={Colors.primaryDark} />
-            <View style={styles.noteCopy}><Text style={styles.noteTitle}>Ghi chú & Lưu ý bảo quản</Text><Text style={styles.noteText}>{product.note || 'Đậy nắp kín sau khi dùng và cất nơi khô thoáng, tránh ánh nắng trực tiếp.'}</Text></View>
+            <View style={styles.noteCopy}><Text style={styles.noteTitle}>Notes & storage tips</Text><Text style={styles.noteText}>{product.note || 'Close the lid tightly after use and store in a cool, dry place away from direct sunlight.'}</Text></View>
           </View>
 
           <View style={styles.actionRow}>
@@ -440,26 +440,26 @@ export default function ProductDetailModal({ route, navigation }) {
               activeOpacity={0.8}
             >
               <Pencil size={16} color={Colors.textLight} />
-              <Text style={styles.editButtonText}>Chỉnh sửa thông tin</Text>
+              <Text style={styles.editButtonText}>Edit information</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.actionRow}>
             {!isFinished ? (
               <TouchableOpacity style={styles.finishButton} onPress={confirmFinish} activeOpacity={0.8}>
-                <Text style={styles.finishButtonText}>Đã dùng hết</Text>
+                <Text style={styles.finishButtonText}>Used up</Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity style={styles.restoreButton} onPress={confirmRestore} activeOpacity={0.8}>
-                <Text style={styles.restoreButtonText}>Dùng lại (Khôi phục)</Text>
+                <Text style={styles.restoreButtonText}>Use again (Restore)</Text>
               </TouchableOpacity>
             )}
             {product.status !== 'archived' && !isFinished ? (
               <TouchableOpacity style={styles.archiveButton} onPress={confirmArchive} activeOpacity={0.8}>
-                <Text style={styles.archiveButtonText}>Lưu trữ</Text>
+                <Text style={styles.archiveButtonText}>Archive</Text>
               </TouchableOpacity>
             ) : null}
           </View>
-          <TouchableOpacity style={styles.deleteButton} onPress={confirmDelete}><Text style={styles.deleteButtonText}>Xoá sản phẩm</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.deleteButton} onPress={confirmDelete}><Text style={styles.deleteButtonText}>Delete product</Text></TouchableOpacity>
         </KeyboardAwareScrollView>
       </View>
     </SafeAreaView>

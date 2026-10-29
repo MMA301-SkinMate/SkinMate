@@ -12,7 +12,6 @@
     "android": {
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
         "foregroundImage": "./src/assets/android-icon-foreground.png",
         "backgroundImage": "./src/assets/android-icon-background.png",
         "monochromeImage": "./src/assets/android-icon-monochrome.png"
@@ -29,6 +28,9 @@
           "cameraPermission": "Ứng dụng cần truy cập camera để chụp ảnh sản phẩm."
         }
       ],
+      "expo-secure-store",
+      "expo-font",
+      "expo-splash-screen",
       "@react-native-community/datetimepicker"
     ]
   }

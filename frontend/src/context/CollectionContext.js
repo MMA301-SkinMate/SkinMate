@@ -15,7 +15,7 @@ export function CollectionProvider({ children }) {
       const result = await listCollectionProducts();
       setCollection(result.products || []);
     } catch (error) {
-      setCollectionError(error.message || 'Không thể tải tủ đồ skincare.');
+      setCollectionError(error.message || 'Unable to load your skincare collection.');
     } finally {
       setIsCollectionLoading(false);
     }

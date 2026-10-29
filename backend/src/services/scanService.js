@@ -75,6 +75,6 @@ If you cannot determine a field with reasonable confidence, use null for that fi
     };
   } catch (error) {
     console.error('Scan service error:', error);
-    throw new Error(`Failed to scan image: ${error.message}`);
+    throw new Error(`Failed to scan image: ${error.message}`, { cause: error });
   }
 };

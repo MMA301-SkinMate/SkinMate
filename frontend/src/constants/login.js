@@ -1,0 +1,27 @@
+export const LOGIN_COPY = {
+  email: "Email",
+  password: "Password",
+  loginTitle: "Welcome back",
+  loginBadge: "Smart skincare",
+  loginDescription: "Sign in to continue your skincare journey.",
+  loginAction: "Sign in",
+  loginSuccess: "Signed in successfully.",
+  noAccount: "Don't have an account?",
+  openRegister: "Create an account",
+  emailPlaceholder: "name@example.com",
+  passwordPlaceholder: "Enter your password",
+  retrySession: "Save session again",
+  loginSessionFailed: "We couldn't save your session. Please try again.",
+  validation: {
+    email: "Please enter a valid email address.",
+    emailLong: "Email must not exceed 254 characters.",
+    loginPassword: "Please enter a password of up to 128 characters.",
+  },
+  errors: {
+    validation: "Please check the information you entered.",
+    credentials: "The email or password is incorrect.",
+    rateLimit: "Too many attempts. Please wait and try again.",
+    network: "The connection was interrupted, so the result could not be confirmed. Check your network and try again, or sign in if your account was created.",
+    server: "We couldn't complete the request. Please try again later.",
+  },
+};

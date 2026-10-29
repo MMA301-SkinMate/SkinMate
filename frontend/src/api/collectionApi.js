@@ -1,9 +1,24 @@
 import axiosClient from './axiosClient';
 
-export const listCollectionProducts = () => axiosClient.get('/collections');
-export const createCollectionProduct = payload => axiosClient.post('/collections', payload);
-export const updateCollectionProduct = (id, payload) => axiosClient.patch(`/collections/${id}`, payload);
-export const deleteCollectionProduct = id => axiosClient.delete(`/collections/${id}`);
+const localizeCollectionError = error => {
+  const message = error.status === 401
+    ? 'Your session has expired. Please sign in again.'
+    : error.status === 404
+      ? 'This product could not be found.'
+      : error.status === 429
+        ? 'Too many requests. Please wait and try again.'
+        : error.status === 400 || error.status === 422
+          ? 'Please check the product information and try again.'
+          : error.isNetworkError || error.status === 0
+            ? 'Unable to connect. Please check your network and try again.'
+            : 'Unable to complete the request. Please try again.';
+  return Promise.reject({ ...error, message });
+};
+
+export const listCollectionProducts = () => axiosClient.get('/collections').catch(localizeCollectionError);
+export const createCollectionProduct = payload => axiosClient.post('/collections', payload).catch(localizeCollectionError);
+export const updateCollectionProduct = (id, payload) => axiosClient.patch(`/collections/${id}`, payload).catch(localizeCollectionError);
+export const deleteCollectionProduct = id => axiosClient.delete(`/collections/${id}`).catch(localizeCollectionError);
 
 export const uploadCollectionProductImage = imageUri => {
   const formData = new FormData();

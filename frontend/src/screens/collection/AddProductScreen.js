@@ -13,14 +13,14 @@ import { getDefaultIconForType, PRODUCT_TYPES } from '../../constants/product-ic
 
 const { width } = Dimensions.get('window');
 
-const formatDate = date => date ? date.toLocaleDateString('vi-VN') : 'Chưa chọn';
+const formatDate = date => date ? date.toLocaleDateString('en-US') : 'Not selected';
 
 const EXPIRY_DURATIONS = [
-  { months: 3, label: '3 tháng' },
-  { months: 6, label: '6 tháng' },
-  { months: 12, label: '12 tháng' },
-  { months: 18, label: '18 tháng' },
-  { months: 24, label: '24 tháng' },
+  { months: 3, label: '3 months' },
+  { months: 6, label: '6 months' },
+  { months: 12, label: '12 months' },
+  { months: 18, label: '18 months' },
+  { months: 24, label: '24 months' },
 ];
 
 const parseDate = value => {
@@ -40,10 +40,10 @@ const addMonths = (date, months) => {
 };
 
 const getRoutineValue = routineUsage => {
-  if (routineUsage?.morning && routineUsage?.evening) return 'Cả hai';
-  if (routineUsage?.morning) return 'Sáng (AM)';
-  if (routineUsage?.evening) return 'Tối (PM)';
-  return 'Cả hai';
+  if (routineUsage?.morning && routineUsage?.evening) return 'Both';
+  if (routineUsage?.morning) return 'Morning (AM)';
+  if (routineUsage?.evening) return 'Evening (PM)';
+  return 'Both';
 };
 
 export default function AddProductScreen({ route, navigation }) {
@@ -100,7 +100,7 @@ export default function AddProductScreen({ route, navigation }) {
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert('Cần cấp quyền', 'Vui lòng cho phép truy cập thư viện ảnh để chọn ảnh sản phẩm.');
+        Alert.alert('Permission required', 'Please allow photo library access to choose a product photo.');
         return;
       }
 
@@ -115,7 +115,7 @@ export default function AddProductScreen({ route, navigation }) {
         setImageChanged(true);
       }
     } catch (error) {
-      Alert.alert('Lỗi', 'Không thể chọn ảnh từ thư viện.');
+      Alert.alert('Error', 'Unable to choose a photo from your library.');
     }
   };
 
@@ -123,7 +123,7 @@ export default function AddProductScreen({ route, navigation }) {
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Cần cấp quyền', 'Ứng dụng cần quyền truy cập máy ảnh để chụp ảnh sản phẩm.');
+        Alert.alert('Permission required', 'Camera access is required to take a product photo.');
         return;
       }
 
@@ -137,7 +137,7 @@ export default function AddProductScreen({ route, navigation }) {
         setImageChanged(true);
       }
     } catch (error) {
-      Alert.alert('Lỗi', 'Không thể khởi động máy ảnh.');
+      Alert.alert('Error', 'Unable to open the camera.');
     }
   };
 
@@ -235,7 +235,7 @@ export default function AddProductScreen({ route, navigation }) {
 
   const clearOpenedDate = () => {
     if (expiryMode === 'duration') {
-      Alert.alert('Không thể xoá ngày mở nắp', 'Hạn dùng theo khoảng thời gian bắt buộc phải có ngày mở nắp.');
+      Alert.alert('Cannot clear opening date', 'An opening date is required to calculate expiry after opening.');
       return;
     }
     setOpenedDate(null);
@@ -243,22 +243,22 @@ export default function AddProductScreen({ route, navigation }) {
 
   const saveProduct = async () => {
     if (!name.trim() || isSaving) {
-      if (!name.trim()) Alert.alert('Thiếu tên sản phẩm', 'Vui lòng nhập tên sản phẩm.');
+      if (!name.trim()) Alert.alert('Product name required', 'Please enter a product name.');
       return;
     }
 
     if (expiryMode === 'duration' && !openedDate) {
-      Alert.alert('Thiếu ngày mở nắp', 'Vui lòng chọn ngày mở nắp để tính hạn dùng theo khoảng thời gian.');
+      Alert.alert('Opening date required', 'Please select an opening date to calculate expiry after opening.');
       return;
     }
 
     if (expiryMode === 'duration' && expiryMonths < 1) {
-      Alert.alert('Khoảng thời gian không hợp lệ', 'Vui lòng nhập khoảng thời gian từ 1 đến 120 tháng.');
+      Alert.alert('Invalid duration', 'Please enter a duration between 1 and 120 months.');
       return;
     }
 
     if (expiryMode === 'date' && openedDate && expiryDate < openedDate) {
-      Alert.alert('Ngày hết hạn không hợp lệ', 'Ngày hết hạn phải bằng hoặc sau ngày mở nắp.');
+      Alert.alert('Invalid expiry date', 'The expiry date must be on or after the opening date.');
       return;
     }
 
@@ -271,21 +271,21 @@ export default function AddProductScreen({ route, navigation }) {
           const uploadRes = await uploadCollectionProductImage(selectedImage);
           productImageUrl = uploadRes?.imageUrl || null;
         } catch (uploadErr) {
-          console.warn('Lỗi tải ảnh lên:', uploadErr);
+          console.warn('Photo upload failed:', uploadErr);
           setIsSaving(false);
           Alert.alert(
-            'Lỗi tải ảnh',
-            'Không thể tải ảnh sản phẩm lên máy chủ. Bạn có muốn tiếp tục lưu sản phẩm mà không có ảnh không?',
+            'Photo upload failed',
+            'Unable to upload the product photo. Would you like to save the product without a new photo?',
             [
-              { text: 'Huỷ', style: 'cancel' },
+              { text: 'Cancel', style: 'cancel' },
               {
-                text: getPreservedProductImage() ? 'Lưu với ảnh cũ' : 'Lưu không kèm ảnh',
+                text: getPreservedProductImage() ? 'Save with original photo' : 'Save without photo',
                 onPress: async () => {
                   setIsSaving(true);
                   try {
                     await submitProduct(isEditing ? product.productImageUrl || null : null);
                   } catch (e) {
-                    Alert.alert('Không thể lưu sản phẩm', e.message || 'Vui lòng thử lại.');
+                    Alert.alert('Unable to save product', e.message || 'Please try again.');
                     setIsSaving(false);
                   }
                 },
@@ -302,7 +302,7 @@ export default function AddProductScreen({ route, navigation }) {
 
       await submitProduct(productImageUrl);
     } catch (error) {
-      Alert.alert('Không thể lưu sản phẩm', error.message || 'Vui lòng thử lại.');
+      Alert.alert('Unable to save product', error.message || 'Please try again.');
       setIsSaving(false);
     }
   };
@@ -324,8 +324,8 @@ export default function AddProductScreen({ route, navigation }) {
       remainingPercent: remaining,
       note: note.trim() || null,
       routineUsage: {
-        morning: routine === 'Sáng (AM)' || routine === 'Cả hai',
-        evening: routine === 'Tối (PM)' || routine === 'Cả hai',
+        morning: routine === 'Morning (AM)' || routine === 'Both',
+        evening: routine === 'Evening (PM)' || routine === 'Both',
         step: product?.routineUsage?.step || null,
       },
     };
@@ -345,7 +345,7 @@ export default function AddProductScreen({ route, navigation }) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <ArrowLeft size={24} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{isEditing ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm'}</Text>
+        <Text style={styles.headerTitle}>{isEditing ? 'Edit product' : 'Add product'}</Text>
         <View style={styles.profile}>
           <UserRound size={19} color={Colors.textLight} />
         </View>
@@ -365,14 +365,14 @@ export default function AddProductScreen({ route, navigation }) {
       >
         {/* Product Photo Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Ảnh sản phẩm</Text>
+          <Text style={styles.sectionTitle}>Product photo</Text>
 
           {selectedImage ? (
             <View style={styles.imagePreviewWrapper}>
               <Image source={{ uri: selectedImage }} style={styles.imagePreview} resizeMode="cover" />
               <View style={styles.imageBadge}>
                 <Check size={14} color={Colors.textLight} strokeWidth={3} />
-                <Text style={styles.imageBadgeText}>Đã chụp ảnh</Text>
+                <Text style={styles.imageBadgeText}>Photo selected</Text>
               </View>
               <View style={styles.imageActionRow}>
                 <TouchableOpacity
@@ -381,7 +381,7 @@ export default function AddProductScreen({ route, navigation }) {
                   activeOpacity={0.8}
                 >
                   <Camera size={16} color={Colors.primaryDark} />
-                  <Text style={styles.imageActionBtnText}>Chụp lại</Text>
+                  <Text style={styles.imageActionBtnText}>Retake</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -390,7 +390,7 @@ export default function AddProductScreen({ route, navigation }) {
                   activeOpacity={0.8}
                 >
                   <Upload size={16} color={Colors.primaryDark} />
-                  <Text style={styles.imageActionBtnText}>Đổi ảnh khác</Text>
+                  <Text style={styles.imageActionBtnText}>Change photo</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -399,7 +399,7 @@ export default function AddProductScreen({ route, navigation }) {
                   activeOpacity={0.8}
                 >
                   <Trash2 size={16} color={Colors.error} />
-                  <Text style={[styles.imageActionBtnText, { color: Colors.error }]}>Xoá</Text>
+                  <Text style={[styles.imageActionBtnText, { color: Colors.error }]}>Remove</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -414,7 +414,7 @@ export default function AddProductScreen({ route, navigation }) {
                   <View style={styles.imageButtonIconWrapper}>
                     <Camera size={36} color={Colors.primary} strokeWidth={1.8} />
                   </View>
-                  <Text style={styles.imageButtonLabel}>Chụp ảnh</Text>
+                  <Text style={styles.imageButtonLabel}>Take photo</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -425,20 +425,20 @@ export default function AddProductScreen({ route, navigation }) {
                   <View style={styles.imageButtonIconWrapper}>
                     <Upload size={36} color={Colors.primary} strokeWidth={1.8} />
                   </View>
-                  <Text style={styles.imageButtonLabel}>Tải ảnh lên</Text>
+                  <Text style={styles.imageButtonLabel}>Upload photo</Text>
                 </TouchableOpacity>
               </View>
-              <Text style={styles.imageHintText}>Chụp hoặc chọn ảnh sản phẩm thật để lưu vào tủ đồ</Text>
+              <Text style={styles.imageHintText}>Take or choose a product photo for your collection</Text>
             </View>
           )}
         </View>
 
         {/* Product Info */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Thông tin sản phẩm</Text>
+          <Text style={styles.sectionTitle}>Product information</Text>
 
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Thương hiệu</Text>
+            <Text style={styles.label}>Brand</Text>
             <TextInput
               {...inputProps('brand')}
               style={styles.input}
@@ -450,20 +450,20 @@ export default function AddProductScreen({ route, navigation }) {
           </View>
 
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Tên sản phẩm <Text style={styles.required}>*</Text></Text>
+            <Text style={styles.label}>Product name <Text style={styles.required}>*</Text></Text>
             <TextInput
               {...inputProps('name')}
               style={styles.input}
               value={name}
               onChangeText={setName}
-              placeholder="Nhập tên sản phẩm"
+              placeholder="Enter product name"
               placeholderTextColor={Colors.textSecondary}
             />
-            {!name.trim() && <Text style={styles.errorText}>Bắt buộc</Text>}
+            {!name.trim() && <Text style={styles.errorText}>Required</Text>}
           </View>
 
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Loại sản phẩm</Text>
+            <Text style={styles.label}>Product type</Text>
             <TouchableOpacity
               style={styles.selectButton}
               onPress={() => setShowTypeModal(true)}
@@ -476,10 +476,10 @@ export default function AddProductScreen({ route, navigation }) {
 
         {/* Dates Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Thời gian sử dụng</Text>
+          <Text style={styles.sectionTitle}>Usage period</Text>
 
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Ngày mở nắp</Text>
+            <Text style={styles.label}>Opening date</Text>
             <View style={styles.dateActionRow}>
               <TouchableOpacity
                 style={[styles.dateButton, styles.dateButtonGrow]}
@@ -500,26 +500,26 @@ export default function AddProductScreen({ route, navigation }) {
           </View>
 
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Cách tính ngày hết hạn</Text>
+            <Text style={styles.label}>Expiry calculation</Text>
             <View style={styles.expiryModeRow}>
               <TouchableOpacity
                 style={[styles.expiryModeButton, expiryMode === 'date' && styles.expiryModeButtonActive]}
                 onPress={() => selectExpiryMode('date')}
               >
-                <Text style={[styles.expiryModeText, expiryMode === 'date' && styles.expiryModeTextActive]}>Ngày cụ thể</Text>
+                <Text style={[styles.expiryModeText, expiryMode === 'date' && styles.expiryModeTextActive]}>Specific date</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.expiryModeButton, expiryMode === 'duration' && styles.expiryModeButtonActive]}
                 onPress={() => selectExpiryMode('duration')}
               >
-                <Text style={[styles.expiryModeText, expiryMode === 'duration' && styles.expiryModeTextActive]}>Sau khi mở nắp</Text>
+                <Text style={[styles.expiryModeText, expiryMode === 'duration' && styles.expiryModeTextActive]}>After opening</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           {expiryMode === 'date' ? (
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Ngày hết hạn</Text>
+              <Text style={styles.label}>Expiry date</Text>
               <TouchableOpacity
                 style={styles.dateButton}
                 onPress={() => setShowExpiryDatePicker(true)}
@@ -530,7 +530,7 @@ export default function AddProductScreen({ route, navigation }) {
             </View>
           ) : (
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Khoảng thời gian sử dụng <Text style={styles.required}>*</Text></Text>
+              <Text style={styles.label}>Usage duration <Text style={styles.required}>*</Text></Text>
               <View style={styles.durationGrid}>
                 {EXPIRY_DURATIONS.map(item => (
                   <TouchableOpacity
@@ -550,15 +550,15 @@ export default function AddProductScreen({ route, navigation }) {
                   onChangeText={changeExpiryDuration}
                   keyboardType="number-pad"
                   maxLength={3}
-                  placeholder="Số tháng"
+                  placeholder="Months"
                   placeholderTextColor={Colors.textSecondary}
                 />
-                <Text style={styles.customDurationUnit}>tháng sau ngày mở nắp</Text>
+                <Text style={styles.customDurationUnit}>months after opening</Text>
               </View>
               {!openedDate ? (
-                <Text style={styles.errorText}>Phải chọn ngày mở nắp để tính ngày hết hạn.</Text>
+                <Text style={styles.errorText}>Select an opening date to calculate expiry.</Text>
               ) : (
-                <Text style={styles.expiryPreviewText}>Ngày hết hạn dự kiến: {formatDate(addMonths(openedDate, expiryMonths))}</Text>
+                <Text style={styles.expiryPreviewText}>Estimated expiry:{formatDate(addMonths(openedDate, expiryMonths))}</Text>
               )}
             </View>
           )}
@@ -566,7 +566,7 @@ export default function AddProductScreen({ route, navigation }) {
 
         {/* Ingredients */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Thành phần sản phẩm</Text>
+          <Text style={styles.sectionTitle}>Ingredients</Text>
 
           {ingredients.length > 0 && (
             <View style={styles.ingredientsList}>
@@ -588,7 +588,7 @@ export default function AddProductScreen({ route, navigation }) {
           {ingredients.length === 0 && (
             <View style={styles.emptyState}>
               <AlertCircle size={40} color={Colors.textSecondary} />
-              <Text style={styles.emptyStateText}>Chưa có thành phần nào</Text>
+              <Text style={styles.emptyStateText}>No ingredients added</Text>
             </View>
           )}
 
@@ -599,7 +599,7 @@ export default function AddProductScreen({ route, navigation }) {
               value={newIngredient}
               onChangeText={setNewIngredient}
               onSubmitEditing={addIngredient}
-              placeholder="Nhập thành phần"
+              placeholder="Enter an ingredient"
               placeholderTextColor={Colors.textSecondary}
               returnKeyType="done"
             />
@@ -615,10 +615,10 @@ export default function AddProductScreen({ route, navigation }) {
 
         {/* Usage Details */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Chi tiết sử dụng</Text>
+          <Text style={styles.sectionTitle}>Usage details</Text>
 
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Lượng còn lại</Text>
+            <Text style={styles.label}>Amount remaining</Text>
             {isEditingPercent ? (
               <View style={styles.percentEditRow}>
                 <TextInput
@@ -632,7 +632,7 @@ export default function AddProductScreen({ route, navigation }) {
                   maxLength={3}
                   autoFocus
                   selectTextOnFocus
-                  accessibilityLabel="Nhập phần trăm dung tích còn lại"
+                  accessibilityLabel="Enter remaining percentage"
                 />
                 <Text style={styles.percentDisplay}>%</Text>
               </View>
@@ -641,7 +641,7 @@ export default function AddProductScreen({ route, navigation }) {
                 style={styles.percentDisplayTouch}
                 onPress={startEditPercent}
                 accessibilityRole="button"
-                accessibilityLabel={`Lượng còn lại ${remaining}%, chạm để nhập`}
+                accessibilityLabel={`Amount remaining ${remaining}%, tap to edit`}
               >
                 <Text style={styles.percentDisplay}>{remaining}%</Text>
               </TouchableOpacity>
@@ -671,9 +671,9 @@ export default function AddProductScreen({ route, navigation }) {
           </View>
 
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Sử dụng khi nào</Text>
+            <Text style={styles.label}>When to use</Text>
             <View style={styles.routineGrid}>
-              {['Sáng (AM)', 'Tối (PM)', 'Cả hai'].map(item => (
+              {['Morning (AM)', 'Evening (PM)', 'Both'].map(item => (
                 <TouchableOpacity
                   key={item}
                   style={[
@@ -694,13 +694,13 @@ export default function AddProductScreen({ route, navigation }) {
           </View>
 
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Ghi chú cá nhân</Text>
+            <Text style={styles.label}>Personal notes</Text>
             <TextInput
               {...inputProps('note', 100)}
               style={[styles.input, styles.noteInput, inputStyle('note', 100)]}
               value={note}
               onChangeText={setNote}
-              placeholder="VD: Bảo quản trong tủ lạnh..."
+              placeholder="e.g. Store in the refrigerator..."
               placeholderTextColor={Colors.textSecondary}
               multiline
             />
@@ -721,7 +721,7 @@ export default function AddProductScreen({ route, navigation }) {
             <Check size={20} color={Colors.textLight} />
           )}
           <Text style={[styles.saveButtonText, { marginLeft: 8 }]}>
-            {isSaving ? 'Đang lưu...' : isEditing ? 'Lưu thay đổi' : 'Lưu sản phẩm'}
+            {isSaving ? 'Saving...' : isEditing ? 'Save changes' : 'Save product'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -736,7 +736,7 @@ export default function AddProductScreen({ route, navigation }) {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Chọn loại sản phẩm</Text>
+              <Text style={styles.modalTitle}>Select product type</Text>
               <TouchableOpacity onPress={() => setShowTypeModal(false)}>
                 <X size={24} color={Colors.text} />
               </TouchableOpacity>
@@ -792,7 +792,7 @@ export default function AddProductScreen({ route, navigation }) {
         <View style={styles.datePickerOverlay}>
           <View style={styles.datePickerContainer}>
             <View style={styles.datePickerHeader}>
-              <Text style={styles.datePickerTitle}>Chọn ngày mở nắp</Text>
+              <Text style={styles.datePickerTitle}>Select opening date</Text>
             </View>
             <DateTimePicker
               value={tempOpenedDate}
@@ -807,7 +807,7 @@ export default function AddProductScreen({ route, navigation }) {
                 style={[styles.datePickerButton, styles.datePickerButtonCancel]}
                 onPress={cancelOpenedDatePicker}
               >
-                <Text style={styles.datePickerButtonCancelText}>Hủy</Text>
+                <Text style={styles.datePickerButtonCancelText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.datePickerButton, styles.datePickerButtonOK]}
@@ -837,7 +837,7 @@ export default function AddProductScreen({ route, navigation }) {
         <View style={styles.datePickerOverlay}>
           <View style={styles.datePickerContainer}>
             <View style={styles.datePickerHeader}>
-              <Text style={styles.datePickerTitle}>Chọn ngày hết hạn</Text>
+              <Text style={styles.datePickerTitle}>Select expiry date</Text>
             </View>
             <DateTimePicker
               value={tempExpiryDate}
@@ -852,7 +852,7 @@ export default function AddProductScreen({ route, navigation }) {
                 style={[styles.datePickerButton, styles.datePickerButtonCancel]}
                 onPress={cancelExpiryDatePicker}
               >
-                <Text style={styles.datePickerButtonCancelText}>Hủy</Text>
+                <Text style={styles.datePickerButtonCancelText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.datePickerButton, styles.datePickerButtonOK]}

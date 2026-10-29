@@ -19,16 +19,16 @@ const { width: screenWidth } = Dimensions.get('window');
 const CARD_WIDTH = Math.max((screenWidth - 62) / 3, 82);
 
 const SHELVES = [
-  { id: 'treatment', title: 'Kệ 1: Tinh chất & Serum', types: ['serum', 'treatment', 'oil', 'mask', 'essences', 'exfoliant'] },
-  { id: 'moisture', title: 'Kệ 2: Dưỡng ẩm & Chống nắng', types: ['cream', 'moisturizer', 'sunscreen'] },
-  { id: 'cleanse', title: 'Kệ 3: Làm sạch & Cân bằng', types: ['cleanser', 'toner', 'others', 'other'] },
+  { id: 'treatment', title: 'Shelf 1: Treatments & Serums', types: ['serum', 'treatment', 'oil', 'mask', 'essences', 'exfoliant'] },
+  { id: 'moisture', title: 'Shelf 2: Moisturizers & Sunscreens', types: ['cream', 'moisturizer', 'sunscreen'] },
+  { id: 'cleanse', title: 'Shelf 3: Cleansers & Toners', types: ['cleanser', 'toner', 'others', 'other'] },
 ];
 
 const BOTTLE_COLORS = [Colors.primaryLight, Colors.surface, Colors.info, Colors.borderDark, Colors.primary];
 
 function formatDate(value) {
-  if (!value) return 'Chưa cập nhật';
-  return new Intl.DateTimeFormat('vi-VN').format(new Date(value));
+  if (!value) return 'Not updated';
+  return new Intl.DateTimeFormat('en-US').format(new Date(value));
 }
 
 function getExpirationStatus(product) {
@@ -52,12 +52,12 @@ function getDaysLeft(product) {
 function toDisplayProduct(product, index) {
   const expirationStatus = getExpirationStatus(product);
   const routine = product.routineUsage?.morning && product.routineUsage?.evening
-    ? 'Sáng / Tối'
+    ? 'Morning / Evening'
     : product.routineUsage?.morning
-      ? 'Sáng'
+      ? 'Morning'
       : product.routineUsage?.evening
-        ? 'Tối'
-        : 'Chưa thiết lập';
+        ? 'Evening'
+        : 'Not set';
 
   return {
     ...product,
@@ -115,10 +115,10 @@ export default function MyCollectionScreen({ navigation }) {
         <View style={styles.headingRow}>
           <View>
             <View style={styles.titleWithCount}>
-              <Text style={styles.title}>Tủ đồ Skincare</Text>
-              <Text style={styles.monthBadge}>{collection.length} món</Text>
+              <Text style={styles.title}>My Collection</Text>
+              <Text style={styles.monthBadge}>{collection.length} items</Text>
             </View>
-            <Text style={styles.subtitle}>Không gian dưỡng da cá nhân & hạn sử dụng</Text>
+            <Text style={styles.subtitle}>Personal skincare space & expiry tracking</Text>
           </View>
           <View style={styles.headingActions}>
             <TouchableOpacity style={styles.roundButton}><Search size={18} color={Colors.text} /></TouchableOpacity>
@@ -128,11 +128,11 @@ export default function MyCollectionScreen({ navigation }) {
 
         <View style={styles.tabBar}>
           <TouchableOpacity style={[styles.tabItem, tab === 'active' && styles.tabActive]} onPress={() => setTab('active')}>
-            <Text style={[styles.tabText, tab === 'active' && styles.tabTextActive]}>Đang sử dụng</Text>
+            <Text style={[styles.tabText, tab === 'active' && styles.tabTextActive]}>Currently using</Text>
             <Text style={styles.countBadge}>{activeProducts.length}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.tabItem, tab === 'archived' && styles.tabActive]} onPress={() => setTab('archived')}>
-            <Text style={[styles.tabText, tab === 'archived' && styles.tabTextActive]}>Đã dùng hết</Text>
+            <Text style={[styles.tabText, tab === 'archived' && styles.tabTextActive]}>Used up</Text>
             <Text style={styles.archivedBadge}>{archivedProducts.length}</Text>
           </TouchableOpacity>
         </View>
@@ -143,15 +143,15 @@ export default function MyCollectionScreen({ navigation }) {
               <AlertTriangle size={13} color={Colors.textLight} />
             </View>
             <Text style={styles.expiredBannerText}>
-              Cảnh báo đỏ: Có <Text style={styles.expiredBannerBold}>{expiredActiveCount} sản phẩm hết hạn</Text> đang tiếp tục dùng
+              Red alert: <Text style={styles.expiredBannerBold}>{expiredActiveCount} expired products</Text> are still in use
             </Text>
           </View>
         ) : null}
 
         <View style={styles.reminder}>
           <View style={styles.reminderDot} />
-          <Text style={styles.reminderText}>Nhắc nhở: <Text style={styles.reminderBold}>{expiringCount} món</Text> cần ưu tiên dùng sớm</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('ExpiryCalendar')}><Text style={styles.calendarLink}>Xem lịch <ChevronRight size={14} color={Colors.dark} /></Text></TouchableOpacity>
+          <Text style={styles.reminderText}>Reminder: <Text style={styles.reminderBold}>{expiringCount} items</Text> should be used soon</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('ExpiryCalendar')}><Text style={styles.calendarLink}>View calendar <ChevronRight size={14} color={Colors.dark} /></Text></TouchableOpacity>
         </View>
 
         {isCollectionLoading ? <LoadingState /> : null}
@@ -173,30 +173,30 @@ export default function MyCollectionScreen({ navigation }) {
         activeOpacity={0.85}
       >
         <Plus size={20} color={Colors.textLight} />
-        <Text style={styles.addText}>Thêm món</Text>
+        <Text style={styles.addText}>Add item</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
 }
 
 function LoadingState() {
-  return <View style={styles.stateCard}><ActivityIndicator color={Colors.primary} /><Text style={styles.stateText}>Đang tải tủ đồ skincare...</Text></View>;
+  return <View style={styles.stateCard}><ActivityIndicator color={Colors.primary} /><Text style={styles.stateText}>Loading your collection...</Text></View>;
 }
 
 function ErrorState({ message, onRetry }) {
-  return <View style={styles.stateCard}><Text style={styles.stateText}>{message}</Text><TouchableOpacity onPress={onRetry}><Text style={styles.retryText}>Thử lại</Text></TouchableOpacity></View>;
+  return <View style={styles.stateCard}><Text style={styles.stateText}>{message}</Text><TouchableOpacity onPress={onRetry}><Text style={styles.retryText}>Try again</Text></TouchableOpacity></View>;
 }
 
 function EmptyState({ tab }) {
   return (
     <View style={styles.stateCard}>
       <Text style={styles.emptyTitle}>
-        {tab === 'active' ? 'Tủ đồ của bạn đang trống' : 'Chưa có sản phẩm đã dùng hết'}
+        {tab === 'active' ? 'Your collection is empty' : 'No used-up products yet'}
       </Text>
       <Text style={styles.stateText}>
         {tab === 'active'
-          ? 'Thêm sản phẩm đầu tiên để theo dõi routine và hạn dùng.'
-          : 'Sản phẩm sau khi được đánh dấu đã dùng hết sẽ hiển thị tại đây.'}
+          ? 'Add your first product to track your routine and expiry dates.'
+          : 'Products marked as used up will appear here.'}
       </Text>
     </View>
   );
@@ -205,7 +205,7 @@ function EmptyState({ tab }) {
 function ShelfSection({ shelf, navigation }) {
   return (
     <View style={styles.shelfSection}>
-      <View style={styles.shelfHeading}><View style={styles.shelfTitleWrap}><View style={styles.shelfAccent} /><Text style={styles.shelfTitle}>{shelf.title}</Text></View><Text style={styles.shelfCount}>{shelf.products.length} sản phẩm</Text></View>
+      <View style={styles.shelfHeading}><View style={styles.shelfTitleWrap}><View style={styles.shelfAccent} /><Text style={styles.shelfTitle}>{shelf.title}</Text></View><Text style={styles.shelfCount}>{shelf.products.length} products</Text></View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.productRow} scrollEnabled={shelf.products.length > 3}>
         {shelf.products.map(product => <ProductCard key={product.id} product={product} navigation={navigation} />)}
       </ScrollView>
@@ -242,13 +242,13 @@ function ProductCard({ product, navigation }) {
         </Text>
         {product.status === 'finished' ? (
           <View style={styles.finishedBadge}>
-            <Text style={styles.finishedBadgeText}>Hết</Text>
+            <Text style={styles.finishedBadgeText}>Used up</Text>
           </View>
         ) : null}
         {showRedAlert ? (
           <View style={styles.expiredRedBadge}>
             <AlertTriangle size={8} color={Colors.textLight} />
-            <Text style={styles.expiredRedBadgeText}>Hết hạn</Text>
+            <Text style={styles.expiredRedBadgeText}>Expired</Text>
           </View>
         ) : null}
       </View>

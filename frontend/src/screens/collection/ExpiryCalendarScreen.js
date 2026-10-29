@@ -19,10 +19,10 @@ import { Colors } from '../../constants/theme';
 import { useCollection } from '../../context/CollectionContext';
 
 const { width: screenWidth } = Dimensions.get('window');
-const WEEK_DAYS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const MONTH_NAMES = [
-  'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
-  'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12',
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
 const pad = value => String(value).padStart(2, '0');
@@ -43,17 +43,17 @@ function getDaysFromToday(date) {
 }
 
 function formatDate(date) {
-  return new Intl.DateTimeFormat('vi-VN', {
+  return new Intl.DateTimeFormat('en-US', {
     weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric',
   }).format(date);
 }
 
 function getStatus(product, date) {
-  if (product.status === 'finished') return { label: 'Đã dùng hết', color: Colors.textMuted };
+  if (product.status === 'finished') return { label: 'Used up', color: Colors.textMuted };
   const days = getDaysFromToday(date);
-  if (days < 0 || product.status === 'expired') return { label: 'Đã hết hạn', color: Colors.error };
-  if (days <= 30) return { label: days === 0 ? 'Hết hạn hôm nay' : `Còn ${days} ngày`, color: Colors.warning };
-  return { label: 'Còn hạn', color: Colors.success };
+  if (days < 0 || product.status === 'expired') return { label: 'Expired', color: Colors.error };
+  if (days <= 30) return { label: days === 0 ? 'Expires today' : `${days} days left`, color: Colors.warning };
+  return { label: 'Not expired', color: Colors.success };
 }
 
 export default function ExpiryCalendarScreen({ navigation }) {
@@ -101,8 +101,8 @@ export default function ExpiryCalendarScreen({ navigation }) {
             <X size={20} color={Colors.text} />
           </TouchableOpacity>
           <View style={styles.headerTitleWrap}>
-            <Text style={styles.title}>Lịch hạn dùng</Text>
-            <Text style={styles.subtitle}>Theo dõi ngày cần ưu tiên sử dụng</Text>
+            <Text style={styles.title}>Expiry calendar</Text>
+            <Text style={styles.subtitle}>Track dates for products to use soon</Text>
           </View>
           <View style={styles.headerIcon}><CalendarDays size={21} color={Colors.primary} /></View>
         </View>
@@ -110,8 +110,8 @@ export default function ExpiryCalendarScreen({ navigation }) {
         <View style={styles.summaryCard}>
           <View style={styles.summaryIcon}><Clock3 size={19} color={Colors.warning} /></View>
           <View style={styles.summaryCopy}>
-            <Text style={styles.summaryTitle}>{monthProductCount} sản phẩm trong tháng này</Text>
-            <Text style={styles.summaryText}>Các sản phẩm được sắp xếp theo ngày hết hạn.</Text>
+            <Text style={styles.summaryTitle}>{monthProductCount} products this month</Text>
+            <Text style={styles.summaryText}>Products are sorted by expiry date.</Text>
           </View>
         </View>
 
@@ -146,14 +146,14 @@ export default function ExpiryCalendarScreen({ navigation }) {
             })}
           </View>
           <View style={styles.legendRow}>
-            <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: Colors.warning }]} /><Text style={styles.legendText}>Sắp hết hạn</Text></View>
-            <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: Colors.error }]} /><Text style={styles.legendText}>Đã hết hạn</Text></View>
+            <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: Colors.warning }]} /><Text style={styles.legendText}>Expiring soon</Text></View>
+            <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: Colors.error }]} /><Text style={styles.legendText}>Expired</Text></View>
           </View>
         </View>
 
         <View style={styles.detailsHeader}>
           <Text style={styles.sectionTitle}>{formatDate(new Date(`${selectedDate}T12:00:00`))}</Text>
-          <Text style={styles.itemCount}>{selectedProducts.length} sản phẩm</Text>
+          <Text style={styles.itemCount}>{selectedProducts.length} products</Text>
         </View>
         {selectedProducts.length ? selectedProducts.map(product => {
           const status = getStatus(product, product.expiryDate);
@@ -162,7 +162,7 @@ export default function ExpiryCalendarScreen({ navigation }) {
               <View style={[styles.statusDot, { backgroundColor: status.color }]} />
               <View style={styles.productCopy}>
                 <Text style={styles.productName} numberOfLines={1}>{product.productName}</Text>
-                <Text style={styles.productBrand} numberOfLines={1}>{product.brand || 'Chưa rõ thương hiệu'}</Text>
+                <Text style={styles.productBrand} numberOfLines={1}>{product.brand || 'Unknown brand'}</Text>
               </View>
               <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
             </View>
@@ -170,8 +170,8 @@ export default function ExpiryCalendarScreen({ navigation }) {
         }) : (
           <View style={styles.emptyCard}>
             <CalendarDays size={22} color={Colors.textMuted} />
-            <Text style={styles.emptyTitle}>Không có sản phẩm hết hạn ngày này</Text>
-            <Text style={styles.emptyText}>Chọn ngày có chấm màu trên lịch để xem sản phẩm.</Text>
+            <Text style={styles.emptyTitle}>No products expire on this date</Text>
+            <Text style={styles.emptyText}>Select a date with a colored dot to view products.</Text>
           </View>
         )}
       </ScrollView>

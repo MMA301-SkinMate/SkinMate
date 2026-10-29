@@ -74,7 +74,8 @@ const buildNotification = (product, type) => {
 
 const runExpiryScan = async now => {
   const products = await Collection.find({ status: 'active', expirationDate: { $ne: null } }).lean();
-  const devices = await NotificationDevice.find({ enabled: true }).lean();
+  const userIds = [...new Set(products.map(product => product.userId.toString()))];
+  const devices = await NotificationDevice.find({ enabled: true, userId: { $in: userIds } }).lean();
   const devicesByUser = new Map();
   devices.forEach(device => {
     const key = device.userId.toString();
