@@ -174,11 +174,12 @@ const analyzeAndGenerateDailyRoutine = async (
     status: 'active',
   }).populate('schedule.morningSteps.product schedule.eveningSteps.product');
 
-  // Lấy danh sách sản phẩm trong tủ đồ còn hạn sử dụng
+  // Lấy danh sách sản phẩm trong tủ đồ còn hạn sử dụng (loại bỏ triệt để sản phẩm hết hạn kể cả khi user cố tình dùng tiếp)
   const closetProducts = await Collection.find({
     user: userId,
     status: 'active',
-    $or: [{ expiryDate: null }, { expiryDate: { $gt: new Date() } }, { isExpiredAcknowledged: true }],
+    $or: [{ expiryDate: null }, { expiryDate: { $gt: new Date() } }],
+    isExpiredAcknowledged: { $ne: true },
   });
 
   const isBadSkinCondition =
@@ -266,6 +267,22 @@ const analyzeAndGenerateDailyRoutine = async (
             shiftDays: 1,
             message: overrideReason,
           });
+
+          // Thực hiện lùi toàn bộ routine từ dayInPlan về sau xuống 1 ngày
+          activePlan.totalDays = (activePlan.totalDays || 14) + 1;
+          activePlan.schedule.forEach((s) => {
+            if (s.day >= dayInPlan) {
+              s.day += 1;
+            }
+          });
+          // Chèn ngày phục hồi vào dayInPlan hiện tại
+          activePlan.schedule.push({
+            day: dayInPlan,
+            morningSteps,
+            eveningSteps,
+          });
+          activePlan.schedule.sort((a, b) => a.day - b.day);
+
           await activePlan.save();
         }
       }

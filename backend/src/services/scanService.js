@@ -77,22 +77,34 @@ Dựa vào điểm số ${scoreResult.finalScore}% và dữ liệu trên, hãy g
 }
 `;
 
-  try {
-    const aiResponse = await ai.models.generateContent({
-      model: 'gemini-3.5-flash',
-      contents: prompt,
-      config: {
-        responseMimeType: 'application/json',
-      },
-    });
+  const CANDIDATE_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  let aiSuccess = false;
 
-    const parsed = JSON.parse(aiResponse.text || '{}');
-    aiExplanation = parsed.explanation || '';
-    conflictResolution = parsed.conflict_resolution || '';
-    bestPairingInCloset = parsed.best_pairing_in_closet || '';
-    futurePlan = parsed.future_plan || '';
-  } catch (err) {
-    console.warn('[scanService] AI generation fallback:', err.message);
+  if (process.env.GEMINI_API_KEY) {
+    for (const model of CANDIDATE_MODELS) {
+      try {
+        const aiResponse = await ai.models.generateContent({
+          model,
+          contents: prompt,
+          config: {
+            responseMimeType: 'application/json',
+          },
+        });
+
+        const parsed = JSON.parse(aiResponse.text || '{}');
+        aiExplanation = parsed.explanation || '';
+        conflictResolution = parsed.conflict_resolution || '';
+        bestPairingInCloset = parsed.best_pairing_in_closet || '';
+        futurePlan = parsed.future_plan || '';
+        aiSuccess = true;
+        break;
+      } catch (err) {
+        console.warn(`[scanService] Model ${model} failed:`, err.message);
+      }
+    }
+  }
+
+  if (!aiSuccess) {
     aiExplanation = `Sản phẩm đạt ${scoreResult.finalScore}% độ phù hợp với nền da ${userSkinType}. Điểm đánh giá dựa trên thành phần khuyến nghị và cấm kỵ của tình trạng da hiện tại.`;
     conflictResolution = scoreResult.matchedConflicts.length > 0
       ? `Cảnh báo: Có xung đột hoạt chất với routine hôm nay. Tránh bôi chung cùng buổi!`

@@ -2,12 +2,17 @@ const ai = require('../config/AI');
 
 // Fallback models in case one hits rate limit (429) or high demand (503)
 const CANDIDATE_MODELS = [
-    'gemini-3.5-flash',
-    'gemini-3.7-flash',
-    'gemini-3-flash-preview',
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
 ];
 
 const extractIngredientsFromImage = async (file) => {
+    const key = process.env.GEMINI_API_KEY?.trim();
+    if (!key || key === 'missing_gemini_api_key') {
+        throw new Error('Chưa cấu hình GEMINI_API_KEY trong file .env. Vui lòng thêm GEMINI_API_KEY để sử dụng tính năng quét AI.');
+    }
+
     const imagePart = {
         inlineData: {
             data: file.buffer.toString('base64'),
