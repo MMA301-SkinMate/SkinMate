@@ -1,23 +1,84 @@
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { useAuth } from "../hooks/useAuth";
+import AuthStackNav from "./AuthStackNav";
+import BottomTabNav from "./BottomTabNav";
+import { AppText } from "../components/common/AppText";
+import { Button } from "../components/common/Button";
+import { Snackbar } from "../components/common/Snackbar";
+import { AUTH_MESSAGES as COPY } from "../constants/auth";
+import { COLORS as C } from "../constants/colors";
+import { SPACING } from "../constants/theme";
+import { useIntro } from "../hooks/useIntro";
+import IntroScreen from "../screens/intro/IntroScreen";
 
-import IntroScreen from '../screens/intro/IntroScreen';
-import BottomTabNav from './BottomTabNav';
-import Login from '../screens/auth/Login';
+const Root = createNativeStackNavigator();
 
-const Stack = createNativeStackNavigator();
-
-export default function AppNavigator({ initialRouteName = 'Intro' }) {
+function BootstrapScreen() {
+  const auth = useAuth();
   return (
-    <Stack.Navigator
-      initialRouteName={initialRouteName}
-      screenOptions={{
-        headerShown: false,
-        animation: 'slide_from_right',
-      }}
-    >
-      <Stack.Screen name="Intro" component={IntroScreen} />
-      <Stack.Screen name="Login" component={Login} />
-      <Stack.Screen name="Main" component={BottomTabNav} />
-    </Stack.Navigator>
+    <View style={styles.loading}>
+      {auth.bootstrapError ? (
+        <>
+          <AppText align="center" color={C.textMain}>
+            {auth.bootstrapError}
+          </AppText>
+          <Button title={COPY.retry} onPress={auth.restore} />
+        </>
+      ) : (
+        <>
+          <ActivityIndicator color={C.primary} />
+          <AppText color={C.textSecondary}>{COPY.restoring}</AppText>
+        </>
+      )}
+    </View>
   );
 }
+
+export default function AppNavigator() {
+  const auth = useAuth();
+  const { isCheckingIntro, hasSeenIntro, handleFinishIntro } = useIntro();
+  return (
+    <>
+      <Root.Navigator
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: C.background },
+        }}
+      >
+        {isCheckingIntro || auth.booting || auth.bootstrapError ? (
+          <Root.Screen name="Bootstrap" component={BootstrapScreen} />
+        ) : !hasSeenIntro ? (
+          <Root.Screen name="Intro">
+            {(props) => <IntroScreen {...props} onFinish={handleFinishIntro} />}
+          </Root.Screen>
+        ) :
+          auth.isAuthenticated ? (
+            <Root.Screen name="MainTabs" component={BottomTabNav} />
+          ) : (
+            <Root.Screen name="Auth" component={AuthStackNav} />
+          )}
+      </Root.Navigator>
+      {auth.notice && (
+        <Snackbar
+          id={auth.notice.id}
+          visible
+          message={auth.notice.message}
+          tone={auth.isAuthenticated ? "success" : "info"}
+          onDismiss={auth.dismissNotice}
+        />
+      )}
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  loading: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: SPACING.xl,
+    gap: SPACING.md,
+    backgroundColor: C.background,
+  },
+});
