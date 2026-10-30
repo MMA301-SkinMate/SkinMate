@@ -1,13 +1,13 @@
 export const PRODUCT_ICONS = [
   { id: 'serum', label: 'Serum', image: require('../icons/serum.png') },
-  { id: 'chai_to', label: 'Chai to', image: require('../icons/chaito.png') },
-  { id: 'hu', label: 'Hũ kem', image: require('../icons/hu.png') },
-  { id: 'tuyp_xanh', label: 'Tuýp xanh', image: require('../icons/tuypxanh.png') },
-  { id: 'oil', label: 'Dầu dưỡng', image: require('../icons/oil.png') },
-  { id: 'pum', label: 'Vòi nhấn', image: require('../icons/pum.png') },
-  { id: 'mask', label: 'Mặt nạ', image: require('../icons/mask.png') },
-  { id: 'tuyp', label: 'Tuýp', image: require('../icons/tuyp.png') },
-  { id: 'xit', label: 'Xịt khoáng', image: require('../icons/xit.png') },
+  { id: 'chai_to', label: 'Large bottle', image: require('../icons/chaito.png') },
+  { id: 'hu', label: 'Cream jar', image: require('../icons/hu.png') },
+  { id: 'tuyp_xanh', label: 'Blue tube', image: require('../icons/tuypxanh.png') },
+  { id: 'oil', label: 'Face oil', image: require('../icons/oil.png') },
+  { id: 'pum', label: 'Pump bottle', image: require('../icons/pum.png') },
+  { id: 'mask', label: 'Face mask', image: require('../icons/mask.png') },
+  { id: 'tuyp', label: 'Tube', image: require('../icons/tuyp.png') },
+  { id: 'xit', label: 'Face mist', image: require('../icons/xit.png') },
 ];
 
 export const PRODUCT_TYPES = [

@@ -16,7 +16,7 @@ export function CommunityProvider({ children }) {
       const result = await listCommunityPosts(skinTypeFilter ? { skinType: skinTypeFilter } : {});
       setPosts(result.posts || []);
     } catch (error) {
-      setCommunityError(error.message || 'Không thể tải bài viết cộng đồng.');
+      setCommunityError(error.message || 'Unable to load community posts.');
     } finally {
       setIsCommunityLoading(false);
     }

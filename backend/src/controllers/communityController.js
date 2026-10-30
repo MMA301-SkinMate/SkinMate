@@ -50,7 +50,7 @@ exports.uploadImages = async (req, res, next) => {
     if (!req.files?.length) return res.status(400).json({ error: { message: 'A JPG, PNG, or WebP image is required', code: 'INVALID_IMAGE' } });
     const images = [];
     for (const file of req.files) {
-      const result = await uploadToCloudinary(file);
+      const result = await uploadToCloudinary(file, 'skinmate/community');
       images.push(result.secureUrl);
     }
     res.status(201).json({ images });
@@ -176,7 +176,7 @@ exports.copyRoutine = async (req, res, next) => {
     const products = days.flatMap((day, dayIndex) => [
       ...toProducts(day.morning || [], 'morning'),
       ...toProducts(day.evening || [], 'evening'),
-    ].map(product => ({ ...product, note: days.length > 1 ? `Ngày ${dayIndex + 1}: ${product.note || ''}`.trim() : product.note })));
+    ].map(product => ({ ...product, note: days.length > 1 ? `Day ${dayIndex + 1}: ${product.note || ''}`.trim() : product.note })));
     if (!products.length) return res.status(400).json({ error: { message: 'This post has no routine to copy', code: 'EMPTY_ROUTINE' } });
 
     const created = await Collection.insertMany(products);

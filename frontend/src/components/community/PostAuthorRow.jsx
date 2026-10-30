@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { formatRelativeTime, getAvatarColor, getInitials } from '../../constants/community';
+import { formatRelativeTime, getAvatarColor, getInitials, SKIN_TYPE_LABELS } from '../../constants/community';
 import { Colors } from '../../constants/theme';
 
 export default function PostAuthorRow({ post, right }) {
@@ -10,10 +10,10 @@ export default function PostAuthorRow({ post, right }) {
         <Text style={styles.initials}>{getInitials(post.authorName)}</Text>
       </View>
       <View style={styles.info}>
-        <Text style={styles.name} numberOfLines={1}>{post.authorName}</Text>
+        <Text style={styles.name} numberOfLines={1}>{post.authorName === 'Thành viên SkinMate' ? 'SkinMate member' : post.authorName}</Text>
         <View style={styles.metaRow}>
           <Text style={styles.meta}>{formatRelativeTime(post.createdAt)}</Text>
-          {(post.skinTypes?.length ? post.skinTypes : post.skinType ? [post.skinType] : []).map(type => <Text key={type} style={styles.tag}>{type}</Text>)}
+          {(post.skinTypes?.length ? post.skinTypes : post.skinType ? [post.skinType] : []).map(type => <Text key={type} style={styles.tag}>{SKIN_TYPE_LABELS[type] || type}</Text>)}
         </View>
       </View>
       {right}

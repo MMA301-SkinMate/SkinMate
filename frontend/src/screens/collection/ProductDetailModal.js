@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Alert, Image, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { Alert, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import useKeyboardAwareInputs from '../../hooks/use-keyboard-aware-inputs';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   AlertTriangle,
@@ -21,23 +22,23 @@ import { getProductIcon } from '../../constants/product-icons';
 import { useCollection } from '../../context/CollectionContext';
 
 const TYPE_LABELS = {
-  cleanser: 'Sữa rửa mặt',
+  cleanser: 'Cleanser',
   toner: 'Toner',
-  essences: 'Tinh chất (Essence)',
-  cream: 'Kem dưỡng',
-  oil: 'Dầu dưỡng (Oil)',
-  serum: 'Serum & Tinh chất',
-  treatment: 'Đặc trị (Treatment)',
-  moisturizer: 'Dưỡng ẩm (Moisturizer)',
-  sunscreen: 'Chống nắng',
-  mask: 'Mặt nạ',
-  exfoliant: 'Tẩy tế bào chết',
-  others: 'Khác',
-  other: 'Khác',
+  essences: 'Essence',
+  cream: 'Cream',
+  oil: 'Face oil',
+  serum: 'Serum',
+  treatment: 'Treatment',
+  moisturizer: 'Moisturizer',
+  sunscreen: 'Sunscreen',
+  mask: 'Face mask',
+  exfoliant: 'Exfoliant',
+  others: 'Other',
+  other: 'Other',
 };
 
 function formatDate(value) {
-  return value ? new Intl.DateTimeFormat('vi-VN').format(new Date(value)) : 'Chưa cập nhật';
+  return value ? new Intl.DateTimeFormat('en-US').format(new Date(value)) : 'Not updated';
 }
 
 function getDaysLeft(expirationDate) {
@@ -46,12 +47,13 @@ function getDaysLeft(expirationDate) {
 }
 
 function formatPao(paoDays) {
-  if (!paoDays) return 'Chưa cập nhật PAO';
+  if (!paoDays) return 'PAO not set';
   if (paoDays % 30 === 0) return `PAO ${paoDays / 30}M`;
-  return `PAO ${paoDays} ngày`;
+  return `PAO ${paoDays} days`;
 }
 
 export default function ProductDetailModal({ route, navigation }) {
+  const { scrollViewRef, inputProps } = useKeyboardAwareInputs();
   const { product } = route.params;
   const { deleteProduct, markAsEmpty, updateProduct, restoreProduct } = useCollection();
   const [remaining, setRemaining] = useState(product.remainingPercent ?? 100);
@@ -89,31 +91,31 @@ export default function ProductDetailModal({ route, navigation }) {
 
     if (nextRemaining === 0) {
       Alert.alert(
-        'Đã dùng hết sản phẩm?',
-        'Dung tích đã về 0%. Bạn có muốn chuyển sản phẩm sang danh sách "Đã dùng hết"?',
+        'Product used up?',
+        'The amount remaining is 0%. Move this product to the "Used up" list?',
         [
           {
-            text: 'Chỉ đặt 0%',
+            text: 'Only set to 0%',
             onPress: async () => {
               setIsSaving(true);
               try {
                 await updateProduct(product.id, { remainingPercent: 0 });
                 setRemaining(0);
               } catch (error) {
-                Alert.alert('Không thể cập nhật', error.message || 'Vui lòng thử lại.');
+                Alert.alert('Unable to update', error.message || 'Please try again.');
               } finally {
                 setIsSaving(false);
               }
             },
           },
           {
-            text: 'Đánh dấu dùng hết',
+            text: 'Mark as used up',
             onPress: async () => {
               try {
                 await markAsEmpty(product.id);
                 navigation.goBack();
               } catch (error) {
-                Alert.alert('Không thể cập nhật', error.message || 'Vui lòng thử lại.');
+                Alert.alert('Unable to update', error.message || 'Please try again.');
               }
             },
           },
@@ -127,23 +129,23 @@ export default function ProductDetailModal({ route, navigation }) {
       await updateProduct(product.id, { remainingPercent: nextRemaining });
       setRemaining(nextRemaining);
     } catch (error) {
-      Alert.alert('Không thể cập nhật', error.message || 'Vui lòng thử lại.');
+      Alert.alert('Unable to update', error.message || 'Please try again.');
     } finally {
       setIsSaving(false);
     }
   };
 
   const confirmFinish = () => {
-    Alert.alert('Đánh dấu đã dùng hết?', 'Sản phẩm sẽ chuyển sang danh sách đã dùng hết và đặt dung tích về 0%.', [
-      { text: 'Huỷ', style: 'cancel' },
+    Alert.alert('Mark as used up?', 'The product will move to the used-up list with 0% remaining.', [
+      { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Đánh dấu hết',
+        text: 'Mark as used up',
         onPress: async () => {
           try {
             await markAsEmpty(product.id);
             navigation.goBack();
           } catch (error) {
-            Alert.alert('Không thể cập nhật', error.message || 'Vui lòng thử lại.');
+            Alert.alert('Unable to update', error.message || 'Please try again.');
           }
         },
       },
@@ -151,16 +153,16 @@ export default function ProductDetailModal({ route, navigation }) {
   };
 
   const confirmRestore = () => {
-    Alert.alert('Dùng lại sản phẩm?', 'Sản phẩm sẽ được khôi phục về danh sách "Đang sử dụng".', [
-      { text: 'Huỷ', style: 'cancel' },
+    Alert.alert('Use this product again?', 'The product will be restored to the "Currently using" list.', [
+      { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Khôi phục',
+        text: 'Restore',
         onPress: async () => {
           try {
             await restoreProduct(product.id, 100);
             navigation.goBack();
           } catch (error) {
-            Alert.alert('Không thể khôi phục', error.message || 'Vui lòng thử lại.');
+            Alert.alert('Unable to restore', error.message || 'Please try again.');
           }
         },
       },
@@ -168,16 +170,16 @@ export default function ProductDetailModal({ route, navigation }) {
   };
 
   const confirmArchive = () => {
-    Alert.alert('Lưu trữ sản phẩm?', 'Sản phẩm sẽ được chuyển vào danh sách đã hoàn tất.', [
-      { text: 'Huỷ', style: 'cancel' },
+    Alert.alert('Archive product?', 'The product will move to the completed list.', [
+      { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Lưu trữ',
+        text: 'Archive',
         onPress: async () => {
           try {
             await updateProduct(product.id, { status: 'archived' });
             navigation.goBack();
           } catch (error) {
-            Alert.alert('Không thể lưu trữ', error.message || 'Vui lòng thử lại.');
+            Alert.alert('Unable to archive', error.message || 'Please try again.');
           }
         },
       },
@@ -185,17 +187,17 @@ export default function ProductDetailModal({ route, navigation }) {
   };
 
   const confirmDelete = () => {
-    Alert.alert('Xoá sản phẩm?', 'Thao tác này không thể hoàn tác.', [
-      { text: 'Huỷ', style: 'cancel' },
+    Alert.alert('Delete product?', 'This action cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Xoá',
+        text: 'Delete',
         style: 'destructive',
         onPress: async () => {
           try {
             await deleteProduct(product.id);
             navigation.goBack();
           } catch (error) {
-            Alert.alert('Không thể xoá', error.message || 'Vui lòng thử lại.');
+            Alert.alert('Unable to delete', error.message || 'Please try again.');
           }
         },
       },
@@ -206,15 +208,15 @@ export default function ProductDetailModal({ route, navigation }) {
   const productIcon = getProductIcon(product.productIcon || product.iconId, productType);
   const routineTimeText =
     product.routineUsage?.morning && product.routineUsage?.evening
-      ? 'Sáng (AM) & Tối (PM)'
+      ? 'Morning (AM) & Evening (PM)'
       : product.routineUsage?.morning
-      ? 'Buổi sáng (AM)'
+      ? 'Morning (AM)'
       : product.routineUsage?.evening
-      ? 'Buổi tối (PM)'
-      : product.routine || 'Chưa thiết lập';
+      ? 'Evening (PM)'
+      : product.routine || 'Not set';
   const routineStepText = product.routineUsage?.step
-    ? `Bước ${product.routineUsage.step} trong quy trình`
-    : 'Chưa thiết lập thứ tự routine';
+    ? `Step ${product.routineUsage.step} in your routine`
+    : 'Routine order not set';
   const hasAnalysis = product.analysisResult && (
     product.analysisResult.verdict ||
     product.analysisResult.conflictResolution ||
@@ -225,36 +227,20 @@ export default function ProductDetailModal({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.overlay} edges={[]}>
-      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={() => { Keyboard.dismiss(); navigation.goBack(); }} />
-      <KeyboardAvoidingView
-        style={styles.keyboardAvoid}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <View style={styles.sheet}>
-          <View style={styles.handle} />
-          <Pressable style={styles.header} onPress={Keyboard.dismiss}>
-            <View style={styles.headerTitleRow}>
-              <View style={styles.leafIcon}><Leaf size={21} color={Colors.primaryDark} /></View>
-              <Text style={styles.headerTitle} numberOfLines={1}>VANITY SHELF • NGĂN {TYPE_LABELS[productType]?.toUpperCase() || 'SKINCARE'}</Text>
-            </View>
-            <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
-              <X size={24} color={Colors.text} />
-            </TouchableOpacity>
-          </Pressable>
+      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={() => navigation.goBack()} />
+      <View style={styles.sheet}>
+        <View style={styles.handle} />
+        <View style={styles.header}>
+          <View style={styles.headerTitleRow}>
+            <View style={styles.leafIcon}><Leaf size={21} color={Colors.primaryDark} /></View>
+            <Text style={styles.headerTitle} numberOfLines={1}>VANITY SHELF •{TYPE_LABELS[productType]?.toUpperCase() || 'SKINCARE'}</Text>
+          </View>
+          <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
+            <X size={24} color={Colors.text} />
+          </TouchableOpacity>
+        </View>
 
-          <KeyboardAwareScrollView
-            contentContainerStyle={styles.content}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            showsVerticalScrollIndicator={false}
-            enableOnAndroid={true}
-            enableAutomaticScroll={true}
-            extraScrollHeight={Platform.OS === 'ios' ? 60 : 80}
-            extraHeight={Platform.OS === 'ios' ? 60 : 80}
-            enableResetScrollToCoords={true}
-          >
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-              <View style={{ flex: 1 }}>
+        <KeyboardAwareScrollView ref={scrollViewRef} enableOnAndroid enableAutomaticScroll keyboardOpeningTime={0} extraScrollHeight={80} extraHeight={100} enableResetScrollToCoords={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.heroCard}>
             <View style={styles.productPreview}>
               <View style={styles.paoBadge}><ShieldCheck size={13} color={Colors.primaryDark} /><Text style={styles.paoText}>{formatPao(product.paoDays)}</Text></View>
@@ -273,33 +259,33 @@ export default function ProductDetailModal({ route, navigation }) {
               )}
             </View>
             <View style={styles.heroCopy}>
-              <View style={styles.categoryBadge}><FlaskConical size={15} color={Colors.primaryDark} /><Text style={styles.categoryText}>{TYPE_LABELS[productType] || 'Chăm sóc da'}</Text></View>
+              <View style={styles.categoryBadge}><FlaskConical size={15} color={Colors.primaryDark} /><Text style={styles.categoryText}>{TYPE_LABELS[productType] || 'Skincare'}</Text></View>
               <Text style={styles.productName} numberOfLines={2}>{product.name || product.productName}</Text>
-              <Text style={styles.brandText} numberOfLines={1}>{product.brand || 'Tủ đồ SkinMate'} • {product.size || 'Dung tích chuẩn'}</Text>
+              <Text style={styles.brandText} numberOfLines={1}>{product.brand || 'SkinMate Collection'} • {product.size || 'Standard size'}</Text>
               {isFinished ? (
                 <View style={[styles.openBadge, styles.finishedBadge]}>
                   <View style={[styles.statusDot, styles.finishedDot]} />
-                  <Text style={styles.finishedBadgeText}>Đã dùng hết</Text>
+                  <Text style={styles.finishedBadgeText}>Used up</Text>
                 </View>
               ) : isExpired ? (
                 <View style={[styles.openBadge, styles.expiredActiveBadge]}>
                   <AlertTriangle size={12} color={Colors.error} />
                   <Text style={styles.expiredActiveBadgeText}>
-                    Đã hết hạn ({daysLeft !== null ? Math.abs(daysLeft) : 0} ngày) • Tiếp tục dùng
+                    Expired ({daysLeft !== null ? Math.abs(daysLeft) : 0} days) • Still in use
                   </Text>
                 </View>
               ) : (
                 <View style={styles.openBadge}>
                   <View style={styles.statusDot} />
                   <Text style={styles.openText}>
-                    {daysLeft === null ? 'Chưa thiết lập hạn dùng' : `Đang mở nắp • ${Math.max(0, daysLeft)} ngày còn lại`}
+                    {daysLeft === null ? 'Expiry not set' : `Opened • ${Math.max(0, daysLeft)} days left`}
                   </Text>
                 </View>
               )}
             </View>
             <TouchableOpacity style={styles.routineRow}>
               <View style={styles.routineIcon}><Sun size={22} color={Colors.primaryDark} /></View>
-              <View style={styles.routineCopy}><Text style={styles.routineTitle}>Quy trình: {routineTimeText}</Text><Text style={styles.routineText}>{routineStepText}</Text></View>
+              <View style={styles.routineCopy}><Text style={styles.routineTitle}>Routine: {routineTimeText}</Text><Text style={styles.routineText}>{routineStepText}</Text></View>
               <ChevronRight size={21} color={Colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -308,9 +294,9 @@ export default function ProductDetailModal({ route, navigation }) {
             <View style={styles.redWarningBox}>
               <AlertTriangle size={20} color={Colors.error} style={{ marginTop: 2 }} />
               <View style={styles.redWarningCopy}>
-                <Text style={styles.redWarningTitle}>Trạng thái cảnh báo đỏ</Text>
+                <Text style={styles.redWarningTitle}>Red alert status</Text>
                 <Text style={styles.redWarningText}>
-                  Sản phẩm này đã quá hạn {daysLeft !== null ? Math.abs(daysLeft) : ''} ngày nhưng bạn chọn tiếp tục sử dụng. Hãy kiểm tra kết cấu, mùi và ngừng dùng ngay nếu có dấu hiệu bất thường.
+                  This product expired {daysLeft !== null ? Math.abs(daysLeft) : ''} days ago, but you chose to keep using it. Check its texture and smell, and stop using it immediately if anything seems unusual.
                 </Text>
               </View>
             </View>
@@ -321,44 +307,44 @@ export default function ProductDetailModal({ route, navigation }) {
             <View style={styles.analysisCard}>
               <View style={styles.sectionHeading}>
                 <Sparkles size={20} color={Colors.primaryDark} />
-                <Text style={styles.sectionTitle}>Kết quả phân tích SkinMate AI</Text>
+                <Text style={styles.sectionTitle}>SkinMate AI analysis</Text>
               </View>
 
               <View style={styles.scoreRow}>
                 <View style={styles.scoreBox}>
                   <Text style={styles.scoreNumber}>{product.analysisResult.baseScore ?? 70}</Text>
-                  <Text style={styles.scoreLabel}>Điểm nền tảng</Text>
+                  <Text style={styles.scoreLabel}>Base score</Text>
                 </View>
                 <View style={[styles.scoreBox, styles.contextScoreBox]}>
                   <Text style={[styles.scoreNumber, styles.contextScoreNumber]}>{product.analysisResult.contextualScore ?? 70}</Text>
-                  <Text style={styles.scoreLabel}>Điểm tương thích</Text>
+                  <Text style={styles.scoreLabel}>Compatibility score</Text>
                 </View>
               </View>
 
               {product.analysisResult.verdict ? (
                 <View style={styles.analysisItem}>
-                  <Text style={styles.analysisItemTitle}>Đánh giá tổng quan</Text>
+                  <Text style={styles.analysisItemTitle}>Overall assessment</Text>
                   <Text style={styles.analysisItemText}>{product.analysisResult.verdict}</Text>
                 </View>
               ) : null}
 
               {product.analysisResult.bestPairingInCloset ? (
                 <View style={styles.analysisItem}>
-                  <Text style={styles.analysisItemTitle}>Kết hợp tối ưu trong tủ đồ</Text>
+                  <Text style={styles.analysisItemTitle}>Best pairing in your collection</Text>
                   <Text style={styles.analysisItemText}>{product.analysisResult.bestPairingInCloset}</Text>
                 </View>
               ) : null}
 
               {product.analysisResult.conflictResolution ? (
                 <View style={styles.analysisItemWarning}>
-                  <Text style={styles.analysisItemWarningTitle}>Lưu ý tương tác & xung đột</Text>
+                  <Text style={styles.analysisItemWarningTitle}>Interactions & conflicts</Text>
                   <Text style={styles.analysisItemWarningText}>{product.analysisResult.conflictResolution}</Text>
                 </View>
               ) : null}
 
               {product.analysisResult.futurePlan ? (
                 <View style={styles.analysisItem}>
-                  <Text style={styles.analysisItemTitle}>Kế hoạch sử dụng gợi ý</Text>
+                  <Text style={styles.analysisItemTitle}>Suggested usage plan</Text>
                   <Text style={styles.analysisItemText}>{product.analysisResult.futurePlan}</Text>
                 </View>
               ) : null}
@@ -370,7 +356,7 @@ export default function ProductDetailModal({ route, navigation }) {
             <View style={styles.ingredientsCard}>
               <View style={styles.sectionHeading}>
                 <FlaskConical size={19} color={Colors.textSecondary} />
-                <Text style={styles.sectionTitle}>Thành phần nổi bật ({product.ingredients.length})</Text>
+                <Text style={styles.sectionTitle}>Key ingredients ({product.ingredients.length})</Text>
               </View>
               <View style={styles.ingredientsWrap}>
                 {product.ingredients.map((ing, idx) => (
@@ -385,26 +371,26 @@ export default function ProductDetailModal({ route, navigation }) {
           <View style={styles.volumeCard}>
             <View style={styles.volumeHeader}>
               <View style={styles.metricIcon}><CircleGauge size={24} color={Colors.primaryDark} /></View>
-              <View style={styles.metricCopy}><Text style={styles.metricTitle}>Dung tích ước lượng</Text><Text style={styles.metricText}>Khoảng {Math.round((Number.parseInt(product.size, 10) || 30) * remaining / 100)}ml</Text></View>
+              <View style={styles.metricCopy}><Text style={styles.metricTitle}>Estimated amount</Text><Text style={styles.metricText}>About {Math.round((Number.parseInt(product.size, 10) || 30) * remaining / 100)}ml</Text></View>
               {isEditingPercent ? (
                 <View style={styles.percentEditRow}>
                   <TextInput
+                    {...inputProps('remainingPercent')}
                     style={[styles.percentage, styles.percentInput]}
                     value={percentDraft}
                     onChangeText={text => setPercentDraft(text.replace(/[^0-9]/g, '').slice(0, 3))}
                     onBlur={commitPercentDraft}
-                    onSubmitEditing={commitPercentDraft}
                     keyboardType="number-pad"
                     returnKeyType="done"
                     maxLength={3}
                     autoFocus
                     selectTextOnFocus
-                    accessibilityLabel="Nhập phần trăm dung tích còn lại"
+                    accessibilityLabel="Enter remaining percentage"
                   />
                   <Text style={styles.percentage}>%</Text>
                 </View>
               ) : (
-                <TouchableOpacity onPress={startEditPercent} disabled={isFinished || isSaving} accessibilityRole="button" accessibilityLabel={`Dung tích còn ${remaining}%, chạm để nhập`}>
+                <TouchableOpacity onPress={startEditPercent} disabled={isFinished || isSaving} accessibilityRole="button" accessibilityLabel={`Amount remaining ${remaining}%, tap to edit`}>
                   <Text style={styles.percentage}>{remaining}%</Text>
                 </TouchableOpacity>
               )}
@@ -413,38 +399,38 @@ export default function ProductDetailModal({ route, navigation }) {
             {!isFinished ? (
               <View style={styles.quickControls}>
                 <TouchableOpacity style={styles.quickButton} onPress={() => updateRemaining(-10)} disabled={isSaving}><Text style={styles.quickButtonText}>− 10%</Text></TouchableOpacity>
-                <Text style={styles.quickLabel}>{isSaving ? 'Đang lưu...' : 'Cập nhật nhanh'}</Text>
+                <Text style={styles.quickLabel}>{isSaving ? 'Saving...' : 'Quick update'}</Text>
                 <TouchableOpacity style={styles.quickButton} onPress={() => updateRemaining(10)} disabled={isSaving}><Text style={styles.quickButtonText}>＋ 10%</Text></TouchableOpacity>
               </View>
             ) : (
               <View style={styles.finishedNoticeWrap}>
-                <Text style={styles.finishedNoticeText}>Sản phẩm này đã được đánh dấu dùng hết (0%)</Text>
+                <Text style={styles.finishedNoticeText}>This product is marked as used up (0%)</Text>
               </View>
             )}
           </View>
 
           <View style={styles.trackingCard}>
-            <View style={styles.sectionHeading}><CalendarDays size={21} color={Colors.textSecondary} /><Text style={styles.sectionTitle}>Theo dõi Hạn dùng & Mở nắp</Text></View>
+            <View style={styles.sectionHeading}><CalendarDays size={21} color={Colors.textSecondary} /><Text style={styles.sectionTitle}>Expiry & opening dates</Text></View>
             <View style={styles.trackingRow}>
               <View style={styles.trackingIcon}><LockKeyhole size={21} color={Colors.primaryDark} /></View>
-              <View style={styles.trackingCopy}><Text style={styles.trackingLabel}>Ngày mở nắp</Text><Text style={styles.trackingValue}>{openedDate}</Text></View>
-              <View style={styles.neutralBadge}><Text style={styles.neutralText}>{product.openedDate ? 'Đã mở nắp' : 'Chưa cập nhật'}</Text></View>
+              <View style={styles.trackingCopy}><Text style={styles.trackingLabel}>Opening date</Text><Text style={styles.trackingValue}>{openedDate}</Text></View>
+              <View style={styles.neutralBadge}><Text style={styles.neutralText}>{product.openedDate ? 'Opened' : 'Not updated'}</Text></View>
             </View>
             <View style={[styles.trackingRow, styles.warningRow]}>
               <View style={styles.trackingIcon}><AlertTriangle size={22} color={Colors.warning} /></View>
-              <View style={styles.trackingCopy}><Text style={styles.warningLabel}>Hạn sử dụng (PAO / EXP)</Text><Text style={styles.warningValue}>{expiryDate}</Text></View>
-              {daysLeft !== null ? <View style={styles.daysBadge}><Text style={styles.daysText}>{isExpired ? 'Đã quá hạn' : `Còn ${Math.max(0, daysLeft)} ngày`}</Text></View> : null}
+              <View style={styles.trackingCopy}><Text style={styles.warningLabel}>Expiry date (PAO / EXP)</Text><Text style={styles.warningValue}>{expiryDate}</Text></View>
+              {daysLeft !== null ? <View style={styles.daysBadge}><Text style={styles.daysText}>{isExpired ? 'Overdue' : `${Math.max(0, daysLeft)} days left`}</Text></View> : null}
             </View>
             <View style={styles.trackingRow}>
               <View style={styles.trackingIcon}><ShieldCheck size={21} color={Colors.textSecondary} /></View>
-              <View style={styles.trackingCopy}><Text style={styles.trackingLabel}>Hạn niêm phong (EXP)</Text><Text style={styles.trackingValue}>{manufacturerExpiry}</Text></View>
-              <View style={styles.safeBadge}><Text style={styles.safeText}>Nguyên vẹn</Text></View>
+              <View style={styles.trackingCopy}><Text style={styles.trackingLabel}>Unopened expiry (EXP)</Text><Text style={styles.trackingValue}>{manufacturerExpiry}</Text></View>
+              <View style={styles.safeBadge}><Text style={styles.safeText}>Sealed</Text></View>
             </View>
           </View>
 
           <View style={styles.storageNote}>
             <Sparkles size={23} color={Colors.primaryDark} />
-            <View style={styles.noteCopy}><Text style={styles.noteTitle}>Ghi chú & Lưu ý bảo quản</Text><Text style={styles.noteText}>{product.note || 'Đậy nắp kín sau khi dùng và cất nơi khô thoáng, tránh ánh nắng trực tiếp.'}</Text></View>
+            <View style={styles.noteCopy}><Text style={styles.noteTitle}>Notes & storage tips</Text><Text style={styles.noteText}>{product.note || 'Close the lid tightly after use and store in a cool, dry place away from direct sunlight.'}</Text></View>
           </View>
 
           <View style={styles.actionRow}>
@@ -454,47 +440,43 @@ export default function ProductDetailModal({ route, navigation }) {
               activeOpacity={0.8}
             >
               <Pencil size={16} color={Colors.textLight} />
-              <Text style={styles.editButtonText}>Chỉnh sửa thông tin</Text>
+              <Text style={styles.editButtonText}>Edit information</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.actionRow}>
             {!isFinished ? (
               <TouchableOpacity style={styles.finishButton} onPress={confirmFinish} activeOpacity={0.8}>
-                <Text style={styles.finishButtonText}>Đã dùng hết</Text>
+                <Text style={styles.finishButtonText}>Used up</Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity style={styles.restoreButton} onPress={confirmRestore} activeOpacity={0.8}>
-                <Text style={styles.restoreButtonText}>Dùng lại (Khôi phục)</Text>
+                <Text style={styles.restoreButtonText}>Use again (Restore)</Text>
               </TouchableOpacity>
             )}
             {product.status !== 'archived' && !isFinished ? (
               <TouchableOpacity style={styles.archiveButton} onPress={confirmArchive} activeOpacity={0.8}>
-                <Text style={styles.archiveButtonText}>Lưu trữ</Text>
+                <Text style={styles.archiveButtonText}>Archive</Text>
               </TouchableOpacity>
             ) : null}
           </View>
-          <TouchableOpacity style={styles.deleteButton} onPress={confirmDelete}><Text style={styles.deleteButtonText}>Xoá sản phẩm</Text></TouchableOpacity>
-              </View>
-            </TouchableWithoutFeedback>
+          <TouchableOpacity style={styles.deleteButton} onPress={confirmDelete}><Text style={styles.deleteButtonText}>Delete product</Text></TouchableOpacity>
         </KeyboardAwareScrollView>
       </View>
-    </KeyboardAvoidingView>
-  </SafeAreaView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: Colors.overlay },
-  keyboardAvoid: { width: '100%', justifyContent: 'flex-end' },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: Colors.overlay },
   sheet: { maxHeight: '88%', minHeight: '76%', backgroundColor: Colors.background, borderTopLeftRadius: 34, borderTopRightRadius: 34, overflow: 'hidden' },
   handle: { width: 72, height: 7, borderRadius: 4, alignSelf: 'center', backgroundColor: Colors.borderDark, marginTop: 13 },
   header: { minHeight: 69, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20 },
   headerTitleRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
-    leafIcon: { width: 39, height: 39, borderRadius: 20, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
+  leafIcon: { width: 39, height: 39, borderRadius: 20, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { flex: 1, color: Colors.text, fontSize: 14, letterSpacing: 0.2 },
   closeButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.surface, marginLeft: 10 },
-  content: { paddingHorizontal: 16, paddingBottom: 30, flexGrow: 1 },
+  content: { paddingHorizontal: 16, paddingBottom: 30 },
   heroCard: { borderRadius: 26, backgroundColor: Colors.surface, padding: 16, flexDirection: 'row', flexWrap: 'wrap', gap: 14, marginBottom: 16 },
   productPreview: { width: 128, height: 147, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: 16 },
   productPhotoImage: { width: '100%', height: '100%', borderRadius: 16 },
@@ -502,13 +484,13 @@ const styles = StyleSheet.create({
   paoBadge: { position: 'absolute', top: 9, left: 9, zIndex: 2, flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 13, backgroundColor: Colors.background, paddingHorizontal: 8, paddingVertical: 5 },
   paoText: { color: Colors.primaryDark, fontSize: 10 },
   heroCopy: { flex: 1, minWidth: 150, justifyContent: 'center' },
-    categoryBadge: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 16, backgroundColor: Colors.primaryLight, paddingHorizontal: 11, paddingVertical: 6, marginBottom: 7 },
+  categoryBadge: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 16, backgroundColor: Colors.primaryLight, paddingHorizontal: 11, paddingVertical: 6, marginBottom: 7 },
   categoryText: { color: Colors.primaryDark, fontSize: 12 },
   productName: { color: Colors.text, fontSize: 22, lineHeight: 26, fontWeight: '700' },
   brandText: { color: Colors.textSecondary, fontSize: 14, marginTop: 3 },
   openBadge: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 7, borderRadius: 17, backgroundColor: Colors.borderDark, paddingHorizontal: 12, paddingVertical: 7, marginTop: 12 },
-    expiredBadge: { backgroundColor: Colors.surface },
-    statusDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.success },
+  expiredBadge: { backgroundColor: Colors.surface },
+  statusDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.success },
   expiredDot: { backgroundColor: Colors.danger },
   openText: { color: Colors.text, fontSize: 12, fontWeight: '500' },
   routineRow: { width: '100%', minHeight: 66, flexDirection: 'row', alignItems: 'center', gap: 11, backgroundColor: Colors.background, paddingHorizontal: 12, marginTop: 2 },
@@ -516,24 +498,24 @@ const styles = StyleSheet.create({
   routineCopy: { flex: 1 },
   routineTitle: { color: Colors.text, fontSize: 13, fontWeight: '700' },
   routineText: { color: Colors.textSecondary, fontSize: 12, marginTop: 2 },
-    volumeCard: { borderRadius: 26, backgroundColor: Colors.background, padding: 16, shadowColor: Colors.shadow, shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2, marginBottom: 16 },
+  volumeCard: { borderRadius: 26, backgroundColor: Colors.background, padding: 16, shadowColor: Colors.shadow, shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2, marginBottom: 16 },
   volumeHeader: { flexDirection: 'row', alignItems: 'center', gap: 11 },
-    metricIcon: { width: 42, height: 42, borderRadius: 21, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
+  metricIcon: { width: 42, height: 42, borderRadius: 21, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
   metricCopy: { flex: 1 },
   metricTitle: { color: Colors.text, fontSize: 15, fontWeight: '600' },
   metricText: { color: Colors.textSecondary, fontSize: 12, marginTop: 2 },
   percentage: { color: Colors.primaryDark, fontSize: 28, fontWeight: '800' },
   percentEditRow: { flexDirection: 'row', alignItems: 'center' },
   percentInput: { minWidth: 56, paddingVertical: 0, textAlign: 'right', borderBottomWidth: 2, borderBottomColor: Colors.primary },
-    progressTrack: { height: 12, borderRadius: 6, backgroundColor: Colors.borderDark, overflow: 'hidden', marginTop: 15 },
+  progressTrack: { height: 12, borderRadius: 6, backgroundColor: Colors.borderDark, overflow: 'hidden', marginTop: 15 },
   progressFill: { height: '100%', borderRadius: 6, backgroundColor: Colors.primary },
   quickControls: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 14 },
-    quickButton: { flex: 1, minHeight: 42, borderRadius: 21, backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center' },
+  quickButton: { flex: 1, minHeight: 42, borderRadius: 21, backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center' },
   quickButtonText: { color: Colors.text, fontSize: 16, fontWeight: '600' },
   quickLabel: { color: Colors.textSecondary, fontSize: 12 },
   trackingCard: { borderRadius: 26, backgroundColor: Colors.background, padding: 16, shadowColor: Colors.shadow, shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2, marginBottom: 16 },
   sectionHeading: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-    sectionTitle: { color: Colors.text, fontSize: 16, fontWeight: '600' },
+  sectionTitle: { color: Colors.text, fontSize: 16, fontWeight: '600' },
   trackingRow: { minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: 11, paddingHorizontal: 10, backgroundColor: Colors.surface, marginBottom: 7 },
   trackingIcon: { width: 38, height: 38, borderRadius: 19, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center' },
   trackingCopy: { flex: 1 },
@@ -541,17 +523,17 @@ const styles = StyleSheet.create({
   trackingValue: { color: Colors.text, fontSize: 15, fontWeight: '600', marginTop: 2 },
   neutralBadge: { borderRadius: 14, backgroundColor: Colors.borderDark, paddingHorizontal: 10, paddingVertical: 6 },
   neutralText: { color: Colors.text, fontSize: 10 },
-    warningRow: { backgroundColor: Colors.surface },
+  warningRow: { backgroundColor: Colors.surface },
   warningLabel: { color: Colors.warning, fontSize: 11 },
   warningValue: { color: Colors.warning, fontSize: 16, fontWeight: '700', marginTop: 2 },
   daysBadge: { borderRadius: 14, backgroundColor: Colors.background, paddingHorizontal: 10, paddingVertical: 6 },
   daysText: { color: Colors.warning, fontSize: 10, fontWeight: '600' },
   safeBadge: { borderRadius: 14, backgroundColor: Colors.primaryLight, paddingHorizontal: 10, paddingVertical: 6 },
   safeText: { color: Colors.primaryDark, fontSize: 10 },
-    storageNote: { flexDirection: 'row', gap: 11, backgroundColor: Colors.surface, padding: 15, marginBottom: 14 },
+  storageNote: { flexDirection: 'row', gap: 11, backgroundColor: Colors.surface, padding: 15, marginBottom: 14 },
   actionRow: { flexDirection: 'row', gap: 10, marginBottom: 10, justifyContent: 'center' },
   editButton: { flex: 1, minHeight: 46, borderRadius: 23, backgroundColor: Colors.primaryDark, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-    editButtonText: { color: Colors.textLight, fontSize: 13, fontWeight: '700' },
+  editButtonText: { color: Colors.textLight, fontSize: 13, fontWeight: '700' },
   finishButton: { flex: 1, minHeight: 46, borderRadius: 23, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
   finishButtonText: { color: Colors.primaryDark, fontSize: 13, fontWeight: '700' },
   restoreButton: { flex: 1, minHeight: 46, borderRadius: 23, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
@@ -560,21 +542,21 @@ const styles = StyleSheet.create({
   archiveButtonText: { color: Colors.text, fontSize: 13, fontWeight: '700' },
   deleteButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   deleteButtonText: { color: Colors.danger, fontSize: 13, fontWeight: '700' },
-    finishedBadge: { backgroundColor: Colors.borderDark },
+  finishedBadge: { backgroundColor: Colors.borderDark },
   finishedDot: { backgroundColor: Colors.textSecondary },
   finishedBadgeText: { color: Colors.text, fontSize: 12, fontWeight: '600' },
   expiredActiveBadge: { backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.error, gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16 },
   expiredActiveBadgeText: { color: Colors.error, fontSize: 11.5, fontWeight: '700' },
-    redWarningBox: { flexDirection: 'row', gap: 10, backgroundColor: Colors.surface, borderWidth: 1.5, borderColor: Colors.error, borderRadius: 18, padding: 14, marginBottom: 16, shadowColor: Colors.error, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
+  redWarningBox: { flexDirection: 'row', gap: 10, backgroundColor: Colors.surface, borderWidth: 1.5, borderColor: Colors.error, borderRadius: 18, padding: 14, marginBottom: 16, shadowColor: Colors.error, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
   redWarningCopy: { flex: 1 },
   redWarningTitle: { color: Colors.error, fontSize: 14, fontWeight: '800', marginBottom: 3 },
   redWarningText: { color: Colors.error, fontSize: 12, lineHeight: 17 },
   noteCopy: { flex: 1 },
-    noteTitle: { color: Colors.text, fontSize: 13, fontWeight: '700', marginBottom: 4 },
+  noteTitle: { color: Colors.text, fontSize: 13, fontWeight: '700', marginBottom: 4 },
   noteText: { color: Colors.textSecondary, fontSize: 12, lineHeight: 18 },
   analysisCard: { borderRadius: 26, backgroundColor: Colors.background, padding: 16, shadowColor: Colors.shadow, shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2, marginBottom: 16 },
   scoreRow: { flexDirection: 'row', gap: 12, marginBottom: 14 },
-    scoreBox: { flex: 1, backgroundColor: Colors.surface, borderRadius: 16, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: Colors.borderDark },
+  scoreBox: { flex: 1, backgroundColor: Colors.surface, borderRadius: 16, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: Colors.borderDark },
   contextScoreBox: { backgroundColor: Colors.surface, borderColor: Colors.borderDark },
   scoreNumber: { fontSize: 24, fontWeight: '800', color: Colors.primaryDark },
   contextScoreNumber: { color: Colors.info },

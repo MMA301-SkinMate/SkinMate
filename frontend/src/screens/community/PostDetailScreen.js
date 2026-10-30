@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, Touchabl
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/theme';
-import { countRoutineSteps } from '../../constants/community';
+import { countRoutineSteps, formatPostTags } from '../../constants/community';
 import { getProductIcon } from '../../constants/product-icons';
 import { getCommunityPost } from '../../api/communityApi';
 import PostAuthorRow from '../../components/community/PostAuthorRow';
@@ -11,8 +11,8 @@ import { useCommunity } from '../../context/CommunityContext';
 import { useCollection } from '../../context/CollectionContext';
 
 const SLOTS = [
-  { key: 'morning', title: 'Buổi sáng (AM)', icon: 'sunny-outline', color: Colors.primary, tint: Colors.primaryLight },
-  { key: 'evening', title: 'Buổi tối (PM)', icon: 'moon-outline', color: Colors.primaryDark, tint: Colors.surface },
+  { key: 'morning', title: 'Morning (AM)', icon: 'sunny-outline', color: Colors.primary, tint: Colors.primaryLight },
+  { key: 'evening', title: 'Evening (PM)', icon: 'moon-outline', color: Colors.primaryDark, tint: Colors.surface },
 ];
 
 export default function PostDetailScreen({ route, navigation }) {
@@ -29,14 +29,14 @@ export default function PostDetailScreen({ route, navigation }) {
       const result = await getCommunityPost(postId);
       setPost(result.post);
     } catch (loadError) {
-      setError(loadError.message || 'Không thể tải bài viết.');
+      setError(loadError.message || 'Unable to load this post.');
     }
   }, [postId]);
 
   useEffect(() => { loadPost(); }, [loadPost]);
 
   const handleLike = async () => {
-    try { setPost(await toggleLike(postId)); } catch (likeError) { Alert.alert('Lỗi', likeError.message || 'Không thể thích bài viết.'); }
+    try { setPost(await toggleLike(postId)); } catch (likeError) { Alert.alert('Error', likeError.message || 'Unable to like this post.'); }
   };
 
   const handleCopy = async () => {
@@ -46,9 +46,9 @@ export default function PostDetailScreen({ route, navigation }) {
       const result = await copyRoutine(postId);
       setPost(result.post);
       await refreshCollection();
-      Alert.alert('Thành công', `Đã thêm ${result.copiedCount} sản phẩm vào tủ đồ của bạn.`);
+      Alert.alert('Copied', `${result.copiedCount} products were added to your collection.`);
     } catch (copyError) {
-      Alert.alert('Lỗi', copyError.message || 'Không thể sao chép chu trình.');
+      Alert.alert('Error', copyError.message || 'Unable to copy this routine.');
     } finally {
       setIsCopying(false);
     }
@@ -56,8 +56,8 @@ export default function PostDetailScreen({ route, navigation }) {
 
   const header = (
     <View style={styles.header}>
-      <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Quay lại"><Ionicons name="arrow-back" size={23} color={Colors.text} /></TouchableOpacity>
-      <Text style={styles.headerTitle}>Chi Tiết Routine</Text>
+      <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Go back"><Ionicons name="arrow-back" size={23} color={Colors.text} /></TouchableOpacity>
+      <Text style={styles.headerTitle}>Routine details</Text>
       <View style={styles.headerSpacer} />
     </View>
   );
@@ -67,7 +67,7 @@ export default function PostDetailScreen({ route, navigation }) {
       <SafeAreaView style={styles.safeArea}>
         {header}
         <View style={styles.centered}>
-          {error ? <><Text style={styles.errorText}>{error}</Text><TouchableOpacity onPress={loadPost}><Text style={styles.retryText}>Thử lại</Text></TouchableOpacity></> : <ActivityIndicator color={Colors.primary} />}
+          {error ? <><Text style={styles.errorText}>{error}</Text><TouchableOpacity onPress={loadPost}><Text style={styles.retryText}>Try again</Text></TouchableOpacity></> : <ActivityIndicator color={Colors.primary} />}
         </View>
       </SafeAreaView>
     );
@@ -82,21 +82,21 @@ export default function PostDetailScreen({ route, navigation }) {
         <View style={styles.authorCard}>
           <PostAuthorRow post={post} />
           <Text style={styles.intro}>{post.content}</Text>
-          {post.tags?.length > 0 && <Text style={styles.tags}>{post.tags.join('  ')}</Text>}
+          {post.tags?.length > 0 && <Text style={styles.tags}>{formatPostTags(post.tags)}</Text>}
         </View>
         {post.images?.length > 0 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.imageRow}>
-            {post.images.map(uri => <Image key={uri} source={{ uri }} style={styles.image} accessibilityLabel="Ảnh minh chứng" />)}
+            {post.images.map(uri => <Image key={uri} source={{ uri }} style={styles.image} accessibilityLabel="Post photo" />)}
           </ScrollView>
         )}
         {(post.sharedRoutine?.days?.length ? post.sharedRoutine.days : [post.sharedRoutine || {}]).map((day, index) => <View key={index}>
-          <Text style={styles.sectionTitle}>Ngày {index + 1}</Text>
+          <Text style={styles.sectionTitle}>Day {index + 1}</Text>
           {SLOTS.map(slot => <RoutineSection key={slot.key} slot={slot} steps={day[slot.key] || []} />)}
         </View>)}
-        {!hasRoutine && <Text style={styles.noRoutine}>Bài viết này không đính kèm routine.</Text>}
+        {!hasRoutine && <Text style={styles.noRoutine}>This post has no attached routine.</Text>}
       </ScrollView>
       <View style={styles.bottomBar}>
-        <TouchableOpacity style={styles.bottomLike} onPress={handleLike} accessibilityRole="button" accessibilityLabel={post.isLiked ? 'Bỏ thích' : 'Thích'}>
+        <TouchableOpacity style={styles.bottomLike} onPress={handleLike} accessibilityRole="button" accessibilityLabel={post.isLiked ? 'Unlike' : 'Like'}>
           <Ionicons name={post.isLiked ? 'heart' : 'heart-outline'} size={21} color={Colors.error} />
           <Text style={styles.bottomCount}>{post.likesCount}</Text>
         </TouchableOpacity>
@@ -107,7 +107,7 @@ export default function PostDetailScreen({ route, navigation }) {
         {hasRoutine && (
           <TouchableOpacity style={styles.saveButton} onPress={handleCopy} disabled={isCopying} accessibilityRole="button">
             {isCopying ? <ActivityIndicator size="small" color={Colors.textLight} /> : <Ionicons name="download-outline" size={17} color={Colors.textLight} />}
-            <Text style={styles.saveText}>Lưu Routine vào tủ</Text>
+            <Text style={styles.saveText}>Copy to collection</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -121,7 +121,7 @@ function RoutineSection({ slot, steps }) {
       <View style={styles.sectionHeader}>
         <View style={[styles.sectionIcon, { backgroundColor: slot.tint }]}><Ionicons name={slot.icon} size={17} color={slot.color} /></View>
         <Text style={styles.sectionTitle}>{slot.title}</Text>
-        <View style={[styles.timeBadge, { backgroundColor: slot.tint }]}><Text style={styles.timeText}>{steps.length} bước</Text></View>
+        <View style={[styles.timeBadge, { backgroundColor: slot.tint }]}><Text style={styles.timeText}>{steps.length} {steps.length === 1 ? 'step' : 'steps'}</Text></View>
       </View>
       {steps.map((step, index) => (
         <View key={`${step.productName}-${index}`} style={styles.detailStep}>

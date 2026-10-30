@@ -5,7 +5,7 @@ import { ActivityIndicator, Alert, FlatList, Image, RefreshControl, StyleSheet, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/theme';
-import { SKIN_TYPES, countRoutineSteps } from '../../constants/community';
+import { SKIN_TYPES, SKIN_TYPE_LABELS, formatPostTags, countRoutineSteps } from '../../constants/community';
 import PostAuthorRow from '../../components/community/PostAuthorRow';
 import { useCommunity } from '../../context/CommunityContext';
 import { useCollection } from '../../context/CollectionContext';
@@ -21,12 +21,12 @@ export default function CommunityScreen({ navigation }) {
     let active = true;
     listCommunityPosts({ mine: 'true', status: 'draft' })
       .then(result => { if (active) setDrafts(result.posts || []); })
-      .catch(error => { if (active) Alert.alert('Không thể tải bản nháp', error.message); });
+      .catch(error => { if (active) Alert.alert('Unable to load drafts', error.message); });
     return () => { active = false; };
   }, []));
 
   const handleLike = async id => {
-    try { await toggleLike(id); } catch (error) { Alert.alert('Lỗi', error.message || 'Không thể thích bài viết.'); }
+    try { await toggleLike(id); } catch (error) { Alert.alert('Error', error.message || 'Unable to like this post.'); }
   };
 
   const handleCopy = async id => {
@@ -35,9 +35,9 @@ export default function CommunityScreen({ navigation }) {
     try {
       const result = await copyRoutine(id);
       await refreshCollection();
-      Alert.alert('Đã sao chép', `Đã thêm ${result.copiedCount} sản phẩm vào tủ đồ của bạn.`);
+      Alert.alert('Copied', `${result.copiedCount} products were added to your collection.`);
     } catch (error) {
-      Alert.alert('Lỗi', error.message || 'Không thể sao chép chu trình.');
+      Alert.alert('Error', error.message || 'Unable to copy this routine.');
     } finally {
       setCopyingId(null);
     }
@@ -54,8 +54,8 @@ export default function CommunityScreen({ navigation }) {
         ListHeaderComponent={<View>
           <CommunityHeader activeFilter={skinTypeFilter} onFilter={setSkinTypeFilter} onCompose={() => navigation.navigate('CreatePost')} />
           {drafts.map(draft => <TouchableOpacity key={draft.id} style={styles.postCard} onPress={() => navigation.navigate('CreatePost', { draft })} accessibilityRole="button">
-            <Text style={styles.routineTitle}>Bản nháp · Tiếp tục chỉnh sửa</Text>
-            <Text style={styles.postText} numberOfLines={2}>{draft.content || 'Routine chưa có nội dung'}</Text>
+            <Text style={styles.routineTitle}>Draft · Continue editing</Text>
+            <Text style={styles.postText} numberOfLines={2}>{draft.content || 'Routine has no content yet'}</Text>
           </TouchableOpacity>)}
         </View>}
         ListEmptyComponent={<FeedEmpty isLoading={isCommunityLoading} error={communityError} onRetry={refreshPosts} />}
@@ -89,14 +89,14 @@ function CommunityHeader({ activeFilter, onFilter, onCompose }) {
           const isActive = activeFilter === item;
           return (
             <TouchableOpacity style={[styles.filter, isActive && styles.filterActive]} onPress={() => onFilter(item)} accessibilityRole="button" accessibilityState={{ selected: isActive }}>
-              <Text style={[styles.filterText, isActive && styles.filterTextActive]}>{isActive && '• '}{item || 'Tất cả'}</Text>
+              <Text style={[styles.filterText, isActive && styles.filterTextActive]}>{isActive && '• '}{SKIN_TYPE_LABELS[item] || item || 'All'}</Text>
             </TouchableOpacity>
           );
         }}
       />
-      <TouchableOpacity style={styles.composer} onPress={onCompose} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel="Tạo bài viết mới">
+      <TouchableOpacity style={styles.composer} onPress={onCompose} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel="Create a new post">
         <View style={styles.avatarPlaceholder}><Ionicons name="people-outline" size={20} color={Colors.primaryDark} /></View>
-        <View style={styles.composerPlaceholder}><Text style={styles.composerPlaceholderText}>Chia sẻ chu trình dưỡng da...</Text></View>
+        <View style={styles.composerPlaceholder}><Text style={styles.composerPlaceholderText}>Share your skincare routine...</Text></View>
         <Ionicons name="camera-outline" size={20} color={Colors.primaryDark} />
         <View style={styles.composerAction}><Ionicons name="add" size={20} color={Colors.primaryDark} /></View>
       </TouchableOpacity>
@@ -109,28 +109,28 @@ function FeedEmpty({ isLoading, error, onRetry }) {
   return (
     <View style={styles.emptyState}>
       <Ionicons name={error ? 'cloud-offline-outline' : 'chatbubbles-outline'} size={36} color={Colors.textMuted} />
-      <Text style={styles.emptyText}>{error || 'Chưa có bài viết nào. Hãy là người đầu tiên chia sẻ routine!'}</Text>
-      {error && <TouchableOpacity onPress={onRetry}><Text style={styles.retryText}>Thử lại</Text></TouchableOpacity>}
+      <Text style={styles.emptyText}>{error || 'No posts yet. Be the first to share your routine!'}</Text>
+      {error && <TouchableOpacity onPress={onRetry}><Text style={styles.retryText}>Try again</Text></TouchableOpacity>}
     </View>
   );
 }
 function PostCard({ post, isCopying, onOpen, onLike, onCopy }) {
   const morning = post.sharedRoutine?.morning || [];
   const evening = post.sharedRoutine?.evening || [];
-  const preview = morning.length ? { title: '☀️ Buổi sáng (AM)', steps: morning } : evening.length ? { title: '🌙 Buổi tối (PM)', steps: evening } : null;
+  const preview = morning.length ? { title: '☀️ Morning (AM)', steps: morning } : evening.length ? { title: '🌙 Evening (PM)', steps: evening } : null;
   const hasRoutine = countRoutineSteps(post.sharedRoutine) > 0;
 
   return (
     <TouchableOpacity style={styles.postCard} activeOpacity={0.95} onPress={onOpen}>
       <PostAuthorRow post={post} />
       <Text style={styles.postText} numberOfLines={4}>{post.content}</Text>
-      {post.tags?.length > 0 && <Text style={styles.tags}>{post.tags.join('  ')}</Text>}
-      {post.images?.length > 0 && <Image source={{ uri: post.images[0] }} style={styles.postImage} accessibilityLabel="Ảnh minh chứng" />}
+      {post.tags?.length > 0 && <Text style={styles.tags}>{formatPostTags(post.tags)}</Text>}
+      {post.images?.length > 0 && <Image source={{ uri: post.images[0] }} style={styles.postImage} accessibilityLabel="Post photo" />}
       {preview && (
         <View style={styles.routinePreview}>
           <View style={styles.routineTitleRow}>
             <Text style={styles.routineTitle}>{preview.title}</Text>
-            <Text style={styles.stepCount}>{preview.steps.length} bước</Text>
+            <Text style={styles.stepCount}>{preview.steps.length} {preview.steps.length === 1 ? 'step' : 'steps'}</Text>
           </View>
           <FlatList
             horizontal
@@ -150,7 +150,7 @@ function PostCard({ post, isCopying, onOpen, onLike, onCopy }) {
         </View>
       )}
       <View style={styles.postFooter}>
-        <TouchableOpacity style={styles.metric} onPress={onLike} accessibilityRole="button" accessibilityLabel={post.isLiked ? 'Bỏ thích' : 'Thích'}>
+        <TouchableOpacity style={styles.metric} onPress={onLike} accessibilityRole="button" accessibilityLabel={post.isLiked ? 'Unlike' : 'Like'}>
           <Ionicons name={post.isLiked ? 'heart' : 'heart-outline'} size={19} color={post.isLiked ? Colors.error : Colors.text} />
           <Text style={styles.metricText}>{post.likesCount}</Text>
         </TouchableOpacity>
@@ -161,7 +161,7 @@ function PostCard({ post, isCopying, onOpen, onLike, onCopy }) {
         {hasRoutine && (
           <TouchableOpacity style={styles.copyButton} onPress={onCopy} disabled={isCopying} accessibilityRole="button">
             {isCopying ? <ActivityIndicator size="small" color={Colors.textLight} /> : <Ionicons name="copy" size={15} color={Colors.textLight} />}
-            <Text style={styles.copyText}>Sao chép chu trình</Text>
+            <Text style={styles.copyText}>Copy routine</Text>
           </TouchableOpacity>
         )}
       </View>

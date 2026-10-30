@@ -1,37 +1,9 @@
 import axios from 'axios';
-import Constants from 'expo-constants';
-import { Platform } from 'react-native';
-
-const resolveBaseUrl = () => {
-    // Production environment configuration
-    if (!__DEV__) {
-        return 'https://api.skinmate.com/api';
-    }
-
-    // Development environment configuration:
-    // Extract local host IP dynamically from Expo (supports both Android & iOS physical devices via Expo Go)
-    const hostUri =
-        Constants.expoConfig?.hostUri ||
-        Constants.expoGoConfig?.debuggerHost ||
-        Constants.manifest2?.extra?.expoGo?.debuggerHost ||
-        Constants.manifest?.debuggerHost;
-
-    if (hostUri) {
-        const localIp = hostUri.split(':')[0];
-        return `http://${localIp}:5000/api`;
-    }
-
-    // Fallback for Android Emulator
-    if (Platform.OS === 'android') {
-        return 'http://10.0.2.2:5000/api';
-    }
-
-    // Fallback for iOS Simulator and Web
-    return 'http://localhost:5000/api';
-};
+import { ENV } from '../constants/env';
+import { loadAuthentication } from '../services/authStorage';
 
 const axiosClient = axios.create({
-    baseURL: resolveBaseUrl(),
+    baseURL: ENV.API_URL,
     headers: {
         'Content-Type': 'application/json',
     },
@@ -88,6 +60,13 @@ axiosClient.interceptors.request.use(
                 config.headers.delete('content-type');
             }
         }
+
+        const authentication = await loadAuthentication();
+        const accessToken = authentication.session?.accessToken;
+        if (accessToken) {
+            config.headers.Authorization = `Bearer ${accessToken}`;
+        }
+
         return config;
     },
     (error) => {
@@ -100,6 +79,9 @@ axiosClient.interceptors.response.use(
         return response.data;
     },
     (error) => {
+        if (__DEV__) {
+            console.warn(`[API Error] ${error.config?.baseURL}${error.config?.url}:`, error.message, error.response?.status || 'No Response');
+        }
         const customError = {
             status: error.response?.status || (error.request ? 0 : 500),
             message:

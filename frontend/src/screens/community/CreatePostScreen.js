@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '../../constants/theme';
-import { POST_TAGS, SKIN_TYPES } from '../../constants/community';
+import { POST_TAGS, POST_TAG_LABELS, SKIN_TYPES, SKIN_TYPE_LABELS } from '../../constants/community';
 import { getProductIcon } from '../../constants/product-icons';
 import { uploadCommunityImages, updateCommunityPost } from '../../api/communityApi';
 import { useCommunity } from '../../context/CommunityContext';
@@ -13,8 +13,8 @@ import { useCollection } from '../../context/CollectionContext';
 
 const MAX_IMAGES = 5;
 const SLOTS = [
-  { key: 'morning', title: '☀️  Buổi sáng' },
-  { key: 'evening', title: '🌙  Buổi tối' },
+  { key: 'morning', title: '☀️  Morning' },
+  { key: 'evening', title: '🌙  Evening' },
 ];
 
 const toStep = product => ({
@@ -104,7 +104,7 @@ export default function CreatePostScreen({ navigation, route }) {
     if (images.length >= MAX_IMAGES) return;
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Cần quyền truy cập', 'Vui lòng cho phép truy cập thư viện ảnh.');
+      Alert.alert('Permission required', 'Please allow access to your photo library.');
       return;
     }
     try {
@@ -112,13 +112,13 @@ export default function CreatePostScreen({ navigation, route }) {
       if (!result.canceled) {
         const selected = (result.assets || []).filter(asset => asset.uri);
         if (selected.some(asset => asset.fileSize > 5 * 1024 * 1024)) {
-          Alert.alert('Ảnh quá lớn', 'Mỗi ảnh phải nhỏ hơn hoặc bằng 5MB.');
+          Alert.alert('Image too large', 'Each image must be 5 MB or smaller.');
           return;
         }
         setImages(current => [...current, ...selected.filter(asset => !current.some(image => image.uri === asset.uri))].slice(0, MAX_IMAGES));
       }
     } catch (error) {
-      Alert.alert('Không thể chọn ảnh', error.message || 'Vui lòng thử lại.');
+      Alert.alert('Unable to select photos', error.message || 'Please try again.');
     }
   };
 
@@ -149,7 +149,7 @@ export default function CreatePostScreen({ navigation, route }) {
       }
       navigation.goBack();
     } catch (error) {
-      Alert.alert('Không thể đăng bài', error.message || 'Vui lòng thử lại.');
+      Alert.alert('Unable to save post', error.message || 'Please try again.');
     } finally {
       setIsPublishing(false);
     }
@@ -159,10 +159,10 @@ export default function CreatePostScreen({ navigation, route }) {
   return (
     <SafeAreaView style={styles.safeArea}>
       <Pressable style={styles.header} onPress={Keyboard.dismiss}>
-        <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button"><Text style={styles.cancel}>Hủy</Text></TouchableOpacity>
-        <Text style={styles.headerTitle}>Chia Sẻ Routine</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button"><Text style={styles.cancel}>Cancel</Text></TouchableOpacity>
+        <Text style={styles.headerTitle}>Share your routine</Text>
         <TouchableOpacity onPress={() => publish('published')} disabled={!canPublish} accessibilityRole="button">
-          {isPublishing ? <ActivityIndicator color={Colors.primary} /> : <Text style={[styles.publish, !canPublish && styles.disabled]}>Đăng</Text>}
+          {isPublishing ? <ActivityIndicator color={Colors.primary} /> : <Text style={[styles.publish, !canPublish && styles.disabled]}>Post</Text>}
         </TouchableOpacity>
       </Pressable>
       <KeyboardAwareScrollView
@@ -194,46 +194,46 @@ export default function CreatePostScreen({ navigation, route }) {
           submitBehavior="newline"
           value={content}
           onChangeText={setContent}
-          placeholder="Bạn muốn chia sẻ điều gì hôm nay?"
+          placeholder="What would you like to share today?"
           placeholderTextColor={Colors.textMuted}
-          accessibilityLabel="Nội dung bài viết"
+          accessibilityLabel="Post content"
         />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
           {POST_TAGS.map(tag => (
             <TouchableOpacity key={tag} style={[styles.chip, tags.includes(tag) && styles.chipActive]} onPress={() => toggleTag(tag)} accessibilityState={{ selected: tags.includes(tag) }}>
-              <Text style={styles.chipText}>{tag}</Text>
+              <Text style={styles.chipText}>{POST_TAG_LABELS[tag] || tag}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
-        <Text style={styles.sectionTitle}>Loại da</Text>
+        <Text style={styles.sectionTitle}>Skin type</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
           {SKIN_TYPES.map(type => {
             const isSelected = skinTypes.includes(type);
             return (
               <TouchableOpacity key={type} style={[styles.chip, isSelected && styles.chipActive]} onPress={() => setSkinTypes(current => current.includes(type) ? current.filter(item => item !== type) : [...current, type])} accessibilityState={{ selected: isSelected }}>
-                <Text style={styles.chipText}>{type}</Text>
+                <Text style={styles.chipText}>{SKIN_TYPE_LABELS[type] || type}</Text>
               </TouchableOpacity>
             );
           })}
         </ScrollView>
 
         <View style={styles.sectionRow}>
-          <View style={styles.labelLeft}><Ionicons name="images-outline" size={18} color={Colors.primaryDark} /><Text style={styles.sectionTitle}>Hình ảnh minh chứng</Text></View>
-          <Text style={styles.muted}>{images.length}/{MAX_IMAGES} ảnh</Text>
+          <View style={styles.labelLeft}><Ionicons name="images-outline" size={18} color={Colors.primaryDark} /><Text style={styles.sectionTitle}>Photos</Text></View>
+          <Text style={styles.muted}>{images.length}/{MAX_IMAGES} photos</Text>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.imageRow}>
           {images.length < MAX_IMAGES && (
-            <TouchableOpacity style={styles.addImage} onPress={pickImage} accessibilityRole="button" accessibilityLabel="Thêm ảnh">
+            <TouchableOpacity style={styles.addImage} onPress={pickImage} accessibilityRole="button" accessibilityLabel="Add photos">
               <View style={styles.cameraCircle}><Ionicons name="camera-outline" size={24} color={Colors.primaryDark} /></View>
-              <Text style={styles.addImageText}>Thêm ảnh</Text>
-              <Text style={styles.muted}>Tối đa 5MB</Text>
+              <Text style={styles.addImageText}>Add photos</Text>
+              <Text style={styles.muted}>Up to 5 MB each</Text>
             </TouchableOpacity>
           )}
           {images.map(image => (
             <View key={image.uri} style={styles.evidenceImage}>
               <Image source={{ uri: image.uri }} style={StyleSheet.absoluteFill} />
-              <TouchableOpacity style={styles.removeImage} onPress={() => setImages(current => current.filter(item => item.uri !== image.uri))} accessibilityLabel="Xóa ảnh">
+              <TouchableOpacity style={styles.removeImage} onPress={() => setImages(current => current.filter(item => item.uri !== image.uri))} accessibilityLabel="Remove photo">
                 <Ionicons name="close" size={16} color={Colors.textLight} />
               </TouchableOpacity>
             </View>
@@ -241,17 +241,17 @@ export default function CreatePostScreen({ navigation, route }) {
         </ScrollView>
 
         <View style={styles.routineCard}>
-          <View style={styles.labelLeft}><Ionicons name="sparkles-outline" size={18} color={Colors.primaryDark} /><Text style={styles.routineTitle}>Routine đính kèm</Text></View>
-          <Text style={styles.muted}>Chọn sản phẩm từ tủ đồ của bạn. Người xem có thể sao chép chu trình này.</Text>
+          <View style={styles.labelLeft}><Ionicons name="sparkles-outline" size={18} color={Colors.primaryDark} /><Text style={styles.routineTitle}>Attached routine</Text></View>
+          <Text style={styles.muted}>Select products from your collection. Others can copy this routine.</Text>
           <ScrollView horizontal contentContainerStyle={styles.chips}>
-            {routineDays.map((day, index) => <TouchableOpacity key={index} style={[styles.chip, dayIndex === index && styles.chipActive]} onPress={() => setDayIndex(index)} disabled={isPublishing}><Text style={styles.chipText}>Ngày {index + 1}</Text></TouchableOpacity>)}
-            {routineDays.length < 31 && <TouchableOpacity style={styles.chip} disabled={isPublishing} onPress={() => { setRoutineDays(current => [...current, { morning: [], evening: [] }]); setDayIndex(routineDays.length); }}><Text style={styles.chipText}>+ Thêm ngày</Text></TouchableOpacity>}
+            {routineDays.map((day, index) => <TouchableOpacity key={index} style={[styles.chip, dayIndex === index && styles.chipActive]} onPress={() => setDayIndex(index)} disabled={isPublishing}><Text style={styles.chipText}>Day {index + 1}</Text></TouchableOpacity>)}
+            {routineDays.length < 31 && <TouchableOpacity style={styles.chip} disabled={isPublishing} onPress={() => { setRoutineDays(current => [...current, { morning: [], evening: [] }]); setDayIndex(routineDays.length); }}><Text style={styles.chipText}>+ Add day</Text></TouchableOpacity>}
           </ScrollView>
           {usableProducts.length === 0 ? (
-            <Text style={styles.emptyRoutine}>Tủ đồ chưa có sản phẩm đang dùng.</Text>
+            <Text style={styles.emptyRoutine}>Your collection has no active products yet.</Text>
           ) : SLOTS.map(slot => (
             <View key={slot.key} style={styles.routineStrip}>
-              <Text style={styles.stripTitle}>{slot.title} · {routine[slot.key].length} bước</Text>
+              <Text style={styles.stripTitle}>{slot.title} · {routine[slot.key].length} {routine[slot.key].length === 1 ? 'step' : 'steps'}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stripSteps}>
                 {usableProducts.map(product => {
                   const order = routine[slot.key].indexOf(product.id);
@@ -286,10 +286,10 @@ export default function CreatePostScreen({ navigation, route }) {
                     submitBehavior="newline"
                     value={notes[`${dayIndex}:${slot.key}:${id}`] || ''}
                     onChangeText={text => setNotes(current => ({ ...current, [`${dayIndex}:${slot.key}:${id}`]: text }))}
-                    placeholder="Cách sử dụng, lượng dùng và lưu ý..."
+                    placeholder="How to use, amount, and tips..."
                     placeholderTextColor={Colors.textMuted}
                     returnKeyType="default"
-                    accessibilityLabel={`Cách sử dụng bước ${index + 1} ${slot.title}`}
+                    accessibilityLabel={`Instructions for step ${index + 1} ${slot.title}`}
                     editable={!isPublishing}
                   />
                 </View>
@@ -298,7 +298,7 @@ export default function CreatePostScreen({ navigation, route }) {
           ))}
         </View>
           <TouchableOpacity style={styles.draftButton} onPress={() => publish('draft')} disabled={isPublishing} accessibilityRole="button">
-            <Text style={styles.publish}>Lưu bản nháp</Text>
+            <Text style={styles.publish}>Save draft</Text>
           </TouchableOpacity>
           </View>
         </TouchableWithoutFeedback>

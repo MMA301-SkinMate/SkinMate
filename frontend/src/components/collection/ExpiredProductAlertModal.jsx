@@ -21,23 +21,23 @@ function getDaysLeft(product) {
 }
 
 function formatDate(value) {
-  if (!value) return 'Chưa cập nhật';
-  return new Intl.DateTimeFormat('vi-VN').format(new Date(value));
+  if (!value) return 'Not updated';
+  return new Intl.DateTimeFormat('en-US').format(new Date(value));
 }
 
 const TYPE_LABELS = {
-  cleanser: 'Sữa rửa mặt',
-  toner: 'Toner & Nước hoa hồng',
-  essences: 'Essence & Tinh chất lỏng',
-  cream: 'Kem dưỡng',
-  oil: 'Dầu dưỡng',
-  serum: 'Serum & Tinh chất đậm đặc',
-  treatment: 'Đặc trị / Treatment',
-  moisturizer: 'Kem dưỡng ẩm',
-  sunscreen: 'Kem chống nắng',
-  mask: 'Mặt nạ',
-  exfoliant: 'Tẩy tế bào chết',
-  others: 'Khác',
+  cleanser: 'Cleanser',
+  toner: 'Toner',
+  essences: 'Essence',
+  cream: 'Cream',
+  oil: 'Face oil',
+  serum: 'Serum',
+  treatment: 'Treatment',
+  moisturizer: 'Moisturizer',
+  sunscreen: 'Sunscreen',
+  mask: 'Face mask',
+  exfoliant: 'Exfoliant',
+  others: 'Other',
 };
 
 export default function ExpiredProductAlertModal() {
@@ -66,7 +66,7 @@ export default function ExpiredProductAlertModal() {
   const daysOverdue = daysLeft !== null ? Math.abs(daysLeft) : 0;
   const expiryDateFormatted = formatDate(currentProduct.expirationDate || currentProduct.manufacturerExpirationDate);
 
-  // Button "Không": Cho sản phẩm vào tab đã sử dụng (đã dùng hết)
+  // Move the product to the used-up tab.
   const handleReject = async () => {
     if (isProcessing || !currentProduct) return;
     setIsProcessing(true);
@@ -80,7 +80,7 @@ export default function ExpiredProductAlertModal() {
     }
   };
 
-  // Button "Tiếp tục sử dụng": Vẫn để sản phẩm ở tab đang sử dụng nhưng có trạng thái cảnh báo đỏ
+  // Keep the product active with a red expiry warning.
   const handleContinue = async () => {
     if (isProcessing || !currentProduct) return;
     setIsProcessing(true);
@@ -111,8 +111,8 @@ export default function ExpiredProductAlertModal() {
             <View style={styles.badgeWrap}>
               <Text style={styles.badgeText}>
                 {expiredProducts.length > 1
-                  ? `Hết hạn • Còn ${expiredProducts.length} món`
-                  : 'Sản phẩm hết hạn'}
+                  ? `Expired • ${expiredProducts.length} items`
+                  : 'Expired product'}
               </Text>
             </View>
           </View>
@@ -127,12 +127,12 @@ export default function ExpiredProductAlertModal() {
                 {currentProduct.productName}
               </Text>
               <Text style={styles.productBrand} numberOfLines={1}>
-                {currentProduct.brand || 'Chưa rõ thương hiệu'} • {TYPE_LABELS[currentProduct.productType] || 'Mỹ phẩm'}
+                {currentProduct.brand || 'Unknown brand'} • {TYPE_LABELS[currentProduct.productType] || 'Cosmetic'}
               </Text>
               <View style={styles.expiryBadgeRow}>
                 <Calendar size={13} color={Colors.error} />
                 <Text style={styles.expiryDateText}>
-                  Hết hạn: {expiryDateFormatted} (Quá hạn {daysOverdue} ngày)
+                  Expired: {expiryDateFormatted} ({daysOverdue} days overdue)
                 </Text>
               </View>
             </View>
@@ -141,12 +141,12 @@ export default function ExpiredProductAlertModal() {
           {/* Question section */}
           <View style={styles.questionSection}>
             <Text style={styles.questionText}>
-              Sản phẩm này đã hết hạn, bạn có muốn tiếp tục sử dụng?
+              This product has expired. Would you like to continue using it?
             </Text>
             <View style={styles.noticeBox}>
               <Clock size={15} color={Colors.warning} style={{ marginTop: 2 }} />
               <Text style={styles.noticeText}>
-                Nếu tiếp tục dùng, sản phẩm sẽ được đánh dấu cảnh báo đỏ trên kệ để bạn chú ý an toàn da liễu.
+                If you continue using it, the product will be marked with a red warning on the shelf so you can pay attention to skincare safety.
               </Text>
             </View>
           </View>
@@ -163,8 +163,8 @@ export default function ExpiredProductAlertModal() {
                 <ActivityIndicator size="small" color={Colors.textSecondary} />
               ) : (
                 <>
-                  <Text style={styles.rejectButtonText}>Không</Text>
-                  <Text style={styles.rejectSubtext}>Cho vào đã dùng hết</Text>
+                  <Text style={styles.rejectButtonText}>No</Text>
+                  <Text style={styles.rejectSubtext}>Mark as used up</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -179,8 +179,8 @@ export default function ExpiredProductAlertModal() {
                 <ActivityIndicator size="small" color={Colors.textLight} />
               ) : (
                 <>
-                  <Text style={styles.continueButtonText}>Tiếp tục sử dụng</Text>
-                  <Text style={styles.continueSubtext}>Cảnh báo đỏ trên kệ</Text>
+                  <Text style={styles.continueButtonText}>Continue using</Text>
+                  <Text style={styles.continueSubtext}>Red shelf warning</Text>
                 </>
               )}
             </TouchableOpacity>
