@@ -11,6 +11,8 @@ import { RADIUS, SPACING } from '../../constants/theme';
 import authApi from '../../api/authApi';
 import { clearStoredSession } from '../../services/authStorage';
 import { useAuth } from '../../hooks/useAuth';
+import PasswordRequirements from '../../components/layout/password-requirements';
+import { PASSWORD_REQUIREMENTS, REGISTER_COPY } from '../../constants/register';
 
 const recoveryError = error => {
   const code = error.data?.error?.code;
@@ -74,13 +76,18 @@ export function PasswordRecoveryScreen({ token, onDone }) {
   const [feedback, setFeedback] = useState(null);
   const [success, setSuccess] = useState(false);
   const [expired, setExpired] = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const validToken = /^[a-f0-9]{64}$/.test(token || '');
-  const validLength = password.length >= 8 && password.length <= 128;
+  const validPassword = PASSWORD_REQUIREMENTS.every(rule => rule.test(password));
+  const passwordError = (password || passwordTouched || submitted) && !validPassword
+    ? REGISTER_COPY.validation.password : undefined;
   const matches = Boolean(password) && password === confirmation;
   const submit = async () => {
     if (inFlight.current || !validToken || expired) return;
-    if (!validLength || !matches) {
-      setFeedback('Password must be 8 to 128 characters, and the confirmation must match.');
+    setSubmitted(true);
+    if (!validPassword || !matches) {
+      setFeedback(!validPassword ? REGISTER_COPY.validation.password : REGISTER_COPY.validation.confirmation);
       return;
     }
     inFlight.current = true;
@@ -124,12 +131,12 @@ export function PasswordRecoveryScreen({ token, onDone }) {
       {!validToken || expired ? (
         <AlertBanner tone="error" description="This link is invalid or has expired. Go back to sign in and choose Forgot password to request a new link." />
       ) : <>
-        <AuthPasswordField label="New password" placeholder="8 to 128 characters" value={password} onChangeText={setPassword} disabled={busy} autoComplete="new-password" textContentType="newPassword" />
-        <View style={styles.panel}>
-          <AppText variant="caption" color={validLength ? COLORS.primaryDark : COLORS.textSecondary}>{validLength ? '✓' : '○'} 8 to 128 characters</AppText>
-          <AppText variant="caption" color={matches ? COLORS.primaryDark : COLORS.textSecondary}>{matches ? '✓' : '○'} Password confirmation matches</AppText>
+        <View>
+          <AuthPasswordField label="New password" placeholder="Enter your new password" value={password} onChangeText={setPassword} onBlur={() => setPasswordTouched(true)} error={passwordError} disabled={busy} autoComplete="new-password" textContentType="newPassword" />
+          <PasswordRequirements value={password} />
         </View>
         <AuthPasswordField label="Confirm password" value={confirmation} onChangeText={setConfirmation} disabled={busy} visibilityLabel="confirmation password" autoComplete="new-password" textContentType="newPassword" />
+        <AppText variant="caption" color={matches ? COLORS.primary : COLORS.textSecondary}>{matches ? '✓' : '○'} Password confirmation matches</AppText>
         <Button title="Update password" loading={busy} onPress={submit} rightIcon="arrow-forward" />
       </>}
       {feedback && <AlertBanner tone="error" description={feedback} />}

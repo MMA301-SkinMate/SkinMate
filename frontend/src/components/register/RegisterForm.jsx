@@ -1,6 +1,6 @@
 import { Controller, useWatch } from "react-hook-form";
-import { StyleSheet, View } from "react-native";
-import { AppText } from "../common/AppText";
+import { View } from "react-native";
+import PasswordRequirements from "../layout/password-requirements";
 import { AuthTextField, AuthPasswordField } from "../layout/auth-field";
 import { Icon } from "../common/Icon";
 import { COLORS } from "../../constants/colors";
@@ -8,33 +8,6 @@ import {
   REGISTER_COPY as COPY,
   PASSWORD_REQUIREMENTS,
 } from "../../constants/register";
-
-function PasswordRequirements({ value, requirements }) {
-  return (
-    <View style={styles.requirements}>
-      {requirements.map((requirement) => {
-        const valid = requirement.test(value);
-        return (
-          <View key={requirement.id} style={styles.requirementRow}>
-            <Icon
-              icon={valid ? "checkmark-circle" : "checkmark-circle-outline"}
-              size={17}
-              color={valid ? COLORS.primary : COLORS.textMuted}
-            />
-            <AppText
-              variant="caption"
-              color={valid ? COLORS.primary : "textSecondary"}
-              style={styles.requirementText}
-              accessibilityLabel={`${requirement.label}: ${valid ? "met" : "not met"}`}
-            >
-              {requirement.label}
-            </AppText>
-          </View>
-        );
-      })}
-    </View>
-  );
-}
 
 function RegisterField({
   form,
@@ -147,17 +120,3 @@ export default function RegisterForm({ form, disabled, confirmationHelperText })
   );
 }
 
-const styles = StyleSheet.create({
-  requirements: {
-    marginTop: 6,
-    gap: 4,
-  },
-  requirementText: {
-    flex: 1,
-  },
-  requirementRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-});

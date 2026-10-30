@@ -48,7 +48,11 @@ const schema = Joi.object({
                 return helpers.error('any.invalid');
             }
         }),
-    RESET_EMAIL_API_KEY: Joi.string().trim().allow('').default(''),
+    SMTP_HOST: Joi.string().trim().allow('').default(''),
+    SMTP_PORT: Joi.number().integer().min(1).max(65535).default(587),
+    SMTP_SECURE: Joi.boolean().default(false),
+    SMTP_USER: Joi.string().trim().allow('').default(''),
+    SMTP_PASS: Joi.string().allow('').default(''),
     RESET_EMAIL_FROM: Joi.string().trim().max(254).allow('').default(''),
     PASSWORD_RESET_URL: Joi.string().trim().allow('').default('').custom((value, helpers) => {
         if (!value) return value;
@@ -56,6 +60,19 @@ const schema = Joi.object({
             const url = new URL(value);
             if (!['exp:', 'exps:', 'https:', 'skinmate:'].includes(url.protocol) ||
                 url.username || url.password || url.search || url.hash) {
+                return helpers.error('any.invalid');
+            }
+            return value;
+        } catch { return helpers.error('any.invalid'); }
+    }),
+    PASSWORD_RESET_PAGE_URL: Joi.string().trim().allow('').default('').custom((value, helpers) => {
+        if (!value) return value;
+        try {
+            const url = new URL(value);
+            if (!['http:', 'https:'].includes(url.protocol) ||
+                url.username || url.password || url.search || url.hash ||
+                url.pathname !== '/reset-password' ||
+                (helpers.state.ancestors[0].NODE_ENV === 'production' && url.protocol !== 'https:')) {
                 return helpers.error('any.invalid');
             }
             return value;
@@ -105,7 +122,12 @@ const parseConfig = (environment) => {
 
     return Object.freeze({
         passwordResetUrl: value.PASSWORD_RESET_URL,
-        resetEmailApiKey: value.RESET_EMAIL_API_KEY,
+        passwordResetPageUrl: value.PASSWORD_RESET_PAGE_URL,
+        smtpHost: value.SMTP_HOST,
+        smtpPort: value.SMTP_PORT,
+        smtpSecure: value.SMTP_SECURE,
+        smtpUser: value.SMTP_USER,
+        smtpPass: value.SMTP_PASS,
         resetEmailFrom: value.RESET_EMAIL_FROM,
         nodeEnv: value.NODE_ENV,
         port: value.PORT,

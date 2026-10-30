@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -45,9 +45,12 @@ export default function App() {
           <CommonOverlayProvider>
             <StatusBar style="dark" backgroundColor={COLORS.card} />
             <AuthProvider>
-              <NavigationContainer theme={navigationTheme} onReady={() => {
-                SplashScreen.hideAsync().catch(error => console.warn('Unable to hide splash screen.', error));
-              }}>
+              <NavigationContainer
+                theme={navigationTheme}
+                onReady={() => {
+                  SplashScreen.hideAsync().catch(error => console.warn('Unable to hide splash screen.', error));
+                }}
+              >
                 <AppNavigator />
               </NavigationContainer>
             </AuthProvider>

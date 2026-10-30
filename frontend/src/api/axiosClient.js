@@ -85,6 +85,7 @@ axiosClient.interceptors.response.use(
         const customError = {
             status: error.response?.status || (error.request ? 0 : 500),
             message:
+                error.response?.data?.error?.message ||
                 error.response?.data?.message ||
                 (error.code === 'ECONNABORTED' ? 'Request timeout. Server took too long to respond.' : null) ||
                 error.message ||

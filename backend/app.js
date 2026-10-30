@@ -4,6 +4,7 @@ const createRequestLogger = require('./src/middlewares/requestLogger');
 const createCorsMiddleware = require('./src/middlewares/corsMiddleware');
 const createApiRateLimiter = require('./src/middlewares/rateLimitMiddleware');
 const createDocsRoutes = require('./src/routes/docsRoutes');
+const createPasswordResetPageRoutes = require('./src/routes/password-reset-page');
 const openApi = require('./src/docs/openapi');
 const { notFound, errorHandler } = require('./src/middlewares/errorMiddleware');
 
@@ -13,6 +14,7 @@ const createApp = (config) => {
     const authRoutes = require('./src/routes/authRoutes');
     const collectionRoutes = require('./src/routes/collectionRoutes');
     const notificationRoutes = require('./src/routes/notificationRoutes');
+    const communityRoutes = require('./src/routes/communityRoutes');
     const app = express();
     app.locals.config = config;
 
@@ -36,8 +38,10 @@ const createApp = (config) => {
     });
     app.use('/api-docs', createDocsRoutes(config));
 
+    app.use(createPasswordResetPageRoutes(config));
     app.use('/api/collections', collectionRoutes);
     app.use('/api/notifications', notificationRoutes);
+    app.use('/api/community', communityRoutes);
     app.use('/api/scan', scanRoutes);
     app.use('/api/auth', authRoutes());
     app.use(notFound);

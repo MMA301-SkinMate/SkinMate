@@ -1,13 +1,7 @@
 import React from 'react';
-import {
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Platform,
-  View,
-} from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { Text, TouchableOpacity, StyleSheet, Platform, View } from 'react-native';
 import { COLORS } from '../constants/colors';
 import HomeScreen from '../screens/home/HomeScreen';
 import MyCollectionScreen from '../screens/collection/MyCollectionScreen';

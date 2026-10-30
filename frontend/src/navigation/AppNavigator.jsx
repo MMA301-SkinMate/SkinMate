@@ -6,6 +6,7 @@ import { useAuth } from "../hooks/useAuth";
 import AuthStackNav from "./AuthStackNav";
 import RootNavigator from "./RootNavigator";
 import { CollectionProvider } from "../context/CollectionContext";
+import { CommunityProvider } from "../context/CommunityContext";
 import ExpiredProductAlertModal from "../components/collection/ExpiredProductAlertModal";
 import { AppText } from "../components/common/AppText";
 import { Button } from "../components/common/Button";
@@ -42,8 +43,10 @@ function BootstrapScreen() {
 function AuthenticatedApp() {
   return (
     <CollectionProvider>
-      <RootNavigator />
-      <ExpiredProductAlertModal />
+      <CommunityProvider>
+        <RootNavigator />
+        <ExpiredProductAlertModal />
+      </CommunityProvider>
     </CollectionProvider>
   );
 }

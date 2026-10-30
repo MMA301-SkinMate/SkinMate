@@ -113,7 +113,7 @@ const validateForgotPassword = validateAuthBody(
 const validateResetPassword = validateAuthBody(
     Joi.object({
         token: Joi.string().pattern(/^[a-f0-9]{64}$/).required(),
-        password: Joi.string().min(8).max(128).required(),
+        password: registerSchema.extract('password'),
         confirmPassword: registerSchema.extract('confirmPassword'),
     }).required(),
     'Thông tin đặt lại mật khẩu chưa hợp lệ.'

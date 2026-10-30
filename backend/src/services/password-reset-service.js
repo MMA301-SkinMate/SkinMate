@@ -1,6 +1,7 @@
 const { createHash, randomBytes } = require('node:crypto');
 const argon2 = require('argon2');
 const User = require('../models/User');
+const { createPasswordResetEmail } = require('./password-reset-email');
 const AppError = require('../utils/AppError');
 
 const hashToken = token => createHash('sha256').update(token).digest('hex');
@@ -11,9 +12,11 @@ const invalidToken = () => new AppError(
 );
 
 const requestReset = async ({ email }, config) => {
-    if (!config.resetEmailApiKey || !config.resetEmailFrom || !config.passwordResetUrl) {
+    if (!config.smtpHost || !config.smtpUser || !config.smtpPass ||
+        !config.resetEmailFrom || !config.passwordResetUrl || !config.passwordResetPageUrl) {
         throw new AppError('Chức năng gửi email chưa được cấu hình.', 503, 'MAIL_UNAVAILABLE');
     }
+    const nodemailer = require('nodemailer');
     const token = randomBytes(32).toString('hex');
     const tokenHash = hashToken(token);
     const user = await User.findOneAndUpdate(
@@ -26,37 +29,31 @@ const requestReset = async ({ email }, config) => {
     );
     if (!user) return { accountNotEligible: true };
 
-    const url = new URL(config.passwordResetUrl);
-    url.searchParams.set('token', token);
-    let providerStatus;
-    let providerError;
+    const url = new URL(config.passwordResetPageUrl);
+    // Fragments stay in the browser and are not sent in HTTP requests or access logs.
+    url.hash = new URLSearchParams({ token }).toString();
+    let transport;
     try {
-        const response = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${config.resetEmailApiKey}`,
-                'Content-Type': 'application/json',
-            },
-            signal: AbortSignal.timeout(10000),
-            body: JSON.stringify({
-                from: config.resetEmailFrom,
-                to: [user.email],
-                subject: 'SkinMate — Đặt lại mật khẩu',
-                text: `Bạn đã yêu cầu đặt lại mật khẩu SkinMate. Mở liên kết dưới đây trên thiết bị có ứng dụng:\n\n${url.href}\n\nLiên kết có hiệu lực 15 phút và chỉ dùng một lần. Nếu không yêu cầu, bạn có thể bỏ qua email này.`,
-            }),
+        transport = nodemailer.createTransport({
+        host: config.smtpHost,
+        port: config.smtpPort,
+        secure: config.smtpSecure,
+        requireTLS: !config.smtpSecure,
+        auth: { user: config.smtpUser, pass: config.smtpPass },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
+        logger: false,
+        debug: false,
         });
-        providerStatus = response.status;
-        if (!response.ok) {
-            const body = await response.json().catch(() => ({}));
-            const allowed = new Set([
-                'validation_error', 'missing_api_key', 'invalid_api_key',
-                'restricted_api_key', 'invalid_access', 'rate_limit_exceeded',
-                'daily_quota_exceeded', 'monthly_quota_exceeded',
-                'application_error', 'internal_server_error',
-            ]);
-            providerError = allowed.has(body.name) ? body.name : 'UNCLASSIFIED';
-            throw new Error('Mail provider rejected request.');
-        }
+        const result = await transport.sendMail({
+            from: config.resetEmailFrom,
+            to: user.email,
+            ...createPasswordResetEmail(url.href),
+            disableFileAccess: true,
+            disableUrlAccess: true,
+        });
+        if (!result.accepted?.length) throw new Error('Mail recipient rejected.');
         return { deliveryAccepted: true };
     } catch (error) {
         await User.updateOne(
@@ -67,9 +64,12 @@ const requestReset = async ({ email }, config) => {
         // Do not log the provider response, recipient, token or recovery URL.
         return {
             deliveryFailed: true,
-            providerStatus,
-            providerError: providerError || (error.name === 'TimeoutError' ? 'TIMEOUT' : 'NETWORK_ERROR'),
+            providerStatus: Number.isInteger(error.responseCode) ? error.responseCode : undefined,
+            providerError: ['EAUTH', 'ECONNECTION', 'ETIMEDOUT', 'ESOCKET', 'EENVELOPE', 'EMESSAGE'].includes(error.code)
+                ? error.code : 'SMTP_ERROR',
         };
+    } finally {
+        transport?.close();
     }
 };
 
