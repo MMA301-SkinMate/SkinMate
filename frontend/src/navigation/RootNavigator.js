@@ -6,6 +6,7 @@ import ProductDetailModal from '../screens/collection/ProductDetailModal';
 import ExpiryCalendarScreen from '../screens/collection/ExpiryCalendarScreen';
 import CreatePostScreen from '../screens/community/CreatePostScreen';
 import PostDetailScreen from '../screens/community/PostDetailScreen';
+import RoutineDetailScreen from '../screens/routine/RoutineDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -16,6 +17,7 @@ export default function RootNavigator() {
       <Stack.Screen name="AddProduct" component={AddProductScreen} />
       <Stack.Screen name="CreatePost" component={CreatePostScreen} />
       <Stack.Screen name="PostDetail" component={PostDetailScreen} />
+      <Stack.Screen name="RoutineDetail" component={RoutineDetailScreen} />
       <Stack.Screen
         name="ProductDetailModal"
         component={ProductDetailModal}

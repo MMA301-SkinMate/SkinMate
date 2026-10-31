@@ -8,6 +8,7 @@ const connectDB = require('./src/config/db');
 const User = require('./src/models/User');
 const AuthSession = require('./src/models/AuthSession');
 const { startExpiryScheduler } = require('./src/services/expiryNotificationService');
+const seedIngredients = require('./src/seeder/seedIngredients');
 
 let server;
 let shutdownPromise;
@@ -69,6 +70,7 @@ const startServer = async () => {
         const app = createApp(config);
         await connectDB(config.mongoUri);
         await Promise.all([User.init(), AuthSession.init()]);
+        await seedIngredients();
         console.log('Database connected successfully.');
         await new Promise((resolve, reject) => {
             server = app.listen(config.port, '0.0.0.0');
