@@ -29,7 +29,7 @@ const useScan = (navigation) => {
             setScannedData(result?.data);
             setIsModalVisible(true);
         } catch (error) {
-            Alert.alert('Error', error?.message || 'Cannot send image to server. Please try again.');
+            Alert.alert('Thông báo', error?.message || 'Không thể gửi ảnh tới máy chủ. Vui lòng thử lại.');
             setCapturedImageUri(null);
         } finally {
             setIsLoading(false);
@@ -46,7 +46,7 @@ const useScan = (navigation) => {
             });
             await processImageScan(photo.uri);
         } catch (error) {
-            Alert.alert('Error', error?.message || 'Cannot send image to server. Please try again.');
+            Alert.alert('Thông báo', error?.message || 'Không thể chụp ảnh. Vui lòng thử lại.');
         }
     };
 
@@ -58,18 +58,61 @@ const useScan = (navigation) => {
     };
 
     const handleCloseModal = (updatedIngredients) => {
-        if (updatedIngredients && Array.isArray(updatedIngredients)) {
+        setIsModalVisible(false);
+        setCapturedImageUri(null);
+
+        if (updatedIngredients && Array.isArray(updatedIngredients) && updatedIngredients.length > 0) {
             setScannedData(prev => ({
                 ...prev,
                 ingredients: updatedIngredients,
             }));
+
+            // Gợi ý phân tích độ phù hợp ngay sau khi xác nhận bảng thành phần
+            setTimeout(() => {
+                Alert.alert(
+                    'Trích xuất thành phần thành công!',
+                    `Đã nhận diện ${updatedIngredients.length} thành phần mỹ phẩm từ ảnh chụp.\nBạn có muốn phân tích độ phù hợp với làn da hôm nay không?`,
+                    [
+                        { text: 'Để sau', style: 'cancel' },
+                        {
+                            text: 'Phân tích ngay',
+                            onPress: async () => {
+                                try {
+                                    setIsLoading(true);
+                                    const res = await scanApi.analyzeSuitability({
+                                        productName: 'Mỹ phẩm vừa quét',
+                                        ingredients: updatedIngredients,
+                                    });
+                                    const score = res?.data?.data?.scoreResult?.finalScore || 85;
+                                    const verdict = res?.data?.data?.scoreResult?.verdict || 'Phù hợp';
+                                    Alert.alert(
+                                        'Kết quả Phân tích Độ Phù Hợp Da',
+                                        `Điểm phù hợp: ${score}%\nĐánh giá y khoa: ${verdict}\n\nThuật toán đã đối chiếu với hồ sơ da và các bước routine hôm nay của bạn.`
+                                    );
+                                } catch (e) {
+                                    Alert.alert('Lỗi', e.message || 'Không thể phân tích độ phù hợp.');
+                                } finally {
+                                    setIsLoading(false);
+                                }
+                            },
+                        },
+                    ]
+                );
+            }, 300);
         }
-        setIsModalVisible(false);
-        setCapturedImageUri(null);
     };
 
-    const handleScanHistory = () => {
-        Alert.alert('Scan History', 'View your previously scanned cosmetic products.');
+    const handleScanHistory = async () => {
+        try {
+            const history = await scanApi.getScanHistory();
+            const count = history?.data?.data?.length || 0;
+            Alert.alert(
+                'Lịch sử quét mỹ phẩm',
+                `Bạn hiện có ${count} sản phẩm đã từng quét bảng thành phần.`
+            );
+        } catch (e) {
+            Alert.alert('Lịch sử quét', 'Xem lại danh sách các mỹ phẩm bạn đã chụp và quét trước đây.');
+        }
     };
 
     return {

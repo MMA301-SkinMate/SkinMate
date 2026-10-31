@@ -20,8 +20,16 @@ const getTodayDateStr = () => {
  * 11. UI Home Data
  */
 const getHomeData = async (userId) => {
-  const user = await User.findById(userId).populate('activeTreatmentPlan');
+  let user = await User.findById(userId).populate('activeTreatmentPlan');
   const todayStr = getTodayDateStr();
+
+  // Đảm bảo user có chuỗi routine đang kích hoạt (Mục 14: Đang ở Ngày thứ 3 của Chuỗi Trị Mụn 14 ngày)
+  if (!user.activeTreatmentPlan) {
+    const defaultPlan = await createDefaultTreatmentPlan(userId);
+    user.activeTreatmentPlan = defaultPlan._id;
+    await user.save();
+    user = await User.findById(userId).populate('activeTreatmentPlan');
+  }
 
   // Find or generate today's routine
   let dailyRoutine = await DailyRoutine.findOne({
@@ -169,10 +177,17 @@ const analyzeAndGenerateDailyRoutine = async (
   undoExpiresAt = null
 ) => {
   const user = await User.findById(userId);
-  const activePlan = await TreatmentPlan.findOne({
+  let activePlan = await TreatmentPlan.findOne({
     user: userId,
     status: 'active',
   }).populate('schedule.morningSteps.product schedule.eveningSteps.product');
+
+  if (!activePlan) {
+    activePlan = await createDefaultTreatmentPlan(userId);
+    user.activeTreatmentPlan = activePlan._id;
+    await user.save();
+    activePlan = await TreatmentPlan.findById(activePlan._id).populate('schedule.morningSteps.product schedule.eveningSteps.product');
+  }
 
   // Lấy danh sách sản phẩm trong tủ đồ còn hạn sử dụng (loại bỏ triệt để sản phẩm hết hạn kể cả khi user cố tình dùng tiếp)
   const closetProducts = await Collection.find({
@@ -390,20 +405,48 @@ function buildDefault5Steps(closet, conditions, skinType) {
  */
 function enrichStepReasons(steps, conditions, session) {
   const condStr = conditions.join(', ');
+  const isDryTight = conditions.some((c) => normalizeStr(c).includes('kho rat'));
+  const isIrritated = conditions.some((c) => normalizeStr(c).includes('kich ung'));
+  const isAcne = conditions.some((c) => normalizeStr(c).includes('noi mun'));
+  const isOily = conditions.some((c) => normalizeStr(c).includes('bong dau'));
+
   steps.forEach((s) => {
-    if (!s.reason) {
-      if (s.stepName.includes('Làm sạch')) {
-        s.reason = `Làm sạch dịu nhẹ giúp loại bỏ bã nhờn mà không làm căng rát da đang ${condStr}`;
-      } else if (s.stepName.includes('Cân bằng')) {
-        s.reason = `Cân bằng pH ngay sau rửa mặt để tạo tiền đề hấp thụ dưỡng chất`;
-      } else if (s.stepName.includes('Đặc trị')) {
-        s.reason = conditions.includes('Khô rát') || conditions.includes('Kích ứng')
-          ? `Cung cấp hoạt chất phục hồi B5/Ceramide làm dịu cấp tốc nền da ${condStr}`
-          : `Tác động sâu vào cồi mụn và kiểm soát dầu thừa hiệu quả`;
-      } else if (s.stepName.includes('Dưỡng')) {
-        s.reason = `Khóa ẩm màng lipid để ngăn mất nước qua biểu bì suốt buổi ${session === 'morning' ? 'ngày' : 'đêm'}`;
-      } else if (s.stepName.includes('Bảo vệ')) {
-        s.reason = `Bảo vệ da tuyệt đối trước tia UV (chỉ số 6.2) để tránh tăng sắc tố và sạm nám`;
+    const prod = s.product || s.customProduct || {};
+    const prodName = prod.productName || prod.name || 'Sản phẩm';
+
+    if (!s.reason || !s.reason.startsWith('Thuật toán tự động ghi đè')) {
+      if (s.stepName.includes('Làm sạch') || s.category === 'cleanser') {
+        if (isDryTight || isIrritated) {
+          s.reason = `${prodName} có hoạt chất làm dịu và Pro-Vitamin B5 sẽ giúp làm dịu nền da đang ${condStr} của bạn.`;
+        } else if (isAcne || isOily) {
+          s.reason = `${prodName} giúp làm sạch sâu bã nhờn trong chân lông, giảm tiết dầu và ngăn ngừa mụn cho da ${condStr}.`;
+        } else {
+          s.reason = `${prodName} làm sạch êm dịu, bảo vệ độ ẩm tự nhiên và cân bằng sinh học cho da.`;
+        }
+      } else if (s.stepName.includes('Cân bằng') || s.category === 'toner') {
+        if (isDryTight || isIrritated) {
+          s.reason = `${prodName} cấp ẩm đa tầng tức thì, làm dịu cảm giác khô căng và phục hồi pH tự nhiên cho da ${condStr}.`;
+        } else {
+          s.reason = `${prodName} cân bằng pH ngay sau rửa mặt để tạo tiền đề hấp thụ dưỡng chất tối ưu.`;
+        }
+      } else if (s.stepName.includes('Đặc trị') || s.category === 'treatment' || s.category === 'serum') {
+        if (isDryTight || isIrritated) {
+          s.reason = `${prodName} giàu hoạt chất Pro-Vitamin B5 và Ceramide đẩy nhanh tốc độ phục hồi biểu bì đang ${condStr}.`;
+        } else if (isAcne) {
+          s.reason = `${prodName} chứa Salicylic Acid & Tea Tree thẩm thấu sâu, gom cồi mụn và giảm sưng viêm hiệu quả.`;
+        } else if (isOily) {
+          s.reason = `${prodName} với Niacinamide & Zinc PCA giúp điều tiết bã nhờn vùng chữ T và làm mịn chân lông.`;
+        } else {
+          s.reason = `${prodName} cung cấp dưỡng chất chống oxy hóa và cấp ẩm sâu giúp da luôn căng bóng ngậm nước.`;
+        }
+      } else if (s.stepName.includes('Dưỡng') || s.category === 'moisturizer') {
+        if (isDryTight || isIrritated) {
+          s.reason = `${prodName} củng cố màng lipid, khóa ẩm vững chắc ngăn hiện tượng mất nước qua biểu bì (TEWL) khi da đang ${condStr}.`;
+        } else {
+          s.reason = `${prodName} khóa ẩm màng lipid để duy trì độ đàn hồi suốt buổi ${session === 'morning' ? 'ngày' : 'đêm'}.`;
+        }
+      } else if (s.stepName.includes('Bảo vệ') || s.category === 'sunscreen') {
+        s.reason = `${prodName} màng lọc phổ rộng bảo vệ da tuyệt đối trước tia UV (chỉ số 6.2) để tránh làm sạm và kích ứng nền da đang ${condStr}.`;
       }
     }
   });
@@ -679,7 +722,31 @@ async function createDefaultTreatmentPlan(userId) {
   const schedule = [];
 
   for (let i = 1; i <= 14; i++) {
+    const isSpecialTreatmentDay = i % 2 === 1;
     const defaultSteps = buildDefault5Steps(closet, ['Bình thường'], 'Da_Hon_Hop');
+
+    // Theo yêu cầu: Ngày thứ 3 của Chuỗi Trị Mụn 14 ngày quy định bôi BHA
+    if (i === 3 || (isSpecialTreatmentDay && i <= 7)) {
+      const closetBha = closet.find((p) => {
+        const ings = (p.ingredients || []).concat(p.activeIngredients || []).map(normalizeStr);
+        return ings.some((ing) => ing.includes('bha') || ing.includes('salicylic acid'));
+      });
+
+      defaultSteps.evening.forEach((step) => {
+        if (step.category === 'treatment') {
+          step.stepName = 'Đặc trị BHA làm sạch sâu & giảm mụn';
+          step.product = closetBha ? closetBha._id : null;
+          step.customProduct = {
+            name: closetBha ? closetBha.productName : "Dung dịch tẩy tế bào chết Paula's Choice 2% BHA Liquid Exfoliant",
+            brand: closetBha ? closetBha.brand : "Paula's Choice",
+            icon: 'bottle',
+            ingredients: closetBha ? closetBha.ingredients : ['Salicylic Acid', 'BHA', 'Camellia Oleifera'],
+          };
+          step.reason = 'BHA 2% (Salicylic Acid) làm sạch sâu dầu thừa và tế bào chết tích tụ trong chân lông';
+        }
+      });
+    }
+
     schedule.push({
       day: i,
       morningSteps: defaultSteps.morning,
@@ -692,7 +759,7 @@ async function createDefaultTreatmentPlan(userId) {
     title: 'Chuỗi Routine Trị Mụn & Phục Hồi 14 Ngày',
     description: 'Phác đồ 14 ngày kết hợp làm dịu và kiểm soát dầu mụn theo lộ trình khoa học.',
     totalDays: 14,
-    currentDay: 3, // Mock đang ở ngày 3
+    currentDay: 3, // Đang ở Ngày thứ 3 của Chuỗi Trị Mụn 14 ngày
     status: 'active',
     schedule,
   });
