@@ -43,6 +43,8 @@ const createApp = (config) => {
     app.use('/api/notifications', notificationRoutes);
     app.use('/api/community', communityRoutes);
     app.use('/api/scan', scanRoutes);
+    app.use('/api/skin-profile', require('./src/routes/skinProfileRoutes'));
+    app.use('/api/routines', require('./src/routes/routineRoutes'));
     app.use('/api/auth', authRoutes());
     app.use(notFound);
     app.use(errorHandler);

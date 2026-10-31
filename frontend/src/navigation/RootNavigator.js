@@ -6,6 +6,9 @@ import ProductDetailModal from '../screens/collection/ProductDetailModal';
 import ExpiryCalendarScreen from '../screens/collection/ExpiryCalendarScreen';
 import CreatePostScreen from '../screens/community/CreatePostScreen';
 import PostDetailScreen from '../screens/community/PostDetailScreen';
+import SkinProfileSetup from '../screens/auth/SkinProfileSetup';
+import RoutineHistoryScreen from '../screens/profile/RoutineHistoryScreen';
+import RoutineDetailScreen from '../screens/home/RoutineDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -25,6 +28,9 @@ export default function RootNavigator() {
           contentStyle: { backgroundColor: 'transparent' },
         }}
       />
+      <Stack.Screen name="SkinProfileSetup" component={SkinProfileSetup} />
+      <Stack.Screen name="RoutineHistory" component={RoutineHistoryScreen} />
+      <Stack.Screen name="RoutineDetail" component={RoutineDetailScreen} />
       <Stack.Screen name="ExpiryCalendar" component={ExpiryCalendarScreen} />
     </Stack.Navigator>
   );
