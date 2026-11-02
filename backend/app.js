@@ -15,6 +15,7 @@ const createApp = (config) => {
     const collectionRoutes = require('./src/routes/collectionRoutes');
     const notificationRoutes = require('./src/routes/notificationRoutes');
     const communityRoutes = require('./src/routes/communityRoutes');
+    const routineRoutes = require('./src/routes/routineRoutes');
     const app = express();
     app.locals.config = config;
 
@@ -43,6 +44,7 @@ const createApp = (config) => {
     app.use('/api/notifications', notificationRoutes);
     app.use('/api/community', communityRoutes);
     app.use('/api/scan', scanRoutes);
+    app.use('/api/routines', routineRoutes);
     app.use('/api/auth', authRoutes());
     app.use(notFound);
     app.use(errorHandler);

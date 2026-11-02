@@ -6,6 +6,10 @@ import ProductDetailModal from '../screens/collection/ProductDetailModal';
 import ExpiryCalendarScreen from '../screens/collection/ExpiryCalendarScreen';
 import CreatePostScreen from '../screens/community/CreatePostScreen';
 import PostDetailScreen from '../screens/community/PostDetailScreen';
+import DailyRoutineDetailScreen from '../screens/home/DailyRoutineDetailScreen';
+import TreatmentPlanDetailScreen from '../screens/home/TreatmentPlanDetailScreen';
+import SuggestedPlansScreen from '../screens/home/SuggestedPlansScreen';
+import EditPlanScreen from '../screens/home/EditPlanScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -13,6 +17,10 @@ export default function RootNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
+      <Stack.Screen name="DailyRoutineDetail" component={DailyRoutineDetailScreen} />
+      <Stack.Screen name="TreatmentPlanDetail" component={TreatmentPlanDetailScreen} />
+      <Stack.Screen name="SuggestedPlans" component={SuggestedPlansScreen} />
+      <Stack.Screen name="EditPlan" component={EditPlanScreen} />
       <Stack.Screen name="AddProduct" component={AddProductScreen} />
       <Stack.Screen name="CreatePost" component={CreatePostScreen} />
       <Stack.Screen name="PostDetail" component={PostDetailScreen} />

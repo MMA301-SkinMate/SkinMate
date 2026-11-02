@@ -1,5 +1,6 @@
 const express = require('express');
 const NotificationDevice = require('../models/NotificationDevice');
+const { sendDailyCheckinReminder } = require('../services/checkinNotificationService');
 const router = express.Router();
 
 const expoTokenPattern = /^(ExponentPushToken|ExpoPushToken)\[[^\]]+\]$/;
@@ -23,6 +24,14 @@ router.delete('/devices', async (req, res, next) => {
     const userId = req.user?.id || req.userId || '6ad620492ae8913ed1eb2871';
     if (req.body?.token) await NotificationDevice.updateOne({ userId, token: req.body.token }, { enabled: false });
     res.status(204).send();
+  } catch (error) { next(error); }
+});
+
+router.post('/daily-checkin', async (req, res, next) => {
+  try {
+    const userId = req.user?.id || req.userId;
+    const result = await sendDailyCheckinReminder(userId);
+    res.status(200).json(result);
   } catch (error) { next(error); }
 });
 
