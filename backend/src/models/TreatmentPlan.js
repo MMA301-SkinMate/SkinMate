@@ -1,63 +1,45 @@
 const mongoose = require('mongoose');
 
 const stepSchema = new mongoose.Schema({
-  stepNumber: { type: Number, required: true }, // 1: Làm sạch, 2: Toner, 3: Đặc trị, 4: Dưỡng ẩm, 5: Chống nắng
-  stepType: { type: String, required: true }, // cleanser, toner, treatment, moisturizer, sunscreen
-  productId: { type: mongoose.Schema.Types.ObjectId, ref: 'MyCollection', default: null },
+  stepNumber: { type: Number, required: true },
+  stepType: { type: String, required: true },
+  productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Collection', default: null },
   productName: { type: String, required: true },
-  targetActiveIngredient: { type: String }, // Hoạt chất chủ đạo (VD: BHA 2%, Niacinamide, B5)
-  isExternalSuggestion: { type: Boolean, default: false }, // true nếu sản phẩm gợi ý ngoài tủ đồ
-  usageNote: { type: String },
+  targetActiveIngredient: String,
+  isExternalSuggestion: { type: Boolean, default: false },
+  usageNote: String,
 });
 
 const routineDaySchema = new mongoose.Schema({
-  dayIndex: { type: Number, required: true }, // Ngày thứ 1, 2, ...
+  dayIndex: { type: Number, required: true },
   morning: [stepSchema],
   evening: [stepSchema],
 });
 
-const treatmentPlanSchema = new mongoose.Schema(
-  {
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-      index: true,
-    },
-    title: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    targetConcern: {
-      type: String, // Ví dụ: "Trị mụn", "Căng bóng cấp ẩm", "Phục hồi da"
-      default: 'Căng bóng cấp ẩm',
-    },
-    durationDays: {
-      type: Number,
-      default: 7,
-    },
-    planPayload: [routineDaySchema],
-    status: {
-      type: String,
-      enum: ['draft', 'active', 'paused', 'completed', 'canceled'],
-      default: 'draft',
-      index: true,
-    },
-    isSkipped: {
-      type: Boolean,
-      default: false,
-    },
-    startDate: {
-      type: Date,
-      default: null,
-    },
-    completedDate: {
-      type: Date,
-      default: null,
-    },
+const treatmentPlanSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+  title: { type: String, required: true, trim: true, default: 'Chuỗi Routine 7 Ngày Cấp Ẩm Căng Bóng' },
+  targetConcern: { type: String, default: 'Căng bóng cấp ẩm' },
+  goal: { type: String, default: 'Cấp ẩm sâu & duy trì làn da căng bóng' },
+  skinTypeTarget: { type: String, default: 'normal' },
+  durationDays: { type: Number, default: 7 },
+  planPayload: [routineDaySchema],
+  status: {
+    type: String,
+    enum: ['draft', 'active', 'paused', 'completed', 'canceled', 'cancelled'],
+    default: 'draft',
+    index: true,
   },
-  { timestamps: true }
-);
+  isSkipped: { type: Boolean, default: false },
+  startDate: { type: Date, default: null },
+  completedDate: { type: Date, default: null },
+  endDate: { type: Date, default: null },
+  currentDay: { type: Number, default: 1 },
+  isOriginalSuggested: { type: Boolean, default: true },
+  sourceRoutineId: { type: mongoose.Schema.Types.ObjectId, ref: 'TreatmentPlan', default: null },
+  notes: { type: String, default: '' },
+}, { timestamps: true });
+
+treatmentPlanSchema.index({ userId: 1, status: 1 });
 
 module.exports = mongoose.model('TreatmentPlan', treatmentPlanSchema);

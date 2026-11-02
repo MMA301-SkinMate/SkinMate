@@ -5,8 +5,10 @@ const request = require('supertest');
 const { errorHandler } = require('../middlewares/errorMiddleware');
 
 for (const [name, modulePath, path] of [
+    ['account profile', './account-profile', '/'],
     ['skin profile', './skinProfileRoutes', '/profile'],
     ['routine history', './routineRoutes', '/history'],
+    ['my routine', './routineRoutes', '/my-routine'],
 ]) {
     test(`${name} requires a real authenticated session`, async () => {
         const app = express();

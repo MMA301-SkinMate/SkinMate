@@ -26,6 +26,8 @@ export const normalizeSession = (value) => {
       id: value.user.id,
       fullName: value.user.fullName,
       email: value.user.email,
+      avatarUrl: typeof value.user.avatarUrl === 'string' ? value.user.avatarUrl : null,
+      phoneNumber: typeof value.user.phoneNumber === 'string' ? value.user.phoneNumber : '',
     },
     accessToken: value.accessToken,
     refreshToken: value.refreshToken,

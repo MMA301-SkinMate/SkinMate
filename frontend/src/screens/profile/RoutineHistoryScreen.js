@@ -39,7 +39,7 @@ export default function RoutineHistoryScreen({ navigation }) {
         onRefresh={loadHistory}
         ListEmptyComponent={<Text style={styles.empty}>{loading ? 'Đang tải...' : 'Chưa có chuỗi routine trong lịch sử.'}</Text>}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('RoutineDetail', { plan: item })}>
+          <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('ProfileRoutineDetail', { plan: item })}>
             <View style={styles.info}>
               <Text style={styles.title}>{item.title}</Text>
               <Text style={styles.detail}>{item.durationDays} ngày · {item.targetConcern}</Text>

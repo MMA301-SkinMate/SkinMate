@@ -39,12 +39,15 @@ const createApp = (config) => {
     app.use('/api-docs', createDocsRoutes(config));
 
     app.use(createPasswordResetPageRoutes(config));
+    const routineRoutes = require('./src/routes/routineRoutes');
     app.use('/api/collections', collectionRoutes);
     app.use('/api/notifications', notificationRoutes);
     app.use('/api/community', communityRoutes);
     app.use('/api/scan', scanRoutes);
     app.use('/api/skin-profile', require('./src/routes/skinProfileRoutes'));
-    app.use('/api/routines', require('./src/routes/routineRoutes'));
+    app.use('/api/routines', routineRoutes.profileRouter);
+    app.use('/api/routine', routineRoutes);
+    app.use('/api/account/profile', require('./src/routes/account-profile'));
     app.use('/api/auth', authRoutes());
     app.use(notFound);
     app.use(errorHandler);

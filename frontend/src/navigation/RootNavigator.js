@@ -7,8 +7,10 @@ import ExpiryCalendarScreen from '../screens/collection/ExpiryCalendarScreen';
 import CreatePostScreen from '../screens/community/CreatePostScreen';
 import PostDetailScreen from '../screens/community/PostDetailScreen';
 import SkinProfileSetup from '../screens/auth/SkinProfileSetup';
+import EditProfileScreen from '../screens/profile/edit-profile-screen';
 import RoutineHistoryScreen from '../screens/profile/RoutineHistoryScreen';
-import RoutineDetailScreen from '../screens/home/RoutineDetailScreen';
+import ProfileRoutineDetailScreen from '../screens/home/RoutineDetailScreen';
+import RoutineDetailScreen from '../screens/routine/RoutineDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -19,6 +21,7 @@ export default function RootNavigator() {
       <Stack.Screen name="AddProduct" component={AddProductScreen} />
       <Stack.Screen name="CreatePost" component={CreatePostScreen} />
       <Stack.Screen name="PostDetail" component={PostDetailScreen} />
+      <Stack.Screen name="RoutineDetail" component={RoutineDetailScreen} />
       <Stack.Screen
         name="ProductDetailModal"
         component={ProductDetailModal}
@@ -29,8 +32,9 @@ export default function RootNavigator() {
         }}
       />
       <Stack.Screen name="SkinProfileSetup" component={SkinProfileSetup} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="RoutineHistory" component={RoutineHistoryScreen} />
-      <Stack.Screen name="RoutineDetail" component={RoutineDetailScreen} />
+      <Stack.Screen name="ProfileRoutineDetail" component={ProfileRoutineDetailScreen} />
       <Stack.Screen name="ExpiryCalendar" component={ExpiryCalendarScreen} />
     </Stack.Navigator>
   );

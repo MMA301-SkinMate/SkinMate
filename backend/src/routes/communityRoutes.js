@@ -1,4 +1,5 @@
 const express = require('express');
+const authenticate = require('../middlewares/authMiddleware');
 const controller = require('../controllers/communityController');
 const validate = require('../validations/postDto');
 const { createMemoryImageUpload } = require('../middlewares/productImageUploadMiddleware');
@@ -16,5 +17,5 @@ router.get('/:id', validate.id, controller.get);
 router.patch('/:id', validate.id, validate.create, controller.update);
 router.delete('/:id', validate.id, controller.remove);
 router.post('/:id/like', validate.id, controller.toggleLike);
-router.post('/:id/copy', validate.id, controller.copyRoutine);
+router.post('/:id/copy', authenticate, validate.id, controller.copyRoutine);
 module.exports = router;

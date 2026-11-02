@@ -7,7 +7,7 @@ import HomeScreen from '../screens/home/HomeScreen.jsx';
 import MyCollectionScreen from '../screens/collection/MyCollectionScreen';
 import ScanScreen from '../screens/scan/ScanScreen';
 import CommunityScreen from '../screens/community/CommunityScreen';
-import ProfileScreen from '../screens/profile/ProfileScreen.js';
+import ProfileScreen from '../screens/profile/ProfileScreen.jsx';
 
 const Tab = createBottomTabNavigator();
 
