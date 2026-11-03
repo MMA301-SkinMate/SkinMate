@@ -13,6 +13,12 @@ export const SKIN_TYPE_LABELS = {
 
 export const POST_TAGS = ['#Routine', '#DaDauMun', '#PhucHoi', '#Review'];
 
+export const SKIN_CONDITIONS = ['Binh_Thuong', 'Kho_Rat', 'Kich_Ung', 'Noi_Mun', 'Bong_Dau'];
+export const SKIN_CONDITION_LABELS = {
+  Binh_Thuong: 'Normal', Kho_Rat: 'Dry / tight', Kich_Ung: 'Irritated',
+  Noi_Mun: 'Breakouts', Bong_Dau: 'Oily',
+};
+
 export const POST_TAG_LABELS = {
   '#DaDauMun': '#AcneProneSkin',
   '#PhucHoi': '#SkinRecovery',

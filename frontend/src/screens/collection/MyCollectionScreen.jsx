@@ -141,25 +141,25 @@ export default function MyCollectionScreen({ navigation }) {
                 const result = await deleteProduct(product._id || product.id);
                 if (result?.wasInRoutine) {
                     Alert.alert(
-                        '✅ Đã xóa sản phẩm',
+                        'Product deleted',
                         result.replacedWith
-                            ? `Hệ thống đã thay thế bằng "${result.replacedWith.productName}" trong routine của bạn.`
-                            : 'Bước dùng sản phẩm này trong routine đã được xóa (không tìm thấy sản phẩm thay thế phù hợp).'
+                            ? `Replaced with "${result.replacedWith.productName}" in your routine.`
+                            : 'This product was removed from your routine because no suitable replacement was found.'
                     );
                 }
             } catch (err) {
-                Alert.alert('Lỗi', err?.message || 'Không thể xóa sản phẩm. Vui lòng thử lại.');
+                Alert.alert('Error', err?.message || 'Unable to delete the product. Please try again.');
             } finally {
                 setActionLoading(false);
             }
         };
 
         Alert.alert(
-            'Xóa sản phẩm?',
-            'Hành động này không thể hoàn tác.',
+            'Delete product?',
+            'This action cannot be undone.',
             [
-                { text: 'Hủy', style: 'cancel' },
-                { text: 'Xóa', style: 'destructive', onPress: doDelete },
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Delete', style: 'destructive', onPress: doDelete },
             ]
         );
     }, [actionTarget, deleteProduct, handleCloseActionSheet]);
@@ -175,14 +175,14 @@ export default function MyCollectionScreen({ navigation }) {
             const result = await markAsUsedUp(product._id || product.id);
             if (result?.wasInRoutine) {
                 Alert.alert(
-                    'Đã đánh dấu dùng hết',
+                    'Product marked as used',
                     result.replacedWith
-                        ? `Hệ thống đã thay thế bằng "${result.replacedWith.productName}" trong routine của bạn.`
-                        : 'Sản phẩm này đã được xóa khỏi routine (không tìm thấy sản phẩm thay thế).'
+                        ? `Replaced with "${result.replacedWith.productName}" in your routine.`
+                        : 'This product was removed from your routine because no replacement was found.'
                 );
             }
         } catch (err) {
-            Alert.alert('Lỗi', err?.message || 'Không thể cập nhật sản phẩm. Vui lòng thử lại.');
+            Alert.alert('Error', err?.message || 'Unable to update the product. Please try again.');
         } finally {
             setActionLoading(false);
         }
@@ -199,12 +199,12 @@ export default function MyCollectionScreen({ navigation }) {
                 <View style={styles.header}>
                     <View>
                         <View style={styles.titleRow}>
-                            <Text style={styles.title}>Tủ đồ</Text>
+                        <Text style={styles.title}>My collection</Text>
                             <View style={styles.countBadge}>
-                                <Text style={styles.countBadgeText}>{activeProducts.length + usedProducts.length} sản phẩm</Text>
+                                <Text style={styles.countBadgeText}>{activeProducts.length + usedProducts.length} products</Text>
                             </View>
                         </View>
-                        <Text style={styles.subtitle}>Theo dõi và quản lý mỹ phẩm của bạn</Text>
+                        <Text style={styles.subtitle}>Track and manage your skincare products</Text>
                     </View>
                 </View>
 
@@ -215,7 +215,7 @@ export default function MyCollectionScreen({ navigation }) {
                         onPress={() => setTab('active')}
                     >
                         <Text style={[styles.tabText, tab === 'active' && styles.tabTextActive]}>
-                            Đang sử dụng
+                            In use
                         </Text>
                         <View style={styles.tabCountBadge}>
                             <Text style={styles.tabCountText}>{activeProducts.length}</Text>
@@ -226,7 +226,7 @@ export default function MyCollectionScreen({ navigation }) {
                         onPress={() => setTab('used')}
                     >
                         <Text style={[styles.tabText, tab === 'used' && styles.tabTextActive]}>
-                            Đã sử dụng
+                            Used
                         </Text>
                         <View style={[styles.tabCountBadge, styles.tabCountUsed]}>
                             <Text style={[styles.tabCountText, { color: Colors.textSecondary }]}>
@@ -241,8 +241,8 @@ export default function MyCollectionScreen({ navigation }) {
                     <View style={styles.alertBanner}>
                         <AlertTriangle size={14} color={Colors.error} />
                         <Text style={styles.alertBannerText}>
-                            <Text style={styles.alertBannerBold}>{expiredActiveCount} sản phẩm đã hết hạn</Text>
-                            {' '}đang trong tủ — hãy kiểm tra và xử lý.
+                            <Text style={styles.alertBannerBold}>{expiredActiveCount} expired products</Text>
+                            {' '}are still in your collection. Please review them.
                         </Text>
                     </View>
                 )}
@@ -250,8 +250,8 @@ export default function MyCollectionScreen({ navigation }) {
                     <View style={styles.warnBanner}>
                         <View style={styles.warnDot} />
                         <Text style={styles.warnBannerText}>
-                            <Text style={styles.warnBannerBold}>{expiringSoonCount} sản phẩm</Text>
-                            {' '}sắp hết hạn trong 30 ngày tới.
+                            <Text style={styles.warnBannerBold}>{expiringSoonCount} products</Text>
+                            {' '}will expire within the next 30 days.
                         </Text>
                     </View>
                 )}
@@ -260,24 +260,24 @@ export default function MyCollectionScreen({ navigation }) {
                 {loading ? (
                     <View style={styles.stateBox}>
                         <ActivityIndicator color={Colors.primary} />
-                        <Text style={styles.stateText}>Đang tải tủ đồ...</Text>
+                        <Text style={styles.stateText}>Loading your collection...</Text>
                     </View>
                 ) : error ? (
                     <View style={styles.stateBox}>
                         <Text style={styles.stateText}>{error}</Text>
                         <TouchableOpacity onPress={load}>
-                            <Text style={styles.retryText}>Thử lại</Text>
+                            <Text style={styles.retryText}>Try again</Text>
                         </TouchableOpacity>
                     </View>
                 ) : productsForTab.length === 0 ? (
                     <View style={styles.stateBox}>
                         <Text style={styles.emptyTitle}>
-                            {tab === 'active' ? 'Tủ đồ đang trống' : 'Chưa có sản phẩm nào'}
+                            {tab === 'active' ? 'Your collection is empty' : 'No used products yet'}
                         </Text>
                         <Text style={styles.stateText}>
                             {tab === 'active'
-                                ? 'Scan và thêm sản phẩm đầu tiên của bạn.'
-                                : 'Sản phẩm đã dùng hết sẽ xuất hiện ở đây.'}
+                                ? 'Scan and add your first product.'
+                                : 'Products marked as used will appear here.'}
                         </Text>
                     </View>
                 ) : (
@@ -303,7 +303,7 @@ export default function MyCollectionScreen({ navigation }) {
                 activeOpacity={0.85}
             >
                 <Plus size={20} color={Colors.textLight} />
-                <Text style={styles.fabText}>Thêm sản phẩm</Text>
+                <Text style={styles.fabText}>Add product</Text>
             </TouchableOpacity>
 
             {/* Product detail modal */}
@@ -365,12 +365,12 @@ function AddProductSlot({ onPress }) {
             onPress={onPress}
             activeOpacity={0.8}
             accessibilityRole="button"
-            accessibilityLabel="Thêm sản phẩm"
+            accessibilityLabel="Add product"
         >
             <View style={styles.addProductIcon}>
                 <Plus size={25} color={Colors.primary} />
             </View>
-            <Text style={styles.addProductText}>Thêm sản phẩm</Text>
+            <Text style={styles.addProductText}>Add product</Text>
         </TouchableOpacity>
     );
 }
@@ -432,7 +432,7 @@ function ProductCard({ product, onPress, onLongPress }) {
                 {/* Status badge overlay */}
                 {isUsedUp && (
                     <View style={styles.badgeDimmed}>
-                        <Text style={styles.badgeDimmedText}>Hết</Text>
+                        <Text style={styles.badgeDimmedText}>Used</Text>
                     </View>
                 )}
                 {redAlert && (
@@ -478,7 +478,7 @@ function ActionSheet({ product, loading, onDelete, onUsedUp, onClose }) {
                         disabled={loading}
                     >
                         <CheckCircle size={20} color={Colors.primary} />
-                        <Text style={styles.actionBtnText}>Đánh dấu đã dùng hết</Text>
+            <Text style={styles.actionBtnText}>Mark as used</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -488,12 +488,12 @@ function ActionSheet({ product, loading, onDelete, onUsedUp, onClose }) {
                     >
                         <Trash2 size={20} color={Colors.error} />
                         <Text style={[styles.actionBtnText, styles.actionBtnTextDanger]}>
-                            Xóa sản phẩm
+                            Delete product
                         </Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.actionCancel} onPress={onClose}>
-                        <Text style={styles.actionCancelText}>Hủy</Text>
+                        <Text style={styles.actionCancelText}>Cancel</Text>
                     </TouchableOpacity>
                 </View>
             </Pressable>
@@ -506,21 +506,21 @@ function ActionSheet({ product, loading, onDelete, onUsedUp, onClose }) {
 // ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: Colors.surface },
-    scroll: { paddingHorizontal: 12, paddingBottom: 110 },
+    container: { flex: 1, backgroundColor: Colors.background },
+    scroll: { paddingHorizontal: 20, paddingBottom: 110 },
 
     // Header
-    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 14 },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 18 },
     titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    title: { fontSize: 27, fontWeight: '800', color: Colors.text },
-    countBadge: { backgroundColor: Colors.primaryLight, paddingHorizontal: 9, paddingVertical: 4, borderRadius: 12 },
+    title: { fontSize: 25, fontWeight: '800', color: Colors.text },
+    countBadge: { backgroundColor: Colors.primaryLight, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 14 },
     countBadgeText: { fontSize: 11, color: Colors.primaryDark, fontWeight: '700' },
-    subtitle: { color: Colors.muted, fontSize: 13, marginTop: 2 },
+    subtitle: { color: Colors.muted, fontSize: 13, marginTop: 5 },
 
     // Tab bar
-    tabBar: { flexDirection: 'row', backgroundColor: Colors.surface, borderRadius: 24, padding: 4, marginBottom: 12 },
+    tabBar: { flexDirection: 'row', backgroundColor: '#eaf1ed', borderRadius: 18, padding: 4, marginBottom: 16 },
     tabItem: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, minHeight: 38, borderRadius: 20 },
-    tabItemActive: { backgroundColor: Colors.background, shadowColor: Colors.shadow, shadowOpacity: 0.08, shadowRadius: 3, elevation: 1 },
+    tabItemActive: { backgroundColor: Colors.card, shadowColor: Colors.shadow, shadowOpacity: 0.07, shadowRadius: 5, elevation: 2 },
     tabText: { fontSize: 13, color: Colors.textSecondary, fontWeight: '500' },
     tabTextActive: { color: Colors.text, fontWeight: '700' },
     tabCountBadge: { backgroundColor: Colors.primaryLight, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 10 },
@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
     retryText: { fontSize: 14, fontWeight: '700', color: Colors.primary },
 
     // Cabinet shell
-    collectionCabinet: { marginHorizontal: -4, padding: 10, paddingBottom: 4, borderRadius: 18, backgroundColor: 'rgba(80, 190, 173, 0.28)', borderWidth: 1, borderColor: 'rgba(42, 145, 132, 0.28)' },
+    collectionCabinet: { marginHorizontal: -2, padding: 12, paddingBottom: 5, borderRadius: 22, backgroundColor: '#e1f2eb', borderWidth: 1, borderColor: '#d2e8de' },
     productRowCard: { minHeight: 84, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, borderRadius: 18, backgroundColor: 'rgba(219, 245, 239, 0.72)', borderWidth: 1, borderColor: 'rgba(51, 153, 136, 0.25)' },
     productRowCardAlert: { borderColor: Colors.error, backgroundColor: 'rgba(255, 235, 235, 0.88)' },
     productRowIcon: { width: 62, height: 62, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.72)' },
@@ -561,17 +561,17 @@ const styles = StyleSheet.create({
     shelfAccent: { width: 4, height: 14, borderRadius: 3, backgroundColor: '#F4A261' },
     shelfTitle: { flex: 1, fontSize: 12, fontWeight: '700', color: Colors.textLight },
     shelfCount: { fontSize: 10, color: '#FDE7CF' },
-    productRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 4, paddingHorizontal: 1, paddingTop: 5, paddingBottom: 4 },
+    productRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 4, paddingHorizontal: 1, paddingTop: 8, paddingBottom: 5 },
 
     // Wood plank
-    woodShelf: { height: 9, borderRadius: 5, backgroundColor: 'rgba(27, 126, 115, 0.58)', marginTop: 6 },
-    woodHighlight: { height: 2, borderRadius: 2, backgroundColor: 'rgba(184, 255, 241, 0.55)', marginHorizontal: 1 },
+    woodShelf: { height: 8, borderRadius: 5, backgroundColor: '#9acdbb', marginTop: 7 },
+    woodHighlight: { height: 2, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.65)', marginHorizontal: 1 },
 
     // Product card
     productCard: { width: CARD_WIDTH, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 2, backgroundColor: 'transparent' },
     productCardDimmed: { opacity: 0.5 },
     productCardRedAlert: { borderRadius: 8 },
-    productIconWrap: { width: 58, height: 63, alignSelf: 'center', alignItems: 'center', justifyContent: 'center', marginBottom: 4, position: 'relative' },
+    productIconWrap: { width: 58, height: 63, alignSelf: 'center', alignItems: 'center', justifyContent: 'center', marginBottom: 5, position: 'relative' },
     productIconImg: { width: '100%', height: '100%' },
 
     // Badges
@@ -582,7 +582,7 @@ const styles = StyleSheet.create({
     badgePending: { position: 'absolute', top: 2, right: 2, width: 13, height: 13, borderRadius: 7, backgroundColor: Colors.warning, alignItems: 'center', justifyContent: 'center' },
     badgePendingText: { color: '#fff', fontSize: 8, fontWeight: '900' },
 
-    productName: { width: '100%', fontSize: 8, lineHeight: 10, fontWeight: '700', textAlign: 'center', color: Colors.text },
+    productName: { width: '100%', fontSize: 10, lineHeight: 13, fontWeight: '700', textAlign: 'center', color: Colors.text },
     productNameExpired: { color: Colors.error, fontWeight: '800' },
 
     // FAB
@@ -592,7 +592,7 @@ const styles = StyleSheet.create({
     fabText: { display: 'none' },
     addProductSlot: { width: CARD_WIDTH, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 2 },
     addProductIcon: { width: 58, height: 63, borderRadius: 12, borderWidth: 1.5, borderStyle: 'dashed', borderColor: Colors.primary, alignItems: 'center', justifyContent: 'center', marginBottom: 4, backgroundColor: 'rgba(255,255,255,0.75)' },
-    addProductText: { width: '100%', fontSize: 8, lineHeight: 10, fontWeight: '700', textAlign: 'center', color: Colors.primary },
+    addProductText: { width: '100%', fontSize: 10, lineHeight: 13, fontWeight: '700', textAlign: 'center', color: Colors.primary },
 
     // Action sheet
     actionOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },

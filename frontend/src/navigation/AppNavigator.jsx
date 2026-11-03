@@ -16,6 +16,8 @@ import { COLORS as C } from "../constants/colors";
 import { SPACING } from "../constants/theme";
 import { useIntro } from "../hooks/useIntro";
 import IntroScreen from "../screens/intro/IntroScreen";
+import SkinProfileScreen from "../screens/profile/SkinProfileScreen";
+import { usePushNotifications } from '../hooks/usePushNotifications';
 
 const Root = createNativeStackNavigator();
 
@@ -41,6 +43,7 @@ function BootstrapScreen() {
 }
 
 function AuthenticatedApp() {
+  usePushNotifications();
   return (
     <CollectionProvider>
       <CommunityProvider>
@@ -88,7 +91,10 @@ export default function AppNavigator() {
             {(props) => <IntroScreen {...props} onFinish={handleFinishIntro} />}
           </Root.Screen>
         ) : auth.isAuthenticated ? (
-          <Root.Screen name="MainTabs" component={AuthenticatedApp} />
+          <>
+            <Root.Screen name="MainTabs" component={AuthenticatedApp} />
+            <Root.Screen name="SkinProfile" component={SkinProfileScreen} />
+          </>
         ) : (
           <Root.Screen name="Auth" component={AuthStackNav} />
         )}

@@ -16,6 +16,7 @@ const createApp = (config) => {
     const notificationRoutes = require('./src/routes/notificationRoutes');
     const communityRoutes = require('./src/routes/communityRoutes');
     const routineRoutes = require('./src/routes/routineRoutes');
+    const profileRoutes = require('./src/routes/profileRoutes');
     const app = express();
     app.locals.config = config;
 
@@ -46,6 +47,7 @@ const createApp = (config) => {
     app.use('/api/notifications', notificationRoutes);
     app.use('/api/community', communityRoutes);
     app.use('/api/routines', routineRoutes);
+    app.use('/api/profile', profileRoutes);
 
     app.use(notFound);
     app.use(errorHandler);

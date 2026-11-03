@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ScreenWrapper from '../../components/ScreenWrapper';
@@ -8,21 +8,18 @@ import { COLORS } from '../../constants/colors';
 
 const DURATIONS = [7, 14, 30];
 
-const toDateKey = (date) => date.toISOString().slice(0, 10);
-const addDays = (date, days) => {
-    const next = new Date(date);
-    next.setUTCDate(next.getUTCDate() + days);
-    return next;
-};
-
 export default function RoutineSetupScreen({ navigation }) {
     const { activeProducts, loading } = useCollectionContext();
     const [duration, setDuration] = useState(14);
     const [morning, setMorning] = useState([]);
     const [evening, setEvening] = useState([]);
     const [saving, setSaving] = useState(false);
+    const [recommendation, setRecommendation] = useState(null);
 
     const products = useMemo(() => activeProducts || [], [activeProducts]);
+    useEffect(() => {
+        routineApi.recommend({ conditions: ['Binh_Thuong'] }).then(setRecommendation).catch(() => setRecommendation(null));
+    }, []);
     const toggleProduct = (id, session) => {
         const setter = session === 'morning' ? setMorning : setEvening;
         setter((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
@@ -30,23 +27,17 @@ export default function RoutineSetupScreen({ navigation }) {
 
     const submit = async () => {
         if (saving) return;
-        if (!morning.length && !evening.length) {
+        const suggestedMorning = (recommendation?.morningProducts || []).map((product) => product._id);
+        const suggestedEvening = (recommendation?.eveningProducts || []).map((product) => product._id);
+        const selectedMorning = morning.length ? morning : suggestedMorning;
+        const selectedEvening = evening.length ? evening : suggestedEvening;
+        if (!selectedMorning.length && !selectedEvening.length) {
             Alert.alert('Chưa chọn sản phẩm', 'Hãy chọn ít nhất một sản phẩm cho routine.');
             return;
         }
         setSaving(true);
         try {
-            const start = new Date();
-            const routineGroupId = `routine-${Date.now()}`;
-            await Promise.all(Array.from({ length: duration }, (_, index) => routineApi.save({
-                date: toDateKey(addDays(start, index)),
-                morningProducts: morning,
-                eveningProducts: evening,
-                routineGroupId,
-                dayNumber: index + 1,
-                totalDays: duration,
-                skinConditions: ['Binh_Thuong'],
-            })));
+            await routineApi.createPlan({ totalDays: duration, conditions: ['Binh_Thuong'], morningProducts: selectedMorning, eveningProducts: selectedEvening });
             Alert.alert('Đã tạo routine', `Routine ${duration} ngày đã được lưu.`, [
                 { text: 'Xem routine', onPress: () => navigation.goBack() },
             ]);
@@ -69,6 +60,7 @@ export default function RoutineSetupScreen({ navigation }) {
                 {DURATIONS.map((value) => <Pressable key={value} onPress={() => setDuration(value)} style={[styles.duration, duration === value && styles.selected]}><Text style={[styles.durationText, duration === value && styles.selectedText]}>{value} ngày</Text></Pressable>)}
             </View>
             <Text style={styles.label}>Sản phẩm buổi sáng</Text>
+            {recommendation?.message && <Text style={styles.recommendation}>{recommendation.message}</Text>}
             <ProductPicker products={products} selected={morning} session="morning" onToggle={toggleProduct} loading={loading} />
             <Text style={styles.label}>Sản phẩm buổi tối</Text>
             <ProductPicker products={products} selected={evening} session="evening" onToggle={toggleProduct} loading={loading} />
@@ -106,6 +98,7 @@ const styles = StyleSheet.create({
     productName: { color: COLORS.textMain, fontWeight: '600' },
     productType: { marginTop: 2, color: COLORS.textSecondary, fontSize: 12 },
     muted: { color: COLORS.textSecondary, paddingVertical: 12 },
+    recommendation: { color: COLORS.primary, fontSize: 12, lineHeight: 17, marginBottom: 6 },
     submit: { alignItems: 'center', marginVertical: 28, paddingVertical: 14, borderRadius: 14, backgroundColor: COLORS.primary },
     disabled: { opacity: 0.6 },
     submitText: { color: COLORS.textLight, fontWeight: '700', fontSize: 16 },

@@ -90,8 +90,8 @@ export default function ExpiredProductAlertModal() {
                         <View style={styles.badge}>
                             <Text style={styles.badgeText}>
                                 {queue.length > 1
-                                    ? `Hết hạn • ${queue.length} sản phẩm`
-                                    : 'Sản phẩm hết hạn'}
+                                    ? `Expired • ${queue.length} products`
+                                    : 'Expired product'}
                             </Text>
                         </View>
                     </View>
@@ -115,8 +115,8 @@ export default function ExpiredProductAlertModal() {
                             <View style={styles.dateRow}>
                                 <Calendar size={12} color={Colors.error} />
                                 <Text style={styles.dateText}>
-                                    Hết hạn: {formatDate(current.expirationDate)}
-                                    {overdue > 0 ? ` (${overdue} ngày trước)` : ''}
+                                    Expires: {formatDate(current.expirationDate)}
+                                    {overdue > 0 ? ` (${overdue} days ago)` : ''}
                                 </Text>
                             </View>
                         </View>
@@ -124,14 +124,14 @@ export default function ExpiredProductAlertModal() {
 
                     {/* Question */}
                     <Text style={styles.questionText}>
-                        Sản phẩm này đã hết hạn. Bạn có muốn tiếp tục sử dụng không?
+                        This product has expired. Do you want to continue using it?
                     </Text>
 
                     {/* Warning note */}
                     <View style={styles.noticeBox}>
                         <Clock size={13} color={Colors.warning} style={{ marginTop: 2 }} />
                         <Text style={styles.noticeText}>
-                            Nếu tiếp tục, sản phẩm sẽ được giữ trong tủ với biển báo đỏ nhắc nhở bạn về tình trạng hết hạn.
+                            If you continue, it will remain in your collection with a red expiration warning.
                         </Text>
                     </View>
 
@@ -147,8 +147,8 @@ export default function ExpiredProductAlertModal() {
                                 ? <ActivityIndicator size="small" color={Colors.textSecondary} />
                                 : (
                                     <>
-                                        <Text style={styles.stopBtnText}>Không</Text>
-                                        <Text style={styles.stopBtnSub}>Chuyển vào Đã sử dụng</Text>
+                                        <Text style={styles.stopBtnText}>Stop using</Text>
+                                        <Text style={styles.stopBtnSub}>Move to Used</Text>
                                     </>
                                 )
                             }
@@ -164,8 +164,8 @@ export default function ExpiredProductAlertModal() {
                                 ? <ActivityIndicator size="small" color="#fff" />
                                 : (
                                     <>
-                                        <Text style={styles.continueBtnText}>Tiếp tục dùng</Text>
-                                        <Text style={styles.continueBtnSub}>Hiện cảnh báo đỏ</Text>
+                                        <Text style={styles.continueBtnText}>Continue</Text>
+                                        <Text style={styles.continueBtnSub}>Keep red warning</Text>
                                     </>
                                 )
                             }

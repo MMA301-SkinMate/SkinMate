@@ -5,7 +5,7 @@ export const getCommunityPost = id => axiosClient.get(`/community/${id}`);
 export const createCommunityPost = payload => axiosClient.post('/community', payload);
 export const deleteCommunityPost = id => axiosClient.delete(`/community/${id}`);
 export const toggleCommunityPostLike = id => axiosClient.post(`/community/${id}/like`);
-export const copyCommunityRoutine = id => axiosClient.post(`/community/${id}/copy`);
+export const copyCommunityRoutine = (id, payload = {}) => axiosClient.post(`/community/${id}/copy`, payload);
 
 export const updateCommunityPost = (id, payload) => axiosClient.patch(`/community/${id}`, payload);
 export const uploadCommunityImages = assets => {

@@ -1,210 +1,65 @@
-import React, { useCallback, useState } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
-import { listCommunityPosts } from '../../api/communityApi';
-import { ActivityIndicator, Alert, FlatList, Image, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../constants/theme';
-import { SKIN_TYPES, SKIN_TYPE_LABELS, formatPostTags, countRoutineSteps } from '../../constants/community';
-import PostAuthorRow from '../../components/community/PostAuthorRow';
 import { useCommunity } from '../../context/CommunityContext';
-import { useCollection } from '../../context/CollectionContext';
-
-const FILTERS = [null, ...SKIN_TYPES];
+import { COLORS } from '../../constants/colors';
+import { SPACING, TYPOGRAPHY, getHeadingStyle, RADIUS } from '../../constants/theme';
+import { SKIN_TYPES, SKIN_TYPE_LABELS, SKIN_CONDITIONS, SKIN_CONDITION_LABELS } from '../../constants/community';
 
 export default function CommunityScreen({ navigation }) {
-  const { posts, skinTypeFilter, setSkinTypeFilter, isCommunityLoading, communityError, refreshPosts, toggleLike, copyRoutine } = useCommunity();
-  const { refreshCollection } = useCollection();
-  const [copyingId, setCopyingId] = useState(null);
-  const [drafts, setDrafts] = useState([]);
-  useFocusEffect(useCallback(() => {
-    let active = true;
-    listCommunityPosts({ mine: 'true', status: 'draft' })
-      .then(result => { if (active) setDrafts(result.posts || []); })
-      .catch(error => { if (active) Alert.alert('Unable to load drafts', error.message); });
-    return () => { active = false; };
-  }, []));
-
-  const handleLike = async id => {
-    try { await toggleLike(id); } catch (error) { Alert.alert('Error', error.message || 'Unable to like this post.'); }
-  };
-
-  const handleCopy = async id => {
-    if (copyingId) return;
-    setCopyingId(id);
-    try {
-      const result = await copyRoutine(id);
-      await refreshCollection();
-      Alert.alert('Copied', `${result.copiedCount} products were added to your collection.`);
-    } catch (error) {
-      Alert.alert('Error', error.message || 'Unable to copy this routine.');
-    } finally {
-      setCopyingId(null);
-    }
-  };
+  const { posts, skinTypeFilter, setSkinTypeFilter, skinConditionFilter, setSkinConditionFilter, isCommunityLoading, communityError, refreshPosts } = useCommunity();
+  const [search, setSearch] = useState('');
+  const filteredPosts = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return posts;
+    return posts.filter((post) => `${post.content || ''} ${(post.tags || []).join(' ')} ${post.authorName || ''}`.toLowerCase().includes(query));
+  }, [posts, search]);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <FlatList
-        data={posts}
-        keyExtractor={item => item.id}
+        data={filteredPosts}
+        keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={isCommunityLoading && posts.length > 0} onRefresh={refreshPosts} tintColor={Colors.primary} />}
+        refreshControl={<RefreshControl refreshing={isCommunityLoading} onRefresh={refreshPosts} tintColor={COLORS.primary} />}
         ListHeaderComponent={<View>
-          <CommunityHeader activeFilter={skinTypeFilter} onFilter={setSkinTypeFilter} onCompose={() => navigation.navigate('CreatePost')} />
-          {drafts.map(draft => <TouchableOpacity key={draft.id} style={styles.postCard} onPress={() => navigation.navigate('CreatePost', { draft })} accessibilityRole="button">
-            <Text style={styles.routineTitle}>Draft · Continue editing</Text>
-            <Text style={styles.postText} numberOfLines={2}>{draft.content || 'Routine has no content yet'}</Text>
-          </TouchableOpacity>)}
+          <View style={styles.header}><View><Text style={styles.eyebrow}>SKINMATE CIRCLE</Text><Text style={getHeadingStyle('Community', 'title')}>Community</Text><Text style={styles.intro}>Real routines, shared by people like you.</Text></View><View style={styles.headerIcon}><Ionicons name="people-outline" size={22} color={COLORS.primary} /></View></View>
+          <View style={styles.searchBox}><Ionicons name="search-outline" size={19} color={COLORS.primary} /><TextInput value={search} onChangeText={setSearch} placeholder="Search routines and skincare tips" placeholderTextColor={COLORS.textMuted} style={styles.searchInput} returnKeyType="search" /></View>
+          <FilterRow title="Skin type" values={[null, ...SKIN_TYPES]} selected={skinTypeFilter} onSelect={setSkinTypeFilter} labels={{ null: 'All', ...SKIN_TYPE_LABELS }} />
+          <FilterRow title="Today's condition" values={[null, ...SKIN_CONDITIONS]} selected={skinConditionFilter} onSelect={setSkinConditionFilter} labels={{ null: 'All', ...SKIN_CONDITION_LABELS }} />
+          {communityError ? <View style={styles.errorBox}><Text style={styles.errorText}>{communityError}</Text><Pressable onPress={refreshPosts}><Text style={styles.retry}>Try again</Text></Pressable></View> : null}
         </View>}
-        ListEmptyComponent={<FeedEmpty isLoading={isCommunityLoading} error={communityError} onRetry={refreshPosts} />}
-        renderItem={({ item }) => (
-          <PostCard
-            post={item}
-            isCopying={copyingId === item.id}
-            onOpen={() => navigation.navigate('PostDetail', { postId: item.id })}
-            onLike={() => handleLike(item.id)}
-            onCopy={() => handleCopy(item.id)}
-          />
-        )}
+        ListEmptyComponent={isCommunityLoading ? <ActivityIndicator style={styles.empty} color={COLORS.primary} /> : <Text style={styles.emptyText}>No community posts match your filters.</Text>}
+        renderItem={({ item }) => <PostCard post={item} onPress={() => navigation.navigate('PostDetail', { postId: item.id })} />}
       />
     </SafeAreaView>
   );
 }
 
-function CommunityHeader({ activeFilter, onFilter, onCompose }) {
-  return (
-    <View>
-      <View style={styles.topBar}>
-        <Text style={styles.pageTitle}>Community</Text>
-      </View>
-      <FlatList
-        horizontal
-        data={FILTERS}
-        keyExtractor={item => item || 'all'}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filters}
-        renderItem={({ item }) => {
-          const isActive = activeFilter === item;
-          return (
-            <TouchableOpacity style={[styles.filter, isActive && styles.filterActive]} onPress={() => onFilter(item)} accessibilityRole="button" accessibilityState={{ selected: isActive }}>
-              <Text style={[styles.filterText, isActive && styles.filterTextActive]}>{isActive && '• '}{SKIN_TYPE_LABELS[item] || item || 'All'}</Text>
-            </TouchableOpacity>
-          );
-        }}
-      />
-      <TouchableOpacity style={styles.composer} onPress={onCompose} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel="Create a new post">
-        <View style={styles.avatarPlaceholder}><Ionicons name="people-outline" size={20} color={Colors.primaryDark} /></View>
-        <View style={styles.composerPlaceholder}><Text style={styles.composerPlaceholderText}>Share your skincare routine...</Text></View>
-        <Ionicons name="camera-outline" size={20} color={Colors.primaryDark} />
-        <View style={styles.composerAction}><Ionicons name="add" size={20} color={Colors.primaryDark} /></View>
-      </TouchableOpacity>
-    </View>
-  );
+function FilterRow({ title, values, selected, onSelect, labels }) {
+  return <View style={styles.filterSection}><Text style={styles.filterTitle}>{title}</Text><FlatList horizontal data={values} keyExtractor={(value) => value || 'all'} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterList} renderItem={({ item }) => { const active = selected === item; return <Pressable onPress={() => onSelect(item)} style={[styles.filter, active && styles.filterActive]}><Text style={[styles.filterText, active && styles.filterTextActive]}>{labels[item] || item || 'All'}</Text></Pressable>; }} /></View>;
 }
 
-function FeedEmpty({ isLoading, error, onRetry }) {
-  if (isLoading) return <ActivityIndicator style={styles.emptyState} color={Colors.primary} />;
-  return (
-    <View style={styles.emptyState}>
-      <Ionicons name={error ? 'cloud-offline-outline' : 'chatbubbles-outline'} size={36} color={Colors.textMuted} />
-      <Text style={styles.emptyText}>{error || 'No posts yet. Be the first to share your routine!'}</Text>
-      {error && <TouchableOpacity onPress={onRetry}><Text style={styles.retryText}>Try again</Text></TouchableOpacity>}
-    </View>
-  );
-}
-function PostCard({ post, isCopying, onOpen, onLike, onCopy }) {
-  const morning = post.sharedRoutine?.morning || [];
-  const evening = post.sharedRoutine?.evening || [];
-  const preview = morning.length ? { title: '☀️ Morning (AM)', steps: morning } : evening.length ? { title: '🌙 Evening (PM)', steps: evening } : null;
-  const hasRoutine = countRoutineSteps(post.sharedRoutine) > 0;
-
-  return (
-    <TouchableOpacity style={styles.postCard} activeOpacity={0.95} onPress={onOpen}>
-      <PostAuthorRow post={post} />
-      <Text style={styles.postText} numberOfLines={4}>{post.content}</Text>
-      {post.tags?.length > 0 && <Text style={styles.tags}>{formatPostTags(post.tags)}</Text>}
-      {post.images?.length > 0 && <Image source={{ uri: post.images[0] }} style={styles.postImage} accessibilityLabel="Post photo" />}
-      {preview && (
-        <View style={styles.routinePreview}>
-          <View style={styles.routineTitleRow}>
-            <Text style={styles.routineTitle}>{preview.title}</Text>
-            <Text style={styles.stepCount}>{preview.steps.length} {preview.steps.length === 1 ? 'step' : 'steps'}</Text>
-          </View>
-          <FlatList
-            horizontal
-            data={preview.steps}
-            keyExtractor={(step, index) => `${step.productName}-${index}`}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.stepList}
-            renderItem={({ item, index }) => (
-              <View style={styles.stepCard}>
-                <View style={styles.stepNumber}><Text style={styles.stepNumberText}>{index + 1}</Text></View>
-                <Text style={styles.stepType}>{item.productType.toUpperCase()}</Text>
-                <Text style={styles.stepProduct} numberOfLines={2}>{item.productName}</Text>
-                {item.note ? <Text style={styles.stepNote} numberOfLines={1}>{item.note}</Text> : null}
-              </View>
-            )}
-          />
-        </View>
-      )}
-      <View style={styles.postFooter}>
-        <TouchableOpacity style={styles.metric} onPress={onLike} accessibilityRole="button" accessibilityLabel={post.isLiked ? 'Unlike' : 'Like'}>
-          <Ionicons name={post.isLiked ? 'heart' : 'heart-outline'} size={19} color={post.isLiked ? Colors.error : Colors.text} />
-          <Text style={styles.metricText}>{post.likesCount}</Text>
-        </TouchableOpacity>
-        <View style={styles.metric}>
-          <Ionicons name="copy-outline" size={17} color={Colors.primaryDark} />
-          <Text style={styles.metricText}>{post.copiesCount}</Text>
-        </View>
-        {hasRoutine && (
-          <TouchableOpacity style={styles.copyButton} onPress={onCopy} disabled={isCopying} accessibilityRole="button">
-            {isCopying ? <ActivityIndicator size="small" color={Colors.textLight} /> : <Ionicons name="copy" size={15} color={Colors.textLight} />}
-            <Text style={styles.copyText}>Copy routine</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
+function PostCard({ post, onPress }) {
+  const stepCount = (post.sharedRoutine?.morning?.length || 0) + (post.sharedRoutine?.evening?.length || 0) + (post.sharedRoutine?.days || []).reduce((total, day) => total + (day.morning?.length || 0) + (day.evening?.length || 0), 0);
+  return <Pressable style={({ pressed }) => [styles.card, pressed && styles.pressed]} onPress={onPress}>
+    <View style={styles.authorRow}><View style={styles.avatar}><Ionicons name="person-outline" size={17} color={COLORS.primary} /></View><View><Text style={styles.author}>{post.authorName || 'SkinMate member'}</Text><Text style={styles.date}>{post.skinTypes?.map((type) => SKIN_TYPE_LABELS[type] || type).join(' · ') || 'Skincare routine'}</Text></View></View>
+    {post.title ? <Text style={styles.postTitle}>{post.title}</Text> : null}<Text style={styles.postText} numberOfLines={4}>{post.note || post.content}</Text>
+    <View style={styles.metaRow}>{stepCount > 0 && <View style={styles.meta}><Ionicons name="sparkles-outline" size={16} color={COLORS.primary} /><Text style={styles.metaText}>{stepCount} routine steps</Text></View>}<View style={styles.meta}><Ionicons name="heart-outline" size={16} color={COLORS.error} /><Text style={styles.metaText}>{post.likesCount || 0}</Text></View><View style={styles.meta}><Ionicons name="copy-outline" size={16} color={COLORS.primary} /><Text style={styles.metaText}>{post.copiesCount || 0}</Text></View></View>
+  </Pressable>;
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: Colors.surface },
-  content: { paddingBottom: 22, flexGrow: 1 },
-  topBar: { minHeight: 58, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 19, borderBottomWidth: 1, borderBottomColor: Colors.border },
-  pageTitle: { color: Colors.text, fontSize: 22, fontWeight: '600' },
-  filters: { gap: 8, paddingHorizontal: 19, paddingVertical: 10 },
-  filter: { paddingHorizontal: 15, paddingVertical: 8, borderRadius: 19, backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.border },
-  filterActive: { backgroundColor: Colors.primaryLight, borderColor: Colors.primary },
-  filterText: { color: Colors.text, fontSize: 12 },
-  filterTextActive: { color: Colors.primaryDark, fontWeight: '600' },
-  composer: { minHeight: 63, flexDirection: 'row', alignItems: 'center', gap: 11, marginHorizontal: 19, marginTop: 4, marginBottom: 14, paddingHorizontal: 12, borderRadius: 20, backgroundColor: Colors.background },
-  avatarPlaceholder: { width: 37, height: 37, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.surface },
-  composerPlaceholder: { flex: 1, paddingVertical: 11, paddingHorizontal: 12, borderRadius: 20, backgroundColor: Colors.surface },
-  composerPlaceholderText: { color: Colors.textMuted, fontSize: 12 },
-  composerAction: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primaryLight },
-  emptyState: { alignItems: 'center', gap: 10, paddingHorizontal: 32, paddingTop: 48 },
-  emptyText: { color: Colors.textSecondary, fontSize: 13, textAlign: 'center', lineHeight: 19 },
-  retryText: { color: Colors.primary, fontSize: 14, fontWeight: '600' },
-  postCard: { marginHorizontal: 19, marginBottom: 14, padding: 14, borderRadius: 20, backgroundColor: Colors.background },
-  postText: { color: Colors.text, fontSize: 13, lineHeight: 20, marginTop: 12 },
-  tags: { color: Colors.primary, fontSize: 12, marginTop: 6 },
-  postImage: { width: '100%', height: 180, borderRadius: 16, marginTop: 12, backgroundColor: Colors.surface },
-  routinePreview: { marginTop: 13 },
-  routineTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  routineTitle: { color: Colors.text, fontSize: 12 },
-  stepCount: { color: Colors.textSecondary, fontSize: 10 },
-  stepList: { gap: 7 },
-  stepCard: { width: 108, minHeight: 108, borderRadius: 22, padding: 10, backgroundColor: Colors.surface },
-  stepNumber: { width: 19, height: 19, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primary, marginBottom: 5 },
-  stepNumberText: { color: Colors.background, fontSize: 10, fontWeight: '700' },
-  stepType: { color: Colors.textSecondary, fontSize: 9 },
-  stepProduct: { color: Colors.text, fontSize: 12, lineHeight: 16, marginTop: 4 },
-  stepNote: { color: Colors.textSecondary, fontSize: 9, marginTop: 'auto' },
-  postFooter: { flexDirection: 'row', alignItems: 'center', gap: 17, marginTop: 14, paddingTop: 11, borderTopWidth: 1, borderTopColor: Colors.border },
-  metric: { flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 32 },
-  metricText: { color: Colors.text, fontSize: 12 },
-  copyButton: { flex: 1, minHeight: 39, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 10, borderRadius: 22, backgroundColor: Colors.primary },
-  copyText: { color: Colors.background, fontSize: 12, fontWeight: '700' },
+  eyebrow: { ...TYPOGRAPHY.caption, color: COLORS.primary, letterSpacing: 1.2, fontWeight: '700', marginBottom: 3 },
+  intro: { ...TYPOGRAPHY.caption, color: COLORS.textSecondary, marginTop: 3 },
+  headerIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: '#e3f5ef' },
+  postTitle: { ...TYPOGRAPHY.section, color: COLORS.textMain, marginTop: SPACING.md },
+  safeArea: { flex: 1, backgroundColor: COLORS.background }, content: { paddingHorizontal: SPACING.screen, paddingBottom: SPACING.xxxl },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: SPACING.lg },
+  searchBox: { minHeight: 52, borderRadius: RADIUS.card, backgroundColor: COLORS.card, flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.md, gap: SPACING.sm, borderWidth: 1, borderColor: COLORS.border, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.035, shadowRadius: 8, elevation: 1 }, searchInput: { flex: 1, ...TYPOGRAPHY.bodySmall, color: COLORS.textMain },
+  filterSection: { marginTop: SPACING.md }, filterTitle: { ...TYPOGRAPHY.caption, color: COLORS.textSecondary, fontWeight: '700' }, filterList: { gap: SPACING.xs, paddingVertical: SPACING.sm },
+  filter: { borderWidth: 1, borderColor: COLORS.borderDark, borderRadius: RADIUS.pill, paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs, backgroundColor: COLORS.card }, filterActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary }, filterText: { ...TYPOGRAPHY.caption, color: COLORS.textSecondary }, filterTextActive: { color: COLORS.textLight },
+  card: { marginTop: SPACING.md, padding: SPACING.md, borderRadius: RADIUS.card, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border }, pressed: { opacity: 0.82 }, authorRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm }, avatar: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: '#d7f3ed' }, author: { ...TYPOGRAPHY.label, color: COLORS.textMain }, date: { ...TYPOGRAPHY.caption, color: COLORS.textSecondary, marginTop: 2 }, postText: { ...TYPOGRAPHY.bodySmall, color: COLORS.textMain, marginTop: SPACING.md, lineHeight: 22 }, metaRow: { flexDirection: 'row', gap: SPACING.lg, marginTop: SPACING.md, paddingTop: SPACING.sm, borderTopWidth: 1, borderTopColor: COLORS.border }, meta: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs }, metaText: { ...TYPOGRAPHY.caption, color: COLORS.textSecondary }, empty: { marginTop: SPACING.xxxl }, emptyText: { ...TYPOGRAPHY.bodySmall, color: COLORS.textSecondary, textAlign: 'center', marginTop: SPACING.xxxl }, errorBox: { padding: SPACING.sm, marginTop: SPACING.md, borderRadius: RADIUS.input, backgroundColor: '#fff1f2' }, errorText: { ...TYPOGRAPHY.caption, color: COLORS.error }, retry: { ...TYPOGRAPHY.label, color: COLORS.primary, marginTop: SPACING.xs },
 });

@@ -15,6 +15,12 @@ const dailyRoutineSchema = new mongoose.Schema(
             ref: 'User',
             required: true,
         },
+        routinePlanId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'RoutinePlan',
+            default: null,
+            index: true,
+        },
         date: {
             type: String,
             required: true,

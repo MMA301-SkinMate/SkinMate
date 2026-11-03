@@ -6,6 +6,7 @@ const CommunityContext = createContext(null);
 export function CommunityProvider({ children }) {
   const [posts, setPosts] = useState([]);
   const [skinTypeFilter, setSkinTypeFilter] = useState(null);
+  const [skinConditionFilter, setSkinConditionFilter] = useState(null);
   const [isCommunityLoading, setIsCommunityLoading] = useState(false);
   const [communityError, setCommunityError] = useState(null);
 
@@ -13,14 +14,17 @@ export function CommunityProvider({ children }) {
     setIsCommunityLoading(true);
     setCommunityError(null);
     try {
-      const result = await listCommunityPosts(skinTypeFilter ? { skinType: skinTypeFilter } : {});
+      const params = {};
+      if (skinTypeFilter) params.skinType = skinTypeFilter;
+      if (skinConditionFilter) params.skinCondition = skinConditionFilter;
+      const result = await listCommunityPosts(params);
       setPosts(result.posts || []);
     } catch (error) {
       setCommunityError(error.message || 'Unable to load community posts.');
     } finally {
       setIsCommunityLoading(false);
     }
-  }, [skinTypeFilter]);
+  }, [skinTypeFilter, skinConditionFilter]);
 
   useEffect(() => { refreshPosts(); }, [refreshPosts]);
 
@@ -47,7 +51,7 @@ export function CommunityProvider({ children }) {
   }, []);
 
   const value = useMemo(() => ({
-    posts, skinTypeFilter, setSkinTypeFilter, isCommunityLoading, communityError,
+    posts, skinTypeFilter, setSkinTypeFilter, skinConditionFilter, setSkinConditionFilter, isCommunityLoading, communityError,
     refreshPosts, addPost, toggleLike, copyRoutine, removePost,
   }), [posts, skinTypeFilter, isCommunityLoading, communityError, refreshPosts, addPost, toggleLike, copyRoutine, removePost]);
   return <CommunityContext.Provider value={value}>{children}</CommunityContext.Provider>;

@@ -21,6 +21,7 @@ const toStep = product => ({
   productName: product.productName,
   productType: product.productType,
   productIcon: product.productIcon || null,
+  ingredients: product.ingredients || [],
   brand: product.brand || null,
   note: null,
 });

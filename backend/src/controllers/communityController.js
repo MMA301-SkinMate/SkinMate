@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const Community = require('../models/Community');
 const Collection = require('../models/Collection');
+const RoutinePlan = require('../models/RoutinePlan');
+const DailyRoutine = require('../models/DailyRoutine');
 const { uploadToCloudinary } = require('../services/cloudinaryService');
 const { notFound } = require('../validations/postDto');
 
@@ -28,10 +30,13 @@ const serialize = (post, userId) => ({
   authorId: post.userId.toString(),
   authorName: post.authorName,
   content: post.content,
+  title: post.title || null,
+  note: post.note || post.content || null,
   images: post.images || [],
   tags: post.tags || [],
   skinType: post.skinType,
   skinTypes: getSkinTypes(post),
+  skinConditions: post.skinConditions || [],
   sharedRoutine: {
     morning: post.sharedRoutine?.morning || [],
     evening: post.sharedRoutine?.evening || [],
@@ -65,6 +70,7 @@ exports.list = async (req, res, next) => {
     const userId = currentUserId(req);
     const filter = { status: 'published' };
     if (req.query.skinType) filter.$or = [{ skinTypes: req.query.skinType }, { skinType: req.query.skinType }];
+    if (req.query.skinCondition) filter.skinConditions = req.query.skinCondition;
     if (req.query.mine === 'true') {
       filter.userId = userId;
       if (req.query.status === 'draft') filter.status = 'draft';
@@ -155,33 +161,56 @@ exports.toggleLike = async (req, res, next) => {
   }
 };
 
-// Copies the shared routine into the viewer's collection. Products are created
-// as active because draft collection items expire through a TTL index.
+// Copy a shared routine into a new RoutinePlan using products already in the
+// viewer's collection. We never create fake collection products from a post.
 exports.copyRoutine = async (req, res, next) => {
   try {
     const userId = currentUserId(req);
     const post = await Community.findOne({ _id: req.params.id, status: 'published' }).lean();
     if (!post) return notFound(res);
-
-    const toProducts = (steps, slot) => steps.map((step, index) => ({
-      userId,
-      productName: step.productName,
-      productType: step.productType,
-      productIcon: step.productIcon || undefined,
-      note: step.note || null,
-      status: 'active',
-      routineUsage: { morning: slot === 'morning', evening: slot === 'evening', step: index + 1 },
-    }));
     const days = post.sharedRoutine?.days?.length ? post.sharedRoutine.days : [post.sharedRoutine || {}];
-    const products = days.flatMap((day, dayIndex) => [
-      ...toProducts(day.morning || [], 'morning'),
-      ...toProducts(day.evening || [], 'evening'),
-    ].map(product => ({ ...product, note: days.length > 1 ? `Day ${dayIndex + 1}: ${product.note || ''}`.trim() : product.note })));
-    if (!products.length) return res.status(400).json({ error: { message: 'This post has no routine to copy', code: 'EMPTY_ROUTINE' } });
+    if (!days.some(day => (day.morning || []).length || (day.evening || []).length)) return res.status(400).json({ error: { message: 'This post has no routine to copy', code: 'EMPTY_ROUTINE' } });
 
-    const created = await Collection.insertMany(products);
+    const activePlan = await RoutinePlan.findOne({ userId, status: 'active' }).select('title currentDay totalDays').lean();
+    if (activePlan && req.body?.mode !== 'replace') {
+      return res.status(409).json({ error: { message: 'Bạn đang có một chuỗi routine đang chạy.', code: 'ACTIVE_ROUTINE' }, data: { activePlan } });
+    }
+
+    const closet = await Collection.find({ userId, status: 'active' }).lean();
+    const findClosetProduct = (step) => {
+      const stepIngredients = (step.ingredients || []).map(item => String(item).toLowerCase());
+      return closet.find(product => product.productName.toLowerCase() === String(step.productName).toLowerCase())
+        || closet.find(product => product.productType === step.productType && stepIngredients.length && (product.ingredients || []).some(ingredient => stepIngredients.some(item => String(ingredient).toLowerCase().includes(item))));
+    };
+    const unresolved = [];
+    const mapSteps = (steps) => steps.map(step => {
+      const product = findClosetProduct(step);
+      if (!product) {
+        unresolved.push({ productName: step.productName, productType: step.productType, ingredients: step.ingredients || [] });
+        return null;
+      }
+      return product._id;
+    }).filter(Boolean);
+    const mappedDays = days.map(day => ({ morningProducts: mapSteps(day.morning || []), eveningProducts: mapSteps(day.evening || []) }));
+    if (unresolved.length) {
+      return res.status(409).json({ error: { message: 'Một số sản phẩm trong routine không có trong tủ đồ.', code: 'MISSING_ROUTINE_PRODUCTS' }, data: { missingProducts: unresolved } });
+    }
+
+    if (activePlan) {
+      await RoutinePlan.updateOne({ _id: activePlan._id }, { $set: { status: 'cancelled' } });
+      await DailyRoutine.deleteMany({ userId, routinePlanId: activePlan._id });
+    }
+    const startDate = new Date();
+    const dateKey = value => value.toISOString().slice(0, 10);
+    const totalDays = mappedDays.length;
+    const plan = await RoutinePlan.create({ userId, title: post.title || 'Routine copied from community', startDate: dateKey(startDate), totalDays, source: 'mixed', days: mappedDays.map((day, index) => ({ ...day, dayNumber: index + 1 })) });
+    await DailyRoutine.insertMany(mappedDays.map((day, index) => {
+      const date = new Date(startDate);
+      date.setUTCDate(date.getUTCDate() + index);
+      return { userId, routinePlanId: plan._id, routineGroupId: String(plan._id), date: dateKey(date), dayNumber: index + 1, totalDays, ...day };
+    }));
     const updated = await Community.findByIdAndUpdate(post._id, { $inc: { copiesCount: 1 } }, { returnDocument: 'after' }).lean();
-    res.status(201).json({ copiedCount: created.length, post: serialize(updated, userId) });
+    res.status(201).json({ copiedCount: mappedDays.length, plan, post: serialize(updated, userId) });
   } catch (error) {
     next(error);
   }

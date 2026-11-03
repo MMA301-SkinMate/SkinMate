@@ -6,11 +6,11 @@ export const COLORS = {
 
   primary: '#0f766e',
   primaryDark: '#0d5e56',
-  primaryLight: '#2dd4bf',
+  primaryLight: '#d9eee8',
 
   // Backgrounds & Surfaces
-  background: '#FFFF',
-  surface: '#f8fafc',
+  background: '#f8fbf9',
+  surface: '#f1f6f3',
   card: '#ffffff',
 
   // Text Colors
@@ -20,8 +20,8 @@ export const COLORS = {
   textLight: '#ffffff',
 
   // Borders & Dividers
-  border: '#f1f5f9',
-  borderDark: '#e2e8f0',
+  border: '#e6eeea',
+  borderDark: '#d9e4de',
 
   overlay: 'rgba(15, 23, 42, 0.62)',
   // Status & Feedback

@@ -27,7 +27,28 @@ const routineFields = {
 };
 
 router.use(authenticate);
+router.get('/plans/active', controller.getActivePlan);
+router.get('/plans/history', controller.getRoutineHistory);
 router.get('/', controller.getRoutine);
+router.post('/recommend', validate(Joi.object({
+    conditions: Joi.array().items(Joi.string().valid(...SKIN_CONDITIONS)).min(1),
+    skinConditions: Joi.array().items(Joi.string().valid(...SKIN_CONDITIONS)).min(1),
+}).or('conditions', 'skinConditions').default({})), controller.recommend);
+router.post('/plans', validate(Joi.object({
+    title: Joi.string().trim().max(150),
+    startDate: Joi.date().iso(),
+    totalDays: Joi.number().integer().min(1).max(365).default(14),
+    conditions: Joi.array().items(Joi.string().valid(...SKIN_CONDITIONS)).min(1),
+    skinConditions: Joi.array().items(Joi.string().valid(...SKIN_CONDITIONS)).min(1),
+    morningProducts: productIds,
+    eveningProducts: productIds,
+}).or('conditions', 'skinConditions').default({})), controller.createPlan);
+router.post('/validate', validate(Joi.object({
+    conditions: Joi.array().items(Joi.string().valid(...SKIN_CONDITIONS)).min(1),
+    skinConditions: Joi.array().items(Joi.string().valid(...SKIN_CONDITIONS)).min(1),
+    morningProducts: productIds,
+    eveningProducts: productIds,
+}).or('conditions', 'skinConditions').default({})), controller.validate);
 router.put('/', validate(Joi.object(routineFields).or('skinCondition', 'skinConditions')), controller.saveRoutine);
 router.put('/check-in', validate(Joi.object({
     date: Joi.date().iso().required(),

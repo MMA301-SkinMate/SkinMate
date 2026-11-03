@@ -15,7 +15,7 @@ const safeParseJson = (rawText) => {
     if (mdMatch && mdMatch[1]) {
         try {
             return JSON.parse(mdMatch[1].trim());
-        } catch (_) { }
+        } catch (error) { void error; }
     }
     // 2. Try outermost braces {}
     const firstBrace = text.indexOf('{');
@@ -23,7 +23,7 @@ const safeParseJson = (rawText) => {
     if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
         try {
             return JSON.parse(text.slice(firstBrace, lastBrace + 1));
-        } catch (_) { }
+        } catch (error) { void error; }
     }
     // 3. Try outermost brackets []
     const firstBracket = text.indexOf('[');
@@ -31,12 +31,13 @@ const safeParseJson = (rawText) => {
     if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
         try {
             return JSON.parse(text.slice(firstBracket, lastBracket + 1));
-        } catch (_) { }
+        } catch (error) { void error; }
     }
     // 4. Direct parse safely
     try {
         return JSON.parse(text);
-    } catch (_) {
+    } catch (error) {
+        void error;
         return null;
     }
 };
@@ -312,7 +313,60 @@ const analyzeProductByScores = async ({
     return normalizeResult({});
 };
 
+const analyzeRoutineRecommendation = async ({ profile = {}, conditions = [], morningProducts = [], eveningProducts = [], missingProducts = [] }) => {
+    const productSummary = [...morningProducts, ...eveningProducts]
+        .map((product) => `${product.productName} (${product.productType}): ${(product.ingredients || []).slice(0, 8).join(', ')}`)
+        .join('\n');
+    const missingSummary = missingProducts.map((item) => `${item.step}: ${(item.requiredIngredients || []).join(', ')}`).join('\n');
+    const fallback = {
+        summary: 'Routine được chọn dựa trên hồ sơ da, check-in hôm nay và các sản phẩm an toàn trong tủ đồ.',
+        stepReasons: {},
+        externalSuggestions: missingProducts.map((item) => ({
+            step: item.step,
+            suggestedIngredients: item.requiredIngredients || [],
+            searchTerms: item.requiredIngredients || [],
+            note: 'Tìm sản phẩm có các thành phần này; kiểm tra bảng thành phần trước khi mua.',
+        })),
+    };
+    const prompt = `
+Bạn là chuyên gia skincare. Hãy giải thích routine được tạo cho user, không chẩn đoán bệnh và không khẳng định sản phẩm cụ thể đang bán trên thị trường.
+Hồ sơ da: ${profile.skinType || 'Da_Thuong'}
+Do của user: ${(profile.customDos || []).join(', ')}
+Don't của user: ${(profile.customDonts || []).join(', ')}
+Check-in hôm nay: ${conditions.join(', ')}
+Sản phẩm trong tủ:
+${productSummary || 'Không có'}
+Bước còn thiếu:
+${missingSummary || 'Không có'}
+
+Chỉ trả JSON:
+{
+  "summary": "giải thích ngắn gọn",
+  "stepReasons": { "cleanser": "...", "toner": "...", "treatment": "...", "moisturizer": "...", "sunscreen": "..." },
+  "externalSuggestions": [{ "step": "treatment", "suggestedIngredients": ["..."], "searchTerms": ["..."], "note": "..." }]
+}`;
+    for (const model of CANDIDATE_MODELS) {
+        try {
+            const response = await Promise.race([
+                ai.models.generateContent({ model, contents: prompt, config: { responseMimeType: 'application/json' } }),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT_12S')), 12000)),
+            ]);
+            const parsed = safeParseJson(response.text);
+            if (!parsed) continue;
+            return {
+                summary: parsed.summary || fallback.summary,
+                stepReasons: parsed.stepReasons && typeof parsed.stepReasons === 'object' ? parsed.stepReasons : {},
+                externalSuggestions: Array.isArray(parsed.externalSuggestions) ? parsed.externalSuggestions : fallback.externalSuggestions,
+            };
+        } catch (error) {
+            console.warn(`[geminiService] Routine recommendation explanation failed with ${model}:`, error.message);
+        }
+    }
+    return fallback;
+};
+
 module.exports = {
     readIngredientsFromImage,
-    analyzeProductByScores
+    analyzeProductByScores,
+    analyzeRoutineRecommendation,
 };

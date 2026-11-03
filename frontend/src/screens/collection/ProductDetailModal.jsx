@@ -40,11 +40,11 @@ function formatDate(value) {
 function daysLeftLabel(product) {
     if (!product.expirationDate) return null;
     const days = Math.ceil((new Date(product.expirationDate) - new Date()) / 86_400_000);
-    if (days < 0) return { text: `Đã hết hạn ${Math.abs(days)} ngày`, danger: true };
-    if (days === 0) return { text: 'Hết hạn hôm nay!', danger: true };
-    if (days <= 7)  return { text: `Còn ${days} ngày`, danger: true };
-    if (days <= 30) return { text: `Còn ${days} ngày`, warn: true };
-    return { text: `Còn ${days} ngày`, ok: true };
+    if (days < 0) return { text: `Expired ${Math.abs(days)} days ago`, danger: true };
+    if (days === 0) return { text: 'Expires today', danger: true };
+    if (days <= 7)  return { text: `${days} days left`, danger: true };
+    if (days <= 30) return { text: `${days} days left`, warn: true };
+    return { text: `${days} days left`, ok: true };
 }
 
 const TYPE_LABELS = Object.fromEntries(
@@ -82,7 +82,7 @@ export default function ProductDetailModal({ product, onClose, onLongPress }) {
 
             setEditMode(false);
         } catch (err) {
-            Alert.alert('Lỗi', err?.message || 'Không thể lưu thay đổi. Vui lòng thử lại.');
+            Alert.alert('Error', err?.message || 'Unable to save changes. Please try again.');
         } finally {
             setSaving(false);
         }
@@ -127,7 +127,7 @@ export default function ProductDetailModal({ product, onClose, onLongPress }) {
                                     {isRedAlert && (
                                         <View style={styles.redBadge}>
                                             <AlertTriangle size={11} color="#fff" />
-                                            <Text style={styles.redBadgeText}>Đã hết hạn — đang tiếp tục dùng</Text>
+                                            <Text style={styles.redBadgeText}>Expired — still in use</Text>
                                         </View>
                                     )}
                                 </View>
@@ -162,7 +162,7 @@ export default function ProductDetailModal({ product, onClose, onLongPress }) {
                             {/* Ingredients list */}
                             {product.ingredients && product.ingredients.length > 0 && (
                                 <View style={styles.section}>
-                                    <Text style={styles.sectionLabel}>Thành phần ({product.ingredients.length})</Text>
+                                        <Text style={styles.sectionLabel}>Ingredients ({product.ingredients.length})</Text>
                                     <View style={styles.ingredientWrap}>
                                         {product.ingredients.slice(0, 20).map((ing, idx) => (
                                             <View key={idx} style={styles.ingBadge}>
@@ -181,7 +181,7 @@ export default function ProductDetailModal({ product, onClose, onLongPress }) {
                             {/* Date fields */}
                             <View style={styles.section}>
                                 <Text style={styles.sectionLabel}>
-                                    <Calendar size={13} color={Colors.muted} /> Ngày mở nắp
+                                        <Calendar size={13} color={Colors.muted} /> Opened date
                                 </Text>
                                 {editMode ? (
                                     <TextInput
@@ -193,14 +193,14 @@ export default function ProductDetailModal({ product, onClose, onLongPress }) {
                                     />
                                 ) : (
                                     <Text style={styles.fieldValue}>
-                                        {product.openedDate ? formatDate(product.openedDate) : 'Chưa nhập'}
+                                        {product.openedDate ? formatDate(product.openedDate) : 'Not set'}
                                     </Text>
                                 )}
                             </View>
 
                             <View style={styles.section}>
                                 <Text style={styles.sectionLabel}>
-                                    <Calendar size={13} color={Colors.muted} /> Hạn sử dụng
+                                        <Calendar size={13} color={Colors.muted} /> Expiration date
                                 </Text>
                                 {editMode ? (
                                     <TextInput
@@ -212,7 +212,7 @@ export default function ProductDetailModal({ product, onClose, onLongPress }) {
                                     />
                                 ) : (
                                     <Text style={[styles.fieldValue, expLabel?.danger && { color: Colors.error }]}>
-                                        {product.expirationDate ? formatDate(product.expirationDate) : 'Chưa nhập'}
+                                        {product.expirationDate ? formatDate(product.expirationDate) : 'Not set'}
                                     </Text>
                                 )}
                             </View>
@@ -220,21 +220,21 @@ export default function ProductDetailModal({ product, onClose, onLongPress }) {
                             {/* Note */}
                             <View style={styles.section}>
                                 <Text style={styles.sectionLabel}>
-                                    <StickyNote size={13} color={Colors.muted} /> Ghi chú
+                                        <StickyNote size={13} color={Colors.muted} /> Notes
                                 </Text>
                                 {editMode ? (
                                     <TextInput
                                         style={[styles.input, styles.inputMultiline]}
                                         value={note}
                                         onChangeText={setNote}
-                                        placeholder="Thêm ghi chú..."
+                                        placeholder="Add notes..."
                                         placeholderTextColor={Colors.muted}
                                         multiline
                                         numberOfLines={3}
                                     />
                                 ) : (
                                     <Text style={styles.fieldValue}>
-                                        {product.note || 'Không có ghi chú'}
+                                        {product.note || 'No notes'}
                                     </Text>
                                 )}
                             </View>
@@ -244,7 +244,7 @@ export default function ProductDetailModal({ product, onClose, onLongPress }) {
                             {false && product.analysisResult?.verdict && (
                                 <View style={styles.analysisBanner}>
                                     <Text style={styles.analysisScore}>
-                                        Điểm phân tích: {product.analysisResult.contextualScore ?? product.analysisResult.baseScore ?? '—'}%
+                                        Analysis score: {product.analysisResult.contextualScore ?? product.analysisResult.baseScore ?? '—'}%
                                     </Text>
                                     <Text style={styles.analysisVerdict} numberOfLines={3}>
                                         {product.analysisResult.verdict?.text}
@@ -261,7 +261,7 @@ export default function ProductDetailModal({ product, onClose, onLongPress }) {
                                             onPress={() => setEditMode(false)}
                                             disabled={saving}
                                         >
-                                            <Text style={styles.cancelBtnText}>Hủy</Text>
+                                            <Text style={styles.cancelBtnText}>Cancel</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity
                                             style={styles.saveBtn}
@@ -270,7 +270,7 @@ export default function ProductDetailModal({ product, onClose, onLongPress }) {
                                         >
                                             {saving
                                                 ? <ActivityIndicator color="#fff" size="small" />
-                                                : <Text style={styles.saveBtnText}>Lưu</Text>
+                                                : <Text style={styles.saveBtnText}>Save</Text>
                                             }
                                         </TouchableOpacity>
                                     </>
@@ -281,7 +281,7 @@ export default function ProductDetailModal({ product, onClose, onLongPress }) {
                                             onPress={() => setEditMode(true)}
                                         >
                                             <Edit3 size={16} color={Colors.primary} />
-                                            <Text style={styles.editBtnText}>Chỉnh sửa</Text>
+                                        <Text style={styles.editBtnText}>Edit</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity
                                             style={[styles.actionMoreBtn, styles.hiddenAction]}
@@ -290,7 +290,7 @@ export default function ProductDetailModal({ product, onClose, onLongPress }) {
                                                 onLongPress?.(product);
                                             }}
                                         >
-                                            <Text style={styles.actionMoreText}>Xóa / Hết</Text>
+            <Text style={styles.actionMoreText}>Delete / Used</Text>
                                         </TouchableOpacity>
                                     </>
                                 )}
@@ -312,19 +312,19 @@ function AnalysisDetails({ analysis }) {
 
     return (
         <View style={styles.analysisDetails}>
-            <Text style={styles.analysisHeading}>Phân tích sản phẩm</Text>
+            <Text style={styles.analysisHeading}>Product analysis</Text>
             <View style={styles.scoreRow}>
                 <Text style={styles.analysisScore}>Base: {analysis.baseScore ?? '—'}%</Text>
                 <Text style={styles.analysisScore}>Context: {analysis.contextualScore ?? '—'}%</Text>
             </View>
-            {verdict.text && <AnalysisField label="Đánh giá" value={verdict.text} />}
-            {conflict.details && <AnalysisField label={conflict.hasConflict ? 'Xung đột' : 'Routine'} value={conflict.details} danger={conflict.hasConflict} />}
-            {pairing.advice && <AnalysisField label="Khuyến nghị kết hợp" value={pairing.advice} />}
-            {pairing.matchedProductInCloset && <AnalysisField label="Sản phẩm phù hợp trong tủ" value={pairing.matchedProductInCloset.productName || pairing.matchedProductInCloset} />}
-            {list(pairing.ingredientsToAdd) && <AnalysisField label="Nên bổ sung" value={list(pairing.ingredientsToAdd)} />}
-            {list(pairing.ingredientsToAvoid) && <AnalysisField label="Nên tránh" value={list(pairing.ingredientsToAvoid)} danger />}
+            {verdict.text && <AnalysisField label="Verdict" value={verdict.text} />}
+            {conflict.details && <AnalysisField label={conflict.hasConflict ? 'Conflict' : 'Routine'} value={conflict.details} danger={conflict.hasConflict} />}
+            {pairing.advice && <AnalysisField label="Pairing recommendation" value={pairing.advice} />}
+            {pairing.matchedProductInCloset && <AnalysisField label="Best match in collection" value={pairing.matchedProductInCloset.productName || pairing.matchedProductInCloset} />}
+            {list(pairing.ingredientsToAdd) && <AnalysisField label="Add" value={list(pairing.ingredientsToAdd)} />}
+            {list(pairing.ingredientsToAvoid) && <AnalysisField label="Avoid" value={list(pairing.ingredientsToAvoid)} danger />}
             {(future.frequency || future.timing || future.notes) && (
-                <AnalysisField label="Kế hoạch sử dụng" value={[future.frequency, future.timing, future.notes].filter(Boolean).join(' • ')} />
+                <AnalysisField label="Usage plan" value={[future.frequency, future.timing, future.notes].filter(Boolean).join(' • ')} />
             )}
         </View>
     );
