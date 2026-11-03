@@ -1,6 +1,6 @@
 const geminiService = require('../services/geminiService');
 
-const scanIngredients = async (req, res) => {
+const scanIngredients = async (req, res, next) => {
     try {
         if (!req.file) {
             return res.status(400).json({
@@ -42,7 +42,7 @@ const scanIngredients = async (req, res) => {
             error: error.message,
         });
     }
-}
+};
 
 module.exports = {
     scanIngredients,

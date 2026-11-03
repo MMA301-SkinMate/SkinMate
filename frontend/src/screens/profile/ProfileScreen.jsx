@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
     View,
     Text,
@@ -8,97 +9,103 @@ import {
     Alert,
     ActivityIndicator,
     Modal,
+    Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
-import { updateSkinProfile, getRoutineHistory, suggestRoutine } from '../../api/routineApi';
+import { updateSkinProfile, getMyRoutine, getRoutineHistory, suggestRoutine, getCurrentSkinProfile } from '../../api/routineApi';
 import GuideFab from '../../components/routine/GuideFab';
 import SkinGuideModal from '../../components/routine/SkinGuideModal';
+import { Colors, SPACING, RADIUS, TYPOGRAPHY, SHADOWS } from '../../constants/theme';
 
 const SKIN_TYPES = [
-    { id: 'oily', label: 'Da Dầu', desc: 'Nhiều dầu, mụn cám' },
-    { id: 'dry', label: 'Da Khô', desc: 'Khô ráp, căng rát' },
-    { id: 'combination', label: 'Da Hỗn Hợp', desc: 'Dầu vùng T, khô má' },
-    { id: 'sensitive', label: 'Da Nhạy Cảm', desc: 'Dễ ửng đỏ, châm chích' },
-    { id: 'normal', label: 'Da Thường', desc: 'Cân bằng khỏe mạnh' },
+    { id: 'oily', label: 'Oily', desc: 'More shine and congestion' },
+    { id: 'dry', label: 'Dry', desc: 'Tight or rough feeling' },
+    { id: 'combination', label: 'Combination', desc: 'Oily T-zone, dry cheeks' },
+    { id: 'sensitive', label: 'Sensitive', desc: 'Easily flushed or reactive' },
+    { id: 'normal', label: 'Normal', desc: 'Balanced and comfortable' },
 ];
 
 const CONCERNS_LIST = [
-    'Mụn ẩn & đầu đen',
-    'Lỗ chân lông to',
-    'Hàng rào phục hồi',
-    'Thâm sạm da',
-    'Lão hóa sớm',
+    'Hidden acne & blackheads',
+    'Visible pores',
+    'Skin barrier',
+    'Dark spots',
+    'Early signs of aging',
 ];
 
 const ALLERGIES_LIST = [
-    'Alcohol Denat (Cồn khô)',
-    'Fragrance (Hương liệu)',
-    'Tea Tree Oil (Tràm trà)',
-    'Mineral Oil (Dầu khoáng)',
+    'Alcohol Denat',
+    'Fragrance',
+    'Tea Tree Oil',
+    'Mineral Oil',
 ];
+
+const SKIN_TYPE_ALIASES = {
+    da_dau: 'oily',
+    da_kho: 'dry',
+    da_hon_hop: 'combination',
+    da_nhay_cam: 'sensitive',
+    da_thuong: 'normal',
+};
 
 const ProfileScreen = ({ navigation }) => {
     const { user, logout } = useAuth();
+    const [profile, setProfile] = useState(user?.skinProfile || {});
     const [loading, setLoading] = useState(false);
+    const [myRoutines, setMyRoutines] = useState([]);
     const [routineHistory, setRoutineHistory] = useState([]);
-
-    // Skin Profile Modal State (UC 40)
     const [editModalVisible, setEditModalVisible] = useState(false);
-    const [selectedSkinType, setSelectedSkinType] = useState('oily');
+    const [selectedSkinType, setSelectedSkinType] = useState('normal');
     const [selectedConcerns, setSelectedConcerns] = useState([]);
     const [selectedAllergies, setSelectedAllergies] = useState([]);
-
-    // Warning Active Plan Modal State (UC 40.3)
     const [activePlanWarningVisible, setActivePlanWarningVisible] = useState(false);
     const [warningMsg, setWarningMsg] = useState('');
-
-    // Re-evaluate Success Popup (UC 40.2)
     const [reEvaluatePopupVisible, setReEvaluatePopupVisible] = useState(false);
     const [reEvaluateCount, setReEvaluateCount] = useState(0);
-
-    // Guide Modal
     const [guideModalVisible, setGuideModalVisible] = useState(false);
 
-    useEffect(() => {
-        loadHistory();
-        if (user?.skinProfile) {
-            setSelectedSkinType(user.skinProfile.skinType || 'oily');
-            setSelectedConcerns(user.skinProfile.currentConcerns || ['Mụn ẩn & đầu đen']);
-            setSelectedAllergies(user.skinProfile.allergies || ['Alcohol Denat (Cồn khô)']);
-        }
-    }, [user]);
-
-    const loadHistory = async () => {
+    const loadRoutines = useCallback(async (isCurrent = () => true) => {
         try {
-            const res = await getRoutineHistory();
-            if (res?.data?.data) {
-                setRoutineHistory(res.data.data);
-            }
-        } catch (e) {
-            console.log('Chưa có lịch sử hoặc lỗi tải lịch sử');
+            const [myRoutineResponse, historyResponse] = await Promise.all([getMyRoutine(), getRoutineHistory()]);
+            if (!isCurrent()) return;
+            setMyRoutines(myRoutineResponse?.data || []);
+            setRoutineHistory(historyResponse?.data || []);
+        } catch (error) {
+            if (isCurrent()) Alert.alert('Unable to load routines', error.message || 'Please try again.');
         }
-    };
+    }, []);
 
-    // UC 8: Bấm tạo gợi ý chuỗi routine mới từ Home/Profile
+    useFocusEffect(useCallback(() => {
+        let cancelled = false;
+        loadRoutines(() => !cancelled);
+        getCurrentSkinProfile().then(res => {
+            if (!cancelled && res?.data?.skinProfile) setProfile(res.data.skinProfile);
+        }).catch(() => {});
+        return () => { cancelled = true; };
+    }, [user, loadRoutines]));
+
+    useEffect(() => {
+        const skinType = SKIN_TYPE_ALIASES[profile.skinType] || profile.skinType || 'normal';
+        setSelectedSkinType(skinType);
+        setSelectedConcerns(profile.currentConcerns || []);
+        setSelectedAllergies(profile.allergies || []);
+    }, [profile]);
+
     const handleGenerateNewSuggestion = async () => {
         setLoading(true);
         try {
             const res = await suggestRoutine();
-            if (res?.data?.data?.plan) {
-                navigation.navigate('RoutineDetail', {
-                    routineId: res.data.data.plan._id,
-                    mode: 'suggestion',
-                });
+            if (res?.data?.plan) {
+                navigation.navigate('RoutineDetail', { routineId: res.data.plan._id, mode: 'suggestion' });
             }
-        } catch (err) {
-            Alert.alert('Thông báo', err.message || 'Không thể tạo chuỗi routine');
+        } catch (error) {
+            Alert.alert('Unable to build routine', error.message || 'Please try again.');
         } finally {
             setLoading(false);
         }
     };
 
-    // UC 40: Lưu thiết lập hồ sơ da
     const handleSaveProfile = async (forceReset = false) => {
         setLoading(true);
         try {
@@ -108,909 +115,220 @@ const ProfileScreen = ({ navigation }) => {
                 currentConcerns: selectedConcerns,
                 forceReset,
             });
-
-            if (res?.data?.data?.hasActivePlan) {
-                // Có phác đồ đang chạy => Cảnh báo rẽ nhánh (UC 40.3)
-                setWarningMsg(res.data.data.warningMessage);
+            if (res?.data?.hasActivePlan) {
+                setWarningMsg(res.data.warningMessage);
                 setActivePlanWarningVisible(true);
                 return;
             }
-
-            // Thành công => Hiện popup đánh giá lại tủ đồ (UC 40.2)
+            if (res?.data?.user?.skinProfile) setProfile(res.data.user.skinProfile);
             setEditModalVisible(false);
             setActivePlanWarningVisible(false);
-            setReEvaluateCount(res?.data?.data?.reEvaluatedProductsCount || 0);
+            setReEvaluateCount(res?.data?.reEvaluatedProductsCount || 0);
             setReEvaluatePopupVisible(true);
-            loadHistory();
-        } catch (err) {
-            Alert.alert('Lỗi', err.message || 'Không thể cập nhật hồ sơ da');
+            loadRoutines();
+        } catch (error) {
+            Alert.alert('Unable to update profile', error.message || 'Please try again.');
         } finally {
             setLoading(false);
         }
     };
 
-    const toggleConcern = (c) => {
-        if (selectedConcerns.includes(c)) {
-            setSelectedConcerns(selectedConcerns.filter(i => i !== c));
-        } else {
-            setSelectedConcerns([...selectedConcerns, c]);
-        }
-    };
+    const toggleValue = (value, setter) => setter(current => current.includes(value)
+        ? current.filter(item => item !== value)
+        : [...current, value]);
 
-    const toggleAllergy = (a) => {
-        if (selectedAllergies.includes(a)) {
-            setSelectedAllergies(selectedAllergies.filter(i => i !== a));
-        } else {
-            setSelectedAllergies([...selectedAllergies, a]);
-        }
-    };
-
-    const skinTypeDisplay = {
-        oily: 'Da Dầu (Oily Skin)',
-        dry: 'Da Khô (Dry Skin)',
-        combination: 'Da Hỗn Hợp (Combination)',
-        sensitive: 'Da Nhạy Cảm (Sensitive)',
-        normal: 'Da Thường (Normal)',
-    };
+    const skinType = SKIN_TYPES.find(item => item.id === selectedSkinType) || SKIN_TYPES[4];
+    const concerns = profile.currentConcerns?.length ? profile.currentConcerns : selectedConcerns;
+    const allergies = profile.allergies?.length ? profile.allergies : selectedAllergies;
 
     return (
         <View style={styles.screenWrapper}>
-            {/* Header */}
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Hồ Sơ & Cài Đặt</Text>
-                <TouchableOpacity
-                    style={styles.guideIconBtn}
-                    onPress={() => setGuideModalVisible(true)}
-                >
-                    <Ionicons name="book-outline" size={20} color="#006c49" />
+                <View>
+                    <Text style={styles.eyebrow}>SKINMATE</Text>
+                    <Text style={styles.headerTitle}>Profile & Settings</Text>
+                </View>
+                <TouchableOpacity style={styles.guideIconBtn} onPress={() => setGuideModalVisible(true)} accessibilityLabel="Open skin guide">
+                    <Ionicons name="book-outline" size={20} color={Colors.primaryDark} />
                 </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.contentScroll} showsVerticalScrollIndicator={false}>
-                {/* User Info Bar */}
-                <View style={styles.userBar}>
+            <ScrollView style={styles.contentScroll} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
+                <TouchableOpacity style={styles.userBar} onPress={() => navigation.navigate('EditProfile')} accessibilityLabel="Edit personal profile">
                     <View style={styles.avatarBox}>
-                        <Ionicons name="person" size={28} color="#006c49" />
+                        {user?.avatarUrl ? <Image source={{ uri: user.avatarUrl }} style={styles.accountAvatar} /> : <Ionicons name="person" size={40} color={Colors.primaryDark} />}
+                        <View style={styles.accountCamera}><Ionicons name="camera" size={15} color={Colors.textLight} /></View>
                     </View>
                     <View style={styles.userInfo}>
-                        <Text style={styles.userName}>{user?.fullName || 'Người dùng SkinMate'}</Text>
-                        <Text style={styles.userEmail}>{user?.email || 'user@skinmate.vn'}</Text>
+                        <Text style={styles.userName}>{user?.fullName || 'SkinMate member'}</Text>
+                        <Text style={styles.userEmail}>{user?.email || 'No email available'}</Text>
                     </View>
-                </View>
+                    <View style={styles.editAccountPill}><Ionicons name="create-outline" size={15} color={Colors.primaryDark} /><Text style={styles.editAccountText}>Edit profile</Text></View>
+                </TouchableOpacity>
 
-                {/* ================= SECTION 1: CORE AI SKIN PROFILE CARD (stitch.txt dòng 320 - 370) ================= */}
                 <View style={styles.profileCard}>
+                    <View style={styles.profileCardAccent} />
                     <View style={styles.cardHeaderRow}>
-                        <View style={styles.profileBadge}>
-                            <Ionicons name="sparkles" size={14} color="#005236" />
-                            <Text style={styles.profileBadgeText}>HỒ SƠ DA CỐT LÕI</Text>
-                        </View>
-                        <TouchableOpacity onPress={() => setGuideModalVisible(true)}>
-                            <Text style={styles.viewGuideText}>Xem Do/Don't</Text>
-                        </TouchableOpacity>
+                        <View style={styles.profileBadge}><Ionicons name="sparkles" size={14} color={Colors.primaryDark} /><Text style={styles.profileBadgeText}>CORE SKIN PROFILE</Text></View>
+                        <TouchableOpacity onPress={() => setGuideModalVisible(true)}><Text style={styles.viewGuideText}>View Do/Don't</Text></TouchableOpacity>
                     </View>
-
-                    {/* Skin Type */}
                     <View style={styles.attributeBlock}>
-                        <Text style={styles.attrLabel}>Loại da nền tảng:</Text>
-                        <View style={styles.skinTypePill}>
-                            <Text style={styles.skinTypePillText}>
-                                {skinTypeDisplay[user?.skinProfile?.skinType || selectedSkinType] || 'Da Dầu'}
-                            </Text>
-                        </View>
+                        <Text style={styles.attrLabel}>Base skin type</Text>
+                        <View style={styles.skinTypePill}><Text style={styles.skinTypePillText}>{skinType.label}</Text></View>
                     </View>
-
-                    {/* Concerns */}
                     <View style={styles.attributeBlock}>
-                        <Text style={styles.attrLabel}>Vấn đề da cần giải quyết:</Text>
+                        <Text style={styles.attrLabel}>Skin concerns</Text>
                         <View style={styles.chipRow}>
-                            {(user?.skinProfile?.currentConcerns?.length > 0
-                                ? user.skinProfile.currentConcerns
-                                : selectedConcerns
-                            ).map((c, idx) => (
-                                <View key={idx} style={styles.concernTag}>
-                                    <View style={styles.concernDot} />
-                                    <Text style={styles.concernTagText}>{c}</Text>
-                                </View>
-                            ))}
+                            {concerns.length ? concerns.map(item => <View key={item} style={styles.concernTag}><View style={styles.concernDot} /><Text style={styles.concernTagText}>{item}</Text></View>) : <Text style={styles.emptyAttribute}>No concerns added yet</Text>}
                         </View>
                     </View>
-
-                    {/* Dị ứng */}
-                    {(user?.skinProfile?.allergies?.length > 0 || selectedAllergies.length > 0) && (
-                        <View style={styles.attributeBlock}>
-                            <Text style={styles.attrLabel}>Thành phần dị ứng:</Text>
-                            <View style={styles.chipRow}>
-                                {(user?.skinProfile?.allergies?.length > 0
-                                    ? user.skinProfile.allergies
-                                    : selectedAllergies
-                                ).map((a, idx) => (
-                                    <View key={idx} style={styles.allergyTag}>
-                                        <Text style={styles.allergyTagText}>⛔ {a}</Text>
-                                    </View>
-                                ))}
-                            </View>
-                        </View>
-                    )}
-
-                    {/* AI Algorithm Recommendation Notice (stitch.txt dòng 350) */}
-                    <View style={styles.aiNoticeBox}>
-                        <Ionicons name="information-circle" size={18} color="#006c49" />
-                        <Text style={styles.aiNoticeText}>
-                            <Text style={styles.boldText}>Tác động thuật toán:</Text> Hồ sơ da định hướng trực tiếp khả năng phát hiện thành phần kỵ nhau & gợi ý chuỗi routine trong Tủ đồ cá nhân của bạn.
-                        </Text>
-                    </View>
-
-                    {/* UC 40: Nút Primary Action CTA: Thiết lập lại hồ sơ da */}
-                    <TouchableOpacity
-                        style={styles.resetProfileBtn}
-                        onPress={() => setEditModalVisible(true)}
-                    >
-                        <Ionicons name="sync-outline" size={18} color="#ffffff" />
-                        <Text style={styles.resetProfileBtnText}>Thiết lập lại hồ sơ da</Text>
-                    </TouchableOpacity>
+                    {allergies.length > 0 && <View style={styles.attributeBlock}>
+                        <Text style={styles.attrLabel}>Allergies to avoid</Text>
+                        <View style={styles.chipRow}>{allergies.map(item => <View key={item} style={styles.allergyTag}><Text style={styles.allergyTagText}>Avoid · {item}</Text></View>)}</View>
+                    </View>}
+                    <View style={styles.aiNoticeBox}><Ionicons name="information-circle" size={18} color={Colors.primaryDark} /><Text style={styles.aiNoticeText}><Text style={styles.boldText}>How this helps: </Text>your profile guides ingredient checks and routine suggestions for your personal collection.</Text></View>
+                    <TouchableOpacity style={styles.resetProfileBtn} onPress={() => setEditModalVisible(true)}><Ionicons name="options-outline" size={18} color={Colors.textLight} /><Text style={styles.resetProfileBtnText}>Update skin profile</Text></TouchableOpacity>
                 </View>
 
-                {/* UC 8: Nút Tạo chuỗi Routine thông minh */}
-                <TouchableOpacity
-                    style={styles.generateBtn}
-                    onPress={handleGenerateNewSuggestion}
-                    disabled={loading}
-                >
-                    <Ionicons name="bulb-outline" size={20} color="#ffffff" />
-                    <Text style={styles.generateBtnText}>Gợi ý chuỗi Routine 7 ngày cải thiện da</Text>
-                </TouchableOpacity>
+                <TouchableOpacity style={styles.generateBtn} onPress={handleGenerateNewSuggestion} disabled={loading}><Ionicons name="bulb-outline" size={20} color={Colors.textLight} /><Text style={styles.generateBtnText}>Build my 7-day routine</Text></TouchableOpacity>
 
-                {/* ================= SECTION 2: ROUTINE HISTORY (UC 41) ================= */}
+            <View style={styles.historySection}>
+                    <View style={styles.sectionTitleRow}><Ionicons name="repeat-outline" size={20} color={Colors.primaryDark} /><Text style={styles.sectionHeading}>My routine</Text><Text style={styles.historyCount}>{myRoutines.length}</Text></View>
+                    {myRoutines.length === 0 ? <View style={styles.emptyHistoryBox}><Text style={styles.emptyHistoryText}>No active or saved routines yet. Build a 7-day routine to get started.</Text></View> : myRoutines.map(item => <TouchableOpacity key={item._id} style={styles.historyCard} onPress={() => navigation.navigate('RoutineDetail', { routineId: item._id, mode: item.status === 'active' ? 'history' : 'suggestion' })}>
+                        <View style={styles.historyCardTop}><Text style={styles.historyTitle} numberOfLines={2}>{item.title}</Text><View style={[styles.statusBadge, item.status === 'active' && styles.statusBadgeActive]}><Text style={[styles.statusBadgeText, item.status === 'active' && styles.statusBadgeTextActive]}>{item.status === 'active' ? 'Active' : 'Draft'}</Text></View></View>
+                        <Text style={styles.historyGoal} numberOfLines={2}>{item.goal || 'A routine built around your current skin goals.'}</Text>
+                        <View style={styles.historyFooter}><Text style={styles.historyDays}>{item.durationDays || 7} days · {item.skinTypeTarget || 'personalized'}</Text><View style={styles.viewDetailLink}><Text style={styles.viewDetailText}>{item.status === 'active' ? 'View routine' : 'Review draft'}</Text><Ionicons name="chevron-forward" size={14} color={Colors.primary} /></View></View>
+                    </TouchableOpacity>)}
+                </View>
+
                 <View style={styles.historySection}>
-                    <View style={styles.sectionTitleRow}>
-                        <Ionicons name="time-outline" size={20} color="#00422b" />
-                        <Text style={styles.sectionHeading}>Lịch Sử Chuỗi Routine (Routine History)</Text>
-                    </View>
-
-                    {routineHistory.length === 0 ? (
-                        <View style={styles.emptyHistoryBox}>
-                            <Text style={styles.emptyHistoryText}>
-                                Bạn chưa có lịch sử chuỗi routine nào. Hãy bấm nút "Gợi ý chuỗi Routine" ở trên để bắt đầu!
-                            </Text>
-                        </View>
-                    ) : (
-                        routineHistory.map((item, idx) => (
-                            <TouchableOpacity
-                                key={idx}
-                                style={styles.historyCard}
-                                onPress={() => navigation.navigate('RoutineDetail', {
-                                    routineId: item._id,
-                                    mode: 'history', // UC 42
-                                })}
-                            >
-                                <View style={styles.historyCardTop}>
-                                    <Text style={styles.historyTitle}>{item.title}</Text>
-                                    <View style={[
-                                        styles.statusBadge,
-                                        item.status === 'active' && styles.statusBadgeActive,
-                                        item.status === 'cancelled' && styles.statusBadgeCancelled,
-                                    ]}>
-                                        <Text style={[
-                                            styles.statusBadgeText,
-                                            item.status === 'active' && styles.statusBadgeTextActive,
-                                        ]}>
-                                            {item.status === 'active' ? 'Đang dùng' : item.status === 'cancelled' ? 'Đã hủy' : item.status === 'draft' ? 'Bản nháp' : 'Đã xong'}
-                                        </Text>
-                                    </View>
-                                </View>
-
-                                <Text style={styles.historyGoal}>{item.goal}</Text>
-
-                                <View style={styles.historyFooter}>
-                                    <Text style={styles.historyDays}>
-                                        {item.durationDays || 7} ngày • Dành cho da {item.skinTypeTarget || 'hỗn hợp'}
-                                    </Text>
-                                    <View style={styles.viewDetailLink}>
-                                        <Text style={styles.viewDetailText}>Xem & Copy</Text>
-                                        <Ionicons name="chevron-forward" size={14} color="#006c49" />
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
-                        ))
-                    )}
+                    <View style={styles.sectionTitleRow}><Ionicons name="time-outline" size={20} color={Colors.primaryDark} /><Text style={styles.sectionHeading}>Routine history</Text><Text style={styles.historyCount}>{routineHistory.length}</Text></View>
+                    {routineHistory.length === 0 ? <View style={styles.emptyHistoryBox}><Text style={styles.emptyHistoryText}>Completed and cancelled routines will appear here.</Text></View> : routineHistory.map(item => <TouchableOpacity key={item._id} style={styles.historyCard} onPress={() => navigation.navigate('RoutineDetail', { routineId: item._id, mode: 'history' })}>
+                        <View style={styles.historyCardTop}><Text style={styles.historyTitle} numberOfLines={2}>{item.title}</Text><View style={[styles.statusBadge, styles.statusBadgeCancelled]}><Text style={styles.statusBadgeText}>{['cancelled', 'canceled'].includes(item.status) ? 'Cancelled' : 'Completed'}</Text></View></View>
+                        <Text style={styles.historyGoal} numberOfLines={2}>{item.goal || 'A routine built around your previous skin goals.'}</Text>
+                        <View style={styles.historyFooter}><Text style={styles.historyDays}>{item.durationDays || 7} days · {item.skinTypeTarget || 'personalized'}</Text><View style={styles.viewDetailLink}><Text style={styles.viewDetailText}>View & copy</Text><Ionicons name="chevron-forward" size={14} color={Colors.primary} /></View></View>
+                    </TouchableOpacity>)}
                 </View>
-
-                {/* Đăng xuất */}
-                <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
-                    <Ionicons name="log-out-outline" size={18} color="#ba1a1a" />
-                    <Text style={styles.logoutBtnText}>Đăng xuất tài khoản</Text>
-                </TouchableOpacity>
+                <TouchableOpacity style={styles.logoutBtn} onPress={logout}><Ionicons name="log-out-outline" size={18} color={Colors.error} /><Text style={styles.logoutBtnText}>Sign out</Text></TouchableOpacity>
             </ScrollView>
 
-            {/* UC 10: NÚT FAB GUIDE NỔI TOÀN APP */}
-            <GuideFab
-                customSkinType={user?.skinProfile?.skinType || selectedSkinType}
-                customAllergies={user?.skinProfile?.allergies || selectedAllergies}
-            />
+            <GuideFab customSkinType={profile?.skinType || selectedSkinType} customAllergies={profile?.allergies || selectedAllergies} />
+            <SkinGuideModal visible={guideModalVisible} onClose={() => setGuideModalVisible(false)} skinType={profile?.skinType || selectedSkinType} allergies={profile?.allergies || selectedAllergies} />
 
-            {/* UC 6: Modal Cẩm nang da */}
-            <SkinGuideModal
-                visible={guideModalVisible}
-                onClose={() => setGuideModalVisible(false)}
-                skinType={user?.skinProfile?.skinType || selectedSkinType}
-                allergies={user?.skinProfile?.allergies || selectedAllergies}
-            />
-
-            {/* UC 40: MODAL THIẾT LẬP LẠI HỒ SƠ DA */}
-            <Modal
-                visible={editModalVisible}
-                transparent
-                animationType="slide"
-                onRequestClose={() => setEditModalVisible(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalSheet}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalSheetTitle}>Thiết Lập Lại Hồ Sơ Da</Text>
-                            <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-                                <Ionicons name="close" size={24} color="#6c7a71" />
-                            </TouchableOpacity>
-                        </View>
-
-                        <ScrollView showsVerticalScrollIndicator={false}>
-                            {/* Loại da */}
-                            <Text style={styles.sheetSectionTitle}>Loại da mới:</Text>
-                            <View style={styles.skinTypeChoiceWrap}>
-                                {SKIN_TYPES.map(st => (
-                                    <TouchableOpacity
-                                        key={st.id}
-                                        style={[
-                                            styles.choicePill,
-                                            selectedSkinType === st.id && styles.choicePillActive,
-                                        ]}
-                                        onPress={() => setSelectedSkinType(st.id)}
-                                    >
-                                        <Text style={[
-                                            styles.choicePillText,
-                                            selectedSkinType === st.id && styles.choicePillTextActive,
-                                        ]}>
-                                            {st.label}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-
-                            {/* Vấn đề da */}
-                            <Text style={styles.sheetSectionTitle}>Vấn đề da cần cải thiện:</Text>
-                            <View style={styles.chipWrap}>
-                                {CONCERNS_LIST.map((c, i) => {
-                                    const active = selectedConcerns.includes(c);
-                                    return (
-                                        <TouchableOpacity
-                                            key={i}
-                                            style={[styles.smallChip, active && styles.smallChipActive]}
-                                            onPress={() => toggleConcern(c)}
-                                        >
-                                            <Text style={[styles.smallChipText, active && styles.smallChipTextActive]}>
-                                                {c}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    );
-                                })}
-                            </View>
-
-                            {/* Dị ứng */}
-                            <Text style={styles.sheetSectionTitle}>Thành phần dị ứng cần loại trừ:</Text>
-                            <View style={styles.chipWrap}>
-                                {ALLERGIES_LIST.map((a, i) => {
-                                    const active = selectedAllergies.includes(a);
-                                    return (
-                                        <TouchableOpacity
-                                            key={i}
-                                            style={[styles.smallAllergyChip, active && styles.smallAllergyChipActive]}
-                                            onPress={() => toggleAllergy(a)}
-                                        >
-                                            <Text style={[styles.smallAllergyChipText, active && styles.smallAllergyChipTextActive]}>
-                                                {a}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    );
-                                })}
-                            </View>
-                        </ScrollView>
-
-                        <TouchableOpacity
-                            style={styles.saveSheetBtn}
-                            onPress={() => handleSaveProfile(false)}
-                            disabled={loading}
-                        >
-                            {loading ? (
-                                <ActivityIndicator size="small" color="#ffffff" />
-                            ) : (
-                                <Text style={styles.saveSheetBtnText}>Lưu & Đánh giá lại hệ thống</Text>
-                            )}
-                        </TouchableOpacity>
-                    </View>
-                </View>
+            <Modal visible={editModalVisible} transparent animationType="slide" onRequestClose={() => setEditModalVisible(false)}>
+                <View style={styles.modalOverlay}><View style={styles.modalSheet}><View style={styles.modalHeader}><Text style={styles.modalSheetTitle}>Update skin profile</Text><TouchableOpacity onPress={() => setEditModalVisible(false)}><Ionicons name="close" size={24} color={Colors.textSecondary} /></TouchableOpacity></View>
+                    <ScrollView showsVerticalScrollIndicator={false}>
+                        <Text style={styles.sheetSectionTitle}>New skin type</Text><View style={styles.skinTypeChoiceWrap}>{SKIN_TYPES.map(item => <TouchableOpacity key={item.id} style={[styles.choicePill, selectedSkinType === item.id && styles.choicePillActive]} onPress={() => setSelectedSkinType(item.id)}><Text style={[styles.choicePillText, selectedSkinType === item.id && styles.choicePillTextActive]}>{item.label}</Text></TouchableOpacity>)}</View>
+                        <Text style={styles.sheetSectionTitle}>Skin concerns to improve</Text><View style={styles.chipWrap}>{CONCERNS_LIST.map(item => <TouchableOpacity key={item} style={[styles.smallChip, selectedConcerns.includes(item) && styles.smallChipActive]} onPress={() => toggleValue(item, setSelectedConcerns)}><Text style={[styles.smallChipText, selectedConcerns.includes(item) && styles.smallChipTextActive]}>{item}</Text></TouchableOpacity>)}</View>
+                        <Text style={styles.sheetSectionTitle}>Ingredients to avoid</Text><View style={styles.chipWrap}>{ALLERGIES_LIST.map(item => <TouchableOpacity key={item} style={[styles.smallAllergyChip, selectedAllergies.includes(item) && styles.smallAllergyChipActive]} onPress={() => toggleValue(item, setSelectedAllergies)}><Text style={[styles.smallAllergyChipText, selectedAllergies.includes(item) && styles.smallAllergyChipTextActive]}>{item}</Text></TouchableOpacity>)}</View>
+                    </ScrollView>
+                    <TouchableOpacity style={styles.saveSheetBtn} onPress={() => handleSaveProfile(false)} disabled={loading}>{loading ? <ActivityIndicator size="small" color={Colors.textLight} /> : <Text style={styles.saveSheetBtnText}>Save & re-check my collection</Text>}</TouchableOpacity>
+                </View></View>
             </Modal>
 
-            {/* UC 40.3: POPUP CẢNH BÁO RẼ NHÁNH TÁC ĐỘNG ĐẾN PHÁC ĐỒ ĐANG CHẠY */}
-            <Modal
-                visible={activePlanWarningVisible}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setActivePlanWarningVisible(false)}
-            >
-                <View style={styles.alertOverlay}>
-                    <View style={styles.alertCard}>
-                        <View style={styles.alertIconBox}>
-                            <Ionicons name="warning" size={32} color="#ba1a1a" />
-                        </View>
-                        <Text style={styles.alertHeading}>Cảnh Báo Hủy Phác Đồ</Text>
-                        <Text style={styles.alertMessage}>{warningMsg}</Text>
-
-                        <View style={styles.alertBtnGroup}>
-                            <TouchableOpacity
-                                style={styles.alertConfirmBtn}
-                                onPress={() => handleSaveProfile(true)}
-                            >
-                                <Text style={styles.alertConfirmBtnText}>Chắc chắn, hủy và đổi hồ sơ</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.alertCancelBtn}
-                                onPress={() => setActivePlanWarningVisible(false)}
-                            >
-                                <Text style={styles.alertCancelBtnText}>Giữ nguyên phác đồ cũ</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
-
-            {/* UC 40.2: POPUP THÔNG BÁO ĐÁNH GIÁ LẠI TỦ ĐỒ (RE-EVALUATE CLOSET) */}
-            <Modal
-                visible={reEvaluatePopupVisible}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setReEvaluatePopupVisible(false)}
-            >
-                <View style={styles.alertOverlay}>
-                    <View style={styles.alertCard}>
-                        <View style={styles.successIconBox}>
-                            <Ionicons name="checkmark-done" size={32} color="#006c49" />
-                        </View>
-                        <Text style={styles.alertHeading}>Đánh Giá Lại Tủ Đồ</Text>
-                        <Text style={styles.alertMessage}>
-                            Hồ sơ da của bạn đã thay đổi. Hệ thống đã đánh giá lại mức độ phù hợp của {reEvaluateCount} sản phẩm trong tủ đồ và cập nhật cẩm nang Do's & Don'ts mới.
-                        </Text>
-                        <TouchableOpacity
-                            style={styles.alertOkBtn}
-                            onPress={() => setReEvaluatePopupVisible(false)}
-                        >
-                            <Text style={styles.alertOkBtnText}>Tuyệt vời</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
+            <Modal visible={activePlanWarningVisible} transparent animationType="fade" onRequestClose={() => setActivePlanWarningVisible(false)}><View style={styles.alertOverlay}><View style={styles.alertCard}><View style={styles.alertIconBox}><Ionicons name="warning" size={32} color={Colors.error} /></View><Text style={styles.alertHeading}>Routine needs an update</Text><Text style={styles.alertMessage}>{warningMsg}</Text><View style={styles.alertBtnGroup}><TouchableOpacity style={styles.alertConfirmBtn} onPress={() => handleSaveProfile(true)}><Text style={styles.alertConfirmBtnText}>Cancel it and update my profile</Text></TouchableOpacity><TouchableOpacity style={styles.alertCancelBtn} onPress={() => setActivePlanWarningVisible(false)}><Text style={styles.alertCancelBtnText}>Keep current routine</Text></TouchableOpacity></View></View></View></Modal>
+            <Modal visible={reEvaluatePopupVisible} transparent animationType="fade" onRequestClose={() => setReEvaluatePopupVisible(false)}><View style={styles.alertOverlay}><View style={styles.alertCard}><View style={styles.successIconBox}><Ionicons name="checkmark-done" size={32} color={Colors.primary} /></View><Text style={styles.alertHeading}>Collection re-checked</Text><Text style={styles.alertMessage}>Your skin profile changed. We re-checked {reEvaluateCount} products and refreshed your Do/Don't guide.</Text><TouchableOpacity style={styles.alertOkBtn} onPress={() => setReEvaluatePopupVisible(false)}><Text style={styles.alertOkBtnText}>Done</Text></TouchableOpacity></View></View></Modal>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    screenWrapper: {
-        flex: 1,
-        backgroundColor: '#f9f9ff',
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingTop: 48,
-        paddingBottom: 14,
-        backgroundColor: '#ffffff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#e9edff',
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#141b2b',
-    },
-    guideIconBtn: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: '#e9edff',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    contentScroll: {
-        flex: 1,
-        paddingHorizontal: 16,
-        paddingTop: 16,
-    },
-    userBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-        backgroundColor: '#ffffff',
-        padding: 14,
-        borderRadius: 20,
-        marginBottom: 16,
-    },
-    avatarBox: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        backgroundColor: '#97f5cc',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    userInfo: {
-        flex: 1,
-    },
-    userName: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: '#141b2b',
-    },
-    userEmail: {
-        fontSize: 12,
-        color: '#6c7a71',
-        marginTop: 2,
-    },
-    profileCard: {
-        backgroundColor: '#ffffff',
-        borderRadius: 24,
-        padding: 18,
-        borderWidth: 1,
-        borderColor: '#bbcabf',
-        marginBottom: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 5,
-        elevation: 2,
-    },
-    cardHeaderRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 14,
-    },
-    profileBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        backgroundColor: '#97f5cc',
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 12,
-    },
-    profileBadgeText: {
-        color: '#005236',
-        fontSize: 11,
-        fontWeight: '700',
-    },
-    viewGuideText: {
-        color: '#006c49',
-        fontSize: 12,
-        fontWeight: '700',
-    },
-    attributeBlock: {
-        marginBottom: 12,
-    },
-    attrLabel: {
-        fontSize: 12,
-        color: '#6c7a71',
-        marginBottom: 4,
-        fontWeight: '500',
-    },
-    skinTypePill: {
-        alignSelf: 'flex-start',
-        backgroundColor: '#e9edff',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 12,
-    },
-    skinTypePillText: {
-        color: '#00422b',
-        fontWeight: '700',
-        fontSize: 13,
-    },
-    chipRow: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 6,
-    },
-    concernTag: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 5,
-        backgroundColor: '#fffbeb',
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#fef3c7',
-    },
-    concernDot: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-        backgroundColor: '#f59e0b',
-    },
-    concernTagText: {
-        color: '#92400e',
-        fontSize: 11,
-        fontWeight: '600',
-    },
-    allergyTag: {
-        backgroundColor: '#fee2e2',
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 8,
-    },
-    allergyTagText: {
-        color: '#991b1b',
-        fontSize: 11,
-        fontWeight: '600',
-    },
-    aiNoticeBox: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        gap: 8,
-        backgroundColor: '#ecfdf5',
-        padding: 10,
-        borderRadius: 12,
-        marginTop: 6,
-        marginBottom: 14,
-    },
-    aiNoticeText: {
-        fontSize: 11,
-        color: '#065f46',
-        flex: 1,
-        lineHeight: 16,
-    },
-    boldText: {
-        fontWeight: '700',
-    },
-    resetProfileBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        backgroundColor: '#006c49',
-        borderRadius: 16,
-        paddingVertical: 13,
-        shadowColor: '#006c49',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.25,
-        shadowRadius: 5,
-        elevation: 2,
-    },
-    resetProfileBtnText: {
-        color: '#ffffff',
-        fontSize: 14,
-        fontWeight: '700',
-    },
-    generateBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        backgroundColor: '#10b981',
-        borderRadius: 20,
-        paddingVertical: 14,
-        marginBottom: 20,
-    },
-    generateBtnText: {
-        color: '#ffffff',
-        fontSize: 14,
-        fontWeight: '700',
-    },
-    historySection: {
-        marginBottom: 24,
-    },
-    sectionTitleRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        marginBottom: 12,
-    },
-    sectionHeading: {
-        fontSize: 15,
-        fontWeight: '700',
-        color: '#141b2b',
-    },
-    emptyHistoryBox: {
-        backgroundColor: '#ffffff',
-        borderRadius: 16,
-        padding: 20,
-        alignItems: 'center',
-    },
-    emptyHistoryText: {
-        fontSize: 13,
-        color: '#6c7a71',
-        textAlign: 'center',
-        lineHeight: 18,
-    },
-    historyCard: {
-        backgroundColor: '#ffffff',
-        borderRadius: 18,
-        padding: 14,
-        marginBottom: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 3,
-        elevation: 1,
-    },
-    historyCardTop: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 4,
-    },
-    historyTitle: {
-        fontSize: 14,
-        fontWeight: '700',
-        color: '#141b2b',
-        flex: 1,
-    },
-    statusBadge: {
-        backgroundColor: '#e9edff',
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 8,
-    },
-    statusBadgeActive: {
-        backgroundColor: '#97f5cc',
-    },
-    statusBadgeCancelled: {
-        backgroundColor: '#fee2e2',
-    },
-    statusBadgeText: {
-        fontSize: 10,
-        fontWeight: '700',
-        color: '#6c7a71',
-    },
-    statusBadgeTextActive: {
-        color: '#005236',
-    },
-    historyGoal: {
-        fontSize: 12,
-        color: '#6c7a71',
-        marginBottom: 8,
-    },
-    historyFooter: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        borderTopWidth: 1,
-        borderTopColor: '#f1f3ff',
-        paddingTop: 8,
-    },
-    historyDays: {
-        fontSize: 11,
-        color: '#3c4a42',
-    },
-    viewDetailLink: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 2,
-    },
-    viewDetailText: {
-        fontSize: 12,
-        color: '#006c49',
-        fontWeight: '700',
-    },
-    logoutBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        backgroundColor: '#fee2e2',
-        borderRadius: 16,
-        paddingVertical: 14,
-        marginBottom: 90,
-    },
-    logoutBtnText: {
-        color: '#ba1a1a',
-        fontWeight: '700',
-        fontSize: 14,
-    },
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(20, 27, 43, 0.5)',
-        justifyContent: 'flex-end',
-    },
-    modalSheet: {
-        backgroundColor: '#ffffff',
-        borderTopLeftRadius: 28,
-        borderTopRightRadius: 28,
-        paddingHorizontal: 20,
-        paddingTop: 20,
-        paddingBottom: 32,
-        maxHeight: '85%',
-    },
-    modalHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 16,
-    },
-    modalSheetTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#141b2b',
-    },
-    sheetSectionTitle: {
-        fontSize: 13,
-        fontWeight: '700',
-        color: '#00422b',
-        marginTop: 12,
-        marginBottom: 8,
-    },
-    skinTypeChoiceWrap: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-    },
-    choicePill: {
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 14,
-        backgroundColor: '#e9edff',
-    },
-    choicePillActive: {
-        backgroundColor: '#006c49',
-    },
-    choicePillText: {
-        fontSize: 12,
-        color: '#3c4a42',
-        fontWeight: '600',
-    },
-    choicePillTextActive: {
-        color: '#ffffff',
-    },
-    chipWrap: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 6,
-    },
-    smallChip: {
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: 12,
-        backgroundColor: '#f1f3ff',
-        borderWidth: 1,
-        borderColor: '#bbcabf',
-    },
-    smallChipActive: {
-        backgroundColor: '#10b981',
-        borderColor: '#10b981',
-    },
-    smallChipText: {
-        fontSize: 11,
-        color: '#3c4a42',
-    },
-    smallChipTextActive: {
-        color: '#ffffff',
-        fontWeight: '600',
-    },
-    smallAllergyChip: {
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: 12,
-        backgroundColor: '#fee2e2',
-    },
-    smallAllergyChipActive: {
-        backgroundColor: '#ba1a1a',
-    },
-    smallAllergyChipText: {
-        fontSize: 11,
-        color: '#991b1b',
-    },
-    smallAllergyChipTextActive: {
-        color: '#ffffff',
-        fontWeight: '600',
-    },
-    saveSheetBtn: {
-        backgroundColor: '#10b981',
-        borderRadius: 16,
-        paddingVertical: 14,
-        alignItems: 'center',
-        marginTop: 20,
-    },
-    saveSheetBtnText: {
-        color: '#ffffff',
-        fontSize: 15,
-        fontWeight: '700',
-    },
-    alertOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(20, 27, 43, 0.6)',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 24,
-    },
-    alertCard: {
-        backgroundColor: '#ffffff',
-        borderRadius: 24,
-        padding: 24,
-        width: '100%',
-        maxWidth: 360,
-        alignItems: 'center',
-    },
-    alertIconBox: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: '#fee2e2',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 14,
-    },
-    successIconBox: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: '#d1fae5',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 14,
-    },
-    alertHeading: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#141b2b',
-        marginBottom: 8,
-        textAlign: 'center',
-    },
-    alertMessage: {
-        fontSize: 13,
-        color: '#4b5563',
-        textAlign: 'center',
-        lineHeight: 18,
-        marginBottom: 20,
-    },
-    alertBtnGroup: {
-        width: '100%',
-        gap: 10,
-    },
-    alertConfirmBtn: {
-        backgroundColor: '#ba1a1a',
-        paddingVertical: 13,
-        borderRadius: 14,
-        alignItems: 'center',
-    },
-    alertConfirmBtnText: {
-        color: '#ffffff',
-        fontWeight: '700',
-        fontSize: 13,
-    },
-    alertCancelBtn: {
-        backgroundColor: '#f3f4f6',
-        paddingVertical: 13,
-        borderRadius: 14,
-        alignItems: 'center',
-    },
-    alertCancelBtnText: {
-        color: '#374151',
-        fontWeight: '600',
-        fontSize: 13,
-    },
-    alertOkBtn: {
-        backgroundColor: '#006c49',
-        paddingVertical: 13,
-        paddingHorizontal: 32,
-        borderRadius: 14,
-        alignItems: 'center',
-        width: '100%',
-    },
-    alertOkBtnText: {
-        color: '#ffffff',
-        fontWeight: '700',
-        fontSize: 14,
-    },
+    screenWrapper: { flex: 1, backgroundColor: Colors.background },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.screen, paddingTop: 18, paddingBottom: 14, backgroundColor: Colors.card, borderBottomWidth: 1, borderBottomColor: Colors.border },
+    eyebrow: { ...TYPOGRAPHY.caption, color: Colors.primary, fontWeight: '700', letterSpacing: 1.2 },
+    headerTitle: { ...TYPOGRAPHY.section, color: Colors.textMain, fontSize: 20 },
+    guideIconBtn: { width: 42, height: 42, borderRadius: RADIUS.pill, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
+    contentScroll: { flex: 1 },
+    contentContainer: { padding: SPACING.screen, paddingTop: SPACING.md, paddingBottom: 100 },
+    userBar: { alignItems: 'center', backgroundColor: Colors.card, padding: SPACING.lg, borderRadius: RADIUS.card, marginBottom: SPACING.md, borderWidth: 1, borderColor: Colors.border, ...SHADOWS.light },
+    avatarBox: { width: 88, height: 88, borderRadius: RADIUS.pill, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: Colors.primaryLight },
+    accountAvatar: { width: 82, height: 82, borderRadius: RADIUS.pill },
+    accountCamera: { position: 'absolute', right: -2, bottom: -2, width: 27, height: 27, borderRadius: RADIUS.pill, backgroundColor: Colors.primary, borderWidth: 2, borderColor: Colors.card, alignItems: 'center', justifyContent: 'center' },
+    userInfo: { alignSelf: 'stretch', alignItems: 'center', marginTop: SPACING.md },
+    userName: { ...TYPOGRAPHY.label, color: Colors.textMain, fontSize: 20, textAlign: 'center' },
+    userEmail: { ...TYPOGRAPHY.caption, color: Colors.textSecondary, marginTop: SPACING.xs, textAlign: 'center' },
+    editAccountPill: { flexDirection: 'row', gap: SPACING.xs, alignItems: 'center', justifyContent: 'center', minHeight: 44, paddingHorizontal: SPACING.md, marginTop: SPACING.sm, backgroundColor: Colors.surface, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: Colors.border },
+    editAccountText: { ...TYPOGRAPHY.caption, color: Colors.primaryDark, fontWeight: '600' },
+    accountDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: Colors.success },
+    profileCard: { backgroundColor: Colors.card, borderRadius: RADIUS.cardLarge, padding: SPACING.lg, marginBottom: SPACING.md, borderWidth: 1, borderColor: Colors.borderDark, overflow: 'hidden', ...SHADOWS.light },
+    profileCardAccent: { position: 'absolute', top: 0, left: 0, right: 0, height: 5, backgroundColor: Colors.primaryLight },
+    cardHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.md },
+    profileBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.primaryLight, paddingHorizontal: 10, paddingVertical: 5, borderRadius: RADIUS.pill },
+    profileBadgeText: { color: Colors.primaryDark, fontSize: 10, fontWeight: '800', letterSpacing: 0.4 },
+    viewGuideText: { color: Colors.primary, fontSize: 12, fontWeight: '700' },
+    attributeBlock: { marginBottom: SPACING.sm },
+    attrLabel: { ...TYPOGRAPHY.caption, color: Colors.textSecondary, marginBottom: 5, fontWeight: '600' },
+    skinTypePill: { alignSelf: 'flex-start', backgroundColor: Colors.surface, paddingHorizontal: 12, paddingVertical: 7, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: Colors.borderDark },
+    skinTypePillText: { color: Colors.primaryDark, fontWeight: '700', fontSize: 13 },
+    chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+    emptyAttribute: { ...TYPOGRAPHY.caption, color: Colors.textMuted },
+    concernTag: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#fffbeb', paddingHorizontal: 10, paddingVertical: 5, borderRadius: RADIUS.small, borderWidth: 1, borderColor: '#fef3c7' },
+    concernDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.warning },
+    concernTagText: { color: '#92400e', fontSize: 11, fontWeight: '600' },
+    allergyTag: { backgroundColor: '#fee2e2', paddingHorizontal: 10, paddingVertical: 5, borderRadius: RADIUS.small },
+    allergyTagText: { color: '#991b1b', fontSize: 11, fontWeight: '600' },
+    aiNoticeBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: '#ecfdf5', padding: 10, borderRadius: RADIUS.input, marginTop: 4, marginBottom: SPACING.md },
+    aiNoticeText: { ...TYPOGRAPHY.caption, color: '#065f46', flex: 1, lineHeight: 17 },
+    boldText: { fontWeight: '800' },
+    resetProfileBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, borderRadius: RADIUS.input, minHeight: 48, paddingHorizontal: SPACING.md },
+    resetProfileBtnText: { color: Colors.textLight, ...TYPOGRAPHY.button, fontSize: 14 },
+    generateBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.success, borderRadius: RADIUS.pill, minHeight: 50, paddingHorizontal: SPACING.md, marginBottom: SPACING.lg },
+    generateBtnText: { color: Colors.textLight, ...TYPOGRAPHY.button, fontSize: 14 },
+    historySection: { marginBottom: SPACING.lg },
+    sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: SPACING.sm },
+    sectionHeading: { ...TYPOGRAPHY.label, color: Colors.textMain, fontSize: 17, flex: 1 },
+    historyCount: { minWidth: 24, textAlign: 'center', color: Colors.primaryDark, backgroundColor: Colors.primaryLight, borderRadius: RADIUS.pill, paddingVertical: 3, fontSize: 11, fontWeight: '800' },
+    emptyHistoryBox: { backgroundColor: Colors.card, borderRadius: RADIUS.input, padding: SPACING.lg, alignItems: 'center', borderWidth: 1, borderColor: Colors.border },
+    emptyHistoryText: { ...TYPOGRAPHY.bodySmall, color: Colors.textSecondary, textAlign: 'center' },
+    historyCard: { backgroundColor: Colors.card, borderRadius: RADIUS.input, padding: SPACING.md, marginBottom: SPACING.sm, borderWidth: 1, borderColor: Colors.border, ...SHADOWS.light },
+    historyCardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 5 },
+    historyTitle: { ...TYPOGRAPHY.label, color: Colors.textMain, flex: 1 },
+    statusBadge: { backgroundColor: Colors.surface, paddingHorizontal: 8, paddingVertical: 4, borderRadius: RADIUS.pill },
+    statusBadgeActive: { backgroundColor: Colors.primaryLight },
+    statusBadgeCancelled: { backgroundColor: '#fee2e2' },
+    statusBadgeText: { fontSize: 10, fontWeight: '800', color: Colors.textSecondary },
+    statusBadgeTextActive: { color: Colors.primaryDark },
+    historyGoal: { ...TYPOGRAPHY.caption, color: Colors.textSecondary, marginBottom: SPACING.sm },
+    historyFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: Colors.border, paddingTop: SPACING.sm },
+    historyDays: { ...TYPOGRAPHY.caption, color: Colors.textSecondary },
+    viewDetailLink: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+    viewDetailText: { ...TYPOGRAPHY.caption, color: Colors.primary, fontWeight: '800' },
+    logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#fff1f2', borderRadius: RADIUS.input, minHeight: 48, marginTop: SPACING.sm },
+    logoutBtnText: { color: Colors.error, fontWeight: '700', fontSize: 14 },
+    modalOverlay: { flex: 1, backgroundColor: Colors.overlay, justifyContent: 'flex-end' },
+    modalSheet: { backgroundColor: Colors.card, borderTopLeftRadius: RADIUS.cardLarge, borderTopRightRadius: RADIUS.cardLarge, paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg, paddingBottom: 32, maxHeight: '85%' },
+    modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.md },
+    modalSheetTitle: { ...TYPOGRAPHY.title, color: Colors.textMain, fontSize: 20 },
+    sheetSectionTitle: { ...TYPOGRAPHY.label, color: Colors.primaryDark, marginTop: SPACING.sm, marginBottom: SPACING.sm },
+    skinTypeChoiceWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    choicePill: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: RADIUS.pill, backgroundColor: Colors.surface },
+    choicePillActive: { backgroundColor: Colors.primary },
+    choicePillText: { fontSize: 12, color: Colors.textSecondary, fontWeight: '600' },
+    choicePillTextActive: { color: Colors.textLight },
+    chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+    smallChip: { paddingHorizontal: 10, paddingVertical: 7, borderRadius: RADIUS.pill, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.borderDark },
+    smallChipActive: { backgroundColor: Colors.success, borderColor: Colors.success },
+    smallChipText: { fontSize: 11, color: Colors.textSecondary },
+    smallChipTextActive: { color: Colors.textLight, fontWeight: '700' },
+    smallAllergyChip: { paddingHorizontal: 10, paddingVertical: 7, borderRadius: RADIUS.pill, backgroundColor: '#fff1f2' },
+    smallAllergyChipActive: { backgroundColor: Colors.error },
+    smallAllergyChipText: { fontSize: 11, color: '#991b1b' },
+    smallAllergyChipTextActive: { color: Colors.textLight, fontWeight: '700' },
+    saveSheetBtn: { backgroundColor: Colors.primary, borderRadius: RADIUS.input, minHeight: 48, alignItems: 'center', justifyContent: 'center', marginTop: SPACING.lg },
+    saveSheetBtnText: { color: Colors.textLight, ...TYPOGRAPHY.button, fontSize: 14 },
+    alertOverlay: { flex: 1, backgroundColor: Colors.overlay, alignItems: 'center', justifyContent: 'center', paddingHorizontal: SPACING.lg },
+    alertCard: { backgroundColor: Colors.card, borderRadius: RADIUS.cardLarge, padding: SPACING.lg, width: '100%', maxWidth: 360, alignItems: 'center' },
+    alertIconBox: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#fee2e2', alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.sm },
+    successIconBox: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#d1fae5', alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.sm },
+    alertHeading: { ...TYPOGRAPHY.title, fontSize: 19, color: Colors.textMain, marginBottom: 8, textAlign: 'center' },
+    alertMessage: { ...TYPOGRAPHY.bodySmall, color: Colors.textSecondary, textAlign: 'center', marginBottom: SPACING.lg },
+    alertBtnGroup: { width: '100%', gap: 10 },
+    alertConfirmBtn: { backgroundColor: Colors.error, paddingVertical: 13, borderRadius: RADIUS.input, alignItems: 'center', paddingHorizontal: 10 },
+    alertConfirmBtnText: { color: Colors.textLight, fontWeight: '700', fontSize: 13, textAlign: 'center' },
+    alertCancelBtn: { backgroundColor: Colors.surface, paddingVertical: 13, borderRadius: RADIUS.input, alignItems: 'center' },
+    alertCancelBtnText: { color: Colors.textMain, fontWeight: '600', fontSize: 13 },
+    alertOkBtn: { backgroundColor: Colors.primary, paddingVertical: 13, borderRadius: RADIUS.input, alignItems: 'center', width: '100%' },
+    alertOkBtnText: { color: Colors.textLight, fontWeight: '700', fontSize: 14 },
 });
 
 export default ProfileScreen;

@@ -38,6 +38,16 @@ const routineStepSchema = new mongoose.Schema({
 
 const dailyRoutineSchema = new mongoose.Schema(
     {
+        date: { type: String, default: undefined },
+        checkIn: {
+            status: { type: [String], default: [] },
+            updatedAt: { type: Date, default: null },
+        },
+        steps: { type: [mongoose.Schema.Types.Mixed], default: [] },
+        previousCheckIn: { type: mongoose.Schema.Types.Mixed, default: null },
+        planTitle: { type: String, default: null },
+        isOverridden: { type: Boolean, default: false },
+        overrideReason: { type: String, default: null },
         planId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'TreatmentPlan',

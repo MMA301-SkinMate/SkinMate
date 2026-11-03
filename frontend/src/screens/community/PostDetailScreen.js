@@ -8,7 +8,6 @@ import { getProductIcon } from '../../constants/product-icons';
 import { getCommunityPost } from '../../api/communityApi';
 import PostAuthorRow from '../../components/community/PostAuthorRow';
 import { useCommunity } from '../../context/CommunityContext';
-import { useCollection } from '../../context/CollectionContext';
 
 const SLOTS = [
   { key: 'morning', title: 'Morning (AM)', icon: 'sunny-outline', color: Colors.primary, tint: Colors.primaryLight },
@@ -18,10 +17,11 @@ const SLOTS = [
 export default function PostDetailScreen({ route, navigation }) {
   const { postId } = route.params || {};
   const { posts, toggleLike, copyRoutine } = useCommunity();
-  const { refreshCollection } = useCollection();
   const [post, setPost] = useState(() => posts.find(item => item.id === postId) || null);
   const [error, setError] = useState(null);
   const [isCopying, setIsCopying] = useState(false);
+  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
+  const [activeSession, setActiveSession] = useState('morning');
 
   const loadPost = useCallback(async () => {
     setError(null);
@@ -45,8 +45,10 @@ export default function PostDetailScreen({ route, navigation }) {
     try {
       const result = await copyRoutine(postId);
       setPost(result.post);
-      await refreshCollection();
-      Alert.alert('Copied', `${result.copiedCount} products were added to your collection.`);
+      Alert.alert('Saved', 'The routine was added to My Routine as a draft. You can review and activate it from your Profile.', [
+        { text: 'View My Routine', onPress: () => navigation.navigate('MainTabs', { screen: 'Profile' }) },
+        { text: 'Stay here', style: 'cancel' },
+      ]);
     } catch (copyError) {
       Alert.alert('Error', copyError.message || 'Unable to copy this routine.');
     } finally {
@@ -74,6 +76,9 @@ export default function PostDetailScreen({ route, navigation }) {
   }
 
   const hasRoutine = countRoutineSteps(post.sharedRoutine) > 0;
+  const routineDays = post.sharedRoutine?.days?.length ? post.sharedRoutine.days : [post.sharedRoutine || {}];
+  const selectedDay = routineDays[selectedDayIndex] || routineDays[0] || {};
+  const selectedSteps = selectedDay[activeSession] || [];
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -89,10 +94,21 @@ export default function PostDetailScreen({ route, navigation }) {
             {post.images.map(uri => <Image key={uri} source={{ uri }} style={styles.image} accessibilityLabel="Post photo" />)}
           </ScrollView>
         )}
-        {(post.sharedRoutine?.days?.length ? post.sharedRoutine.days : [post.sharedRoutine || {}]).map((day, index) => <View key={index}>
-          <Text style={styles.sectionTitle}>Day {index + 1}</Text>
-          {SLOTS.map(slot => <RoutineSection key={slot.key} slot={slot} steps={day[slot.key] || []} />)}
-        </View>)}
+        {hasRoutine && <>
+          <Text style={styles.routineTitle}>Shared routine</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dayRow}>
+            {routineDays.map((day, index) => <TouchableOpacity key={index} onPress={() => setSelectedDayIndex(index)} style={[styles.dayChip, selectedDayIndex === index && styles.dayChipActive]}>
+              <Text style={[styles.dayText, selectedDayIndex === index && styles.dayTextActive]}>Day {index + 1}</Text>
+            </TouchableOpacity>)}
+          </ScrollView>
+          <View style={styles.sessionRow}>
+            {SLOTS.map(slot => <TouchableOpacity key={slot.key} onPress={() => setActiveSession(slot.key)} style={[styles.sessionChip, activeSession === slot.key && styles.sessionChipActive]}>
+              <Ionicons name={slot.icon} size={17} color={activeSession === slot.key ? Colors.textLight : slot.color} />
+              <Text style={[styles.sessionText, activeSession === slot.key && styles.sessionTextActive]}>{slot.title}</Text>
+            </TouchableOpacity>)}
+          </View>
+          <RoutineSection slot={SLOTS.find(slot => slot.key === activeSession)} steps={selectedSteps} />
+        </>}
         {!hasRoutine && <Text style={styles.noRoutine}>This post has no attached routine.</Text>}
       </ScrollView>
       <View style={styles.bottomBar}>
@@ -106,8 +122,8 @@ export default function PostDetailScreen({ route, navigation }) {
         </View>
         {hasRoutine && (
           <TouchableOpacity style={styles.saveButton} onPress={handleCopy} disabled={isCopying} accessibilityRole="button">
-            {isCopying ? <ActivityIndicator size="small" color={Colors.textLight} /> : <Ionicons name="download-outline" size={17} color={Colors.textLight} />}
-            <Text style={styles.saveText}>Copy to collection</Text>
+            {isCopying ? <ActivityIndicator size="small" color={Colors.textLight} /> : <Ionicons name="copy-outline" size={17} color={Colors.textLight} />}
+            <Text style={styles.saveText}>Save to My Routine</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -158,8 +174,19 @@ const styles = StyleSheet.create({
   tags: { color: Colors.primary, fontSize: 12, marginTop: 8 },
   imageRow: { gap: 8, marginBottom: 14 },
   image: { width: 220, height: 220, borderRadius: 18, backgroundColor: Colors.surface },
-  noRoutine: { color: Colors.textSecondary, fontSize: 13, textAlign: 'center', marginTop: 8 },
+  dayRow: { gap: 8, paddingVertical: 12 },
+  dayChip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 18, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.background },
+  dayChipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  dayText: { color: Colors.text, fontSize: 12, fontWeight: '700' },
+  dayTextActive: { color: Colors.textLight },
+  sessionRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
+  sessionChip: { flex: 1, minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 14, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.background },
+  sessionChipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  sessionText: { color: Colors.text, fontSize: 12, fontWeight: '700' },
+  sessionTextActive: { color: Colors.textLight },
+  routineTitle: { color: Colors.text, fontSize: 18, fontWeight: '800', marginBottom: 2 },
   routineSection: { marginBottom: 12 },
+  noRoutine: { color: Colors.textSecondary, fontSize: 13, textAlign: 'center', marginTop: 8 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 8 },
   sectionIcon: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   sectionTitle: { flex: 1, color: Colors.text, fontSize: 16, fontWeight: '600' },

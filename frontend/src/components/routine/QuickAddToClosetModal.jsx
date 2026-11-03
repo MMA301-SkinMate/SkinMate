@@ -26,7 +26,7 @@ const QuickAddToClosetModal = ({ visible, onClose, onSuccess }) => {
     const [productName, setProductName] = useState('');
     const [productType, setProductType] = useState('serum');
     const [ingredientInput, setIngredientInput] = useState('');
-    const [ingredients, setIngredients] = useState(['Centella Asiatica', 'Hyaluronic Acid']);
+    const [ingredients, setIngredients] = useState([]);
     const [loading, setLoading] = useState(false);
 
     const handleAddIngredient = () => {

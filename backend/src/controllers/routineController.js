@@ -1,128 +1,70 @@
 const routineService = require('../services/routineService');
-const { sendSuccess, sendError } = require('../utils/response');
+const User = require('../models/User');
+const { sendSuccess } = require('../utils/response');
 
-class RoutineController {
-    // UC 6 & UC 10: Lấy cẩm nang Do's & Don'ts
-    async getGuide(req, res, next) {
-        try {
-            const user = req.user;
-            const skinType = req.query.skinType || user?.skinProfile?.skinType || 'normal';
-            const allergies = req.query.allergies ? req.query.allergies.split(',') : (user?.skinProfile?.allergies || []);
-            const guide = await routineService.getSkinGuide(skinType, allergies);
-            return sendSuccess(res, guide, 'Lấy cẩm nang da thành công');
-        } catch (err) {
-            next(err);
-        }
-    }
+const handle = (operation, statusCode = 200) => async (req, res, next) => {
+  try {
+    const data = await operation(req);
+    return sendSuccess(res, { data, statusCode });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    // UC 8: Gợi ý chuỗi routine 7 ngày
-    async suggestRoutine(req, res, next) {
-        try {
-            const userId = req.user.id;
-            const result = await routineService.generateRoutinePlan(userId);
-            return sendSuccess(res, result, 'Gợi ý chuỗi routine thành công');
-        } catch (err) {
-            next(err);
-        }
-    }
+const invalidInput = (message) => {
+  const error = new Error(message);
+  error.status = 400;
+  throw error;
+};
 
-    // UC 9 & UC 42: Chi tiết chuỗi routine
-    async getRoutineDetail(req, res, next) {
-        try {
-            const { id } = req.params;
-            const detail = await routineService.getRoutineDetail(id);
-            return sendSuccess(res, detail, 'Lấy chi tiết chuỗi routine thành công');
-        } catch (err) {
-            next(err);
-        }
-    }
+exports.generateRoutineChain = handle(req => {
+  const { targetConcern } = req.body || {};
+  if (targetConcern !== undefined && (typeof targetConcern !== 'string' || !targetConcern.trim())) {
+    invalidInput('Mối quan tâm về da không hợp lệ');
+  }
+  return routineService.generateRoutineChain(req.user.id, targetConcern);
+}, 201);
+exports.activatePlan = handle(req => routineService.activatePlan(req.user.id, req.params.planId));
+exports.skipPlan = handle(req => routineService.skipPlan(req.user.id, req.params.planId));
+exports.getRoutineHistory = handle(req => routineService.getLegacyRoutineHistory(req.user.id));
+exports.copyOldRoutine = handle(req => {
+  const { overrideActive } = req.body || {};
+  if (overrideActive !== undefined && typeof overrideActive !== 'boolean') {
+    invalidInput('Giá trị xác nhận thay routine không hợp lệ');
+  }
+  return routineService.copyOldRoutine(req.user.id, req.params.planId, overrideActive);
+});
+exports.prepareRoutineForShare = handle(req => routineService.prepareRoutineForShare(req.user.id, req.params.planId, req.body || {}), 201);
 
-    // UC 9: Kích hoạt chuỗi routine
-    async activateRoutine(req, res, next) {
-        try {
-            const userId = req.user.id;
-            const { id } = req.params;
-            const plan = await routineService.activateRoutinePlan(userId, id);
-            return sendSuccess(res, plan, 'Đã thêm vào chuỗi routine của tôi');
-        } catch (err) {
-            next(err);
-        }
-    }
-
-    // UC 9: Bỏ qua chuỗi routine (Lưu nháp)
-    async dismissRoutine(req, res, next) {
-        try {
-            const { id } = req.params;
-            const result = await routineService.dismissRoutineSuggestion(id);
-            return sendSuccess(res, result, 'Đã lưu nháp chuỗi routine');
-        } catch (err) {
-            next(err);
-        }
-    }
-
-    // UC 40: Thiết lập lại hồ sơ da (với 3 xử lý tác động)
-    async updateSkinProfile(req, res, next) {
-        try {
-            const userId = req.user.id;
-            const { skinType, allergies, currentConcerns, forceReset } = req.body;
-            const result = await routineService.updateSkinProfileWithImpact(userId, {
-                skinType,
-                allergies,
-                currentConcerns,
-            }, forceReset === true);
-
-            return sendSuccess(res, result, 'Cập nhật hồ sơ da thành công');
-        } catch (err) {
-            next(err);
-        }
-    }
-
-    // UC 41: Lịch sử chuỗi routine
-    async getHistory(req, res, next) {
-        try {
-            const userId = req.user.id;
-            const history = await routineService.getRoutineHistory(userId);
-            return sendSuccess(res, history, 'Lấy lịch sử chuỗi routine thành công');
-        } catch (err) {
-            next(err);
-        }
-    }
-
-    // UC 43: Kiểm tra đối chiếu trước khi copy
-    async checkCopyCompatibility(req, res, next) {
-        try {
-            const userId = req.user.id;
-            const { id } = req.params;
-            const check = await routineService.checkCopyRoutineCompatibility(userId, id);
-            return sendSuccess(res, check, 'Kiểm tra độ tương thích thành công');
-        } catch (err) {
-            next(err);
-        }
-    }
-
-    // UC 43: Thực hiện copy chuỗi routine cũ
-    async executeCopy(req, res, next) {
-        try {
-            const userId = req.user.id;
-            const { id } = req.params;
-            const { userChoice } = req.body; // 'start_now' hoặc 'queue_later'
-            const result = await routineService.executeCopyRoutine(userId, id, { userChoice });
-            return sendSuccess(res, result, result.message);
-        } catch (err) {
-            next(err);
-        }
-    }
-
-    // UC 44: Lấy dữ liệu routine để chia sẻ
-    async getSharePreview(req, res, next) {
-        try {
-            const { id } = req.params;
-            const preview = await routineService.prepareRoutineForShare(id);
-            return sendSuccess(res, preview, 'Lấy dữ liệu chia sẻ thành công');
-        } catch (err) {
-            next(err);
-        }
-    }
-}
-
-module.exports = new RoutineController();
+exports.getGuide = handle(async req => {
+  const user = req.user ? await User.findById(req.user.id).select('skinProfile').lean() : null;
+  const skinType = req.query.skinType || user?.skinProfile?.skinType || 'normal';
+  const allergies = req.query.allergies === undefined
+    ? (user?.skinProfile?.allergies || [])
+    : (typeof req.query.allergies === 'string' ? req.query.allergies.split(',') : null);
+  if (typeof skinType !== 'string' || !Array.isArray(allergies)) invalidInput('Invalid guide parameters.');
+  return routineService.getSkinGuide(skinType, allergies);
+});
+exports.suggestRoutine = handle(req => routineService.generateRoutinePlan(req.user.id));
+exports.getRoutineDetail = handle(req => routineService.getRoutineDetail(req.user.id, req.params.id));
+exports.activateRoutine = handle(req => routineService.activateRoutinePlan(req.user.id, req.params.id));
+exports.dismissRoutine = handle(req => routineService.dismissRoutineSuggestion(req.user.id, req.params.id));
+exports.getMyRoutine = handle(req => routineService.getMyRoutine(req.user.id));
+exports.getHistory = handle(req => routineService.getRoutineHistory(req.user.id));
+exports.checkCopyCompatibility = handle(req => routineService.checkCopyRoutineCompatibility(req.user.id, req.params.id));
+exports.executeCopy = handle(req => {
+  const { userChoice = 'start_now' } = req.body || {};
+  if (!['start_now', 'queue_later'].includes(userChoice)) invalidInput('Invalid routine copy choice.');
+  return routineService.executeCopyRoutine(req.user.id, req.params.id, { userChoice });
+});
+exports.getSharePreview = handle(req => routineService.getRoutineSharePreview(req.user.id, req.params.id));
+exports.updateSkinProfile = handle(req => {
+  const { skinType, allergies, currentConcerns, forceReset = false } = req.body || {};
+  if ((skinType !== undefined && !['normal', 'dry', 'oily', 'combination', 'sensitive'].includes(skinType))
+    || [allergies, currentConcerns].some(value => value !== undefined
+      && (!Array.isArray(value) || value.some(item => typeof item !== 'string' || !item.trim())))
+    || typeof forceReset !== 'boolean') {
+    invalidInput('Invalid skin profile.');
+  }
+  return routineService.updateSkinProfileWithImpact(req.user.id, { skinType, allergies, currentConcerns }, forceReset);
+});

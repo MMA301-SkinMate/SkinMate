@@ -42,9 +42,9 @@ const RoutineDetailScreen = ({ route, navigation }) => {
         setLoading(true);
         try {
             const res = await getRoutineDetail(routineId);
-            if (res?.data?.data) {
-                setPlanData(res.data.data.plan);
-                setDailyRoutines(res.data.data.dailyRoutines || []);
+            if (res?.data) {
+                setPlanData(res.data.plan);
+                setDailyRoutines(res.data.dailyRoutines || []);
             }
         } catch (err) {
             Alert.alert('Lỗi', err.message || 'Không thể tải chi tiết chuỗi routine');
@@ -82,8 +82,8 @@ const RoutineDetailScreen = ({ route, navigation }) => {
         setCopying(true);
         try {
             const res = await checkCopyCompatibility(routineId);
-            if (res?.data?.data) {
-                setCopyCompatibility(res.data.data);
+            if (res?.data) {
+                setCopyCompatibility(res.data);
                 setCopyModalVisible(true);
             }
         } catch (err) {
@@ -111,10 +111,21 @@ const RoutineDetailScreen = ({ route, navigation }) => {
 
     // UC 44: Chuyển qua màn hình Chia sẻ bài đăng
     const handleShareToCommunity = () => {
+        if (!planData) return;
+        const mapSteps = steps => (steps || []).map(step => ({
+            productName: step.productName,
+            stepType: step.productType,
+            usageNote: step.instruction,
+        }));
         navigation.navigate('CreatePost', {
-            prefillRoutineId: routineId,
-            routineTitle: planData?.title,
-            routineGoal: planData?.goal,
+            sharedPlan: {
+                ...planData,
+                planPayload: dailyRoutines.map(day => ({
+                    dayIndex: day.dayNumber,
+                    morning: mapSteps(day.morningSteps),
+                    evening: mapSteps(day.eveningSteps),
+                })),
+            },
         });
     };
 

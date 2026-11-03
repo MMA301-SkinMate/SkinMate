@@ -27,8 +27,8 @@ const SkinGuideModal = ({ visible, onClose, skinType, allergies }) => {
         setLoading(true);
         try {
             const res = await getSkinGuide(skinType, allergies);
-            if (res?.data?.data) {
-                setGuideData(res.data.data);
+            if (res?.data) {
+                setGuideData(res.data);
             }
         } catch (err) {
             console.error('Lỗi lấy cẩm nang da:', err);

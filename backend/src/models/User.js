@@ -16,66 +16,18 @@ const userSchema = new mongoose.Schema(
             lowercase: true,
             maxlength: 254,
         },
-        passwordHash: {
-            type: String,
-            required: true,
-            select: false
-        },
-        avatarUrl: {
-            type:
-                String,
-            default: null
-        },
-        passwordResetTokenHash: {
-            type: String,
-            default: null,
-            select: false
-        },
-        passwordResetExpiresAt: {
-            type: Date,
-            default: null
-        },
+        passwordHash: { type: String, required: true, select: false },
+        avatarUrl: { type: String, default: null },
+        phoneNumber: { type: String, default: '', trim: true, maxlength: 20 },
+        googleSubject: { type: String, default: null },
+        passwordResetTokenHash: { type: String, default: null, select: false },
+        passwordResetExpiresAt: { type: Date, default: null },
+        googleExchangeCodeHash: { type: String, default: null, select: false },
+        googleExchangeCodeExpiresAt: { type: Date, default: null },
         skinProfile: {
-            skinType: {
-                type: String,
-                enum: [
-                    'Da_Dau',
-                    'Da_Kho',
-                    'Da_Hon_Hop_Thien_Dau',
-                    'Da_Hon_Hop_Thien_Kho',
-                    'Da_Thuong',
-                    'Da_Nhay_Cam'
-                ],
-                default: 'Da_Thuong',
-            },
-            customDonts: {
-                type: [String],
-                default: [],
-            },
-            customDos: {
-                type: [String],
-                default: [],
-            }
-        },
-        isActive: {
-            type: Boolean,
-            default: true
-        },
-        passwordChangedAt: {
-            type: Date,
-            default: null
-        },
-        termsAcceptedAt: {
-            type: Date,
-            required: true
-        },
-        termsVersion: {
-            type: String,
-            required: true
-        },
-        privacyVersion: {
-            type: String,
-            required: true
+            skinType: { type: String, default: null },
+            allergies: { type: [String], default: [] },
+            currentConcerns: { type: [String], default: [] },
         },
     },
     {

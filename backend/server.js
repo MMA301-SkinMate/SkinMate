@@ -3,6 +3,9 @@ const mongoose = require('mongoose');
 const createApp = require('./app');
 const { loadConfig } = require('./src/config/env');
 const connectDB = require('./src/config/db');
+const User = require('./src/models/User');
+const AuthSession = require('./src/models/AuthSession');
+const { startExpiryScheduler } = require('./src/services/expiryNotificationService');
 
 let server;
 let shutdownPromise;
@@ -58,6 +61,7 @@ const startServer = async () => {
         const app = createApp();
 
         await connectDB(config.mongoUri);
+        await Promise.all([User.init(), AuthSession.init()]);
         console.log('Database connected successfully.');
 
         await new Promise((resolve, reject) => {

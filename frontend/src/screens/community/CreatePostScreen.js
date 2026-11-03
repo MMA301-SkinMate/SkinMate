@@ -8,7 +8,6 @@ import { Colors } from '../../constants/theme';
 import { POST_TAGS, POST_TAG_LABELS, SKIN_TYPES, SKIN_TYPE_LABELS } from '../../constants/community';
 import { getProductIcon } from '../../constants/product-icons';
 import { uploadCommunityImages, updateCommunityPost } from '../../api/communityApi';
-import { getRoutineDetail } from '../../api/routineApi';
 import { useCommunity } from '../../context/CommunityContext';
 import { useCollection } from '../../context/CollectionContext';
 
@@ -28,14 +27,24 @@ const toStep = product => ({
 
 export default function CreatePostScreen({ navigation, route }) {
   const draft = route.params?.draft;
-  const prefillRoutineId = route.params?.prefillRoutineId;
-  const routineTitle = route.params?.routineTitle;
-  const routineGoal = route.params?.routineGoal;
+  const sharedPlan = route.params?.sharedPlan;
+  const sharedRoutine = useMemo(() => sharedPlan ? {
+    days: (sharedPlan.planPayload || []).map(day => Object.fromEntries(SLOTS.map(slot => [slot.key,
+      (day[slot.key] || []).map(step => ({
+        productName: step.productName,
+        productType: step.stepType,
+        note: step.usageNote || null,
+      })),
+    ]))),
+  } : null, [sharedPlan]);
   const { addPost, refreshPosts } = useCommunity();
   const { collection } = useCollection();
-  const draftDays = useMemo(() => draft?.sharedRoutine?.days?.length ? draft.sharedRoutine.days : [draft?.sharedRoutine || {}], [draft]);
+  const draftDays = useMemo(() => {
+    const source = draft?.sharedRoutine || sharedRoutine;
+    return source?.days?.length ? source.days : [source || {}];
+  }, [draft, sharedRoutine]);
   const draftProducts = useMemo(() => draftDays.flatMap((day, dayIndex) => SLOTS.flatMap(slot => (day[slot.key] || []).map((step, index) => ({ ...step, id: `draft-${dayIndex}-${slot.key}-${index}`, status: 'active' })))), [draftDays]);
-  const [content, setContent] = useState(draft?.content || '');
+  const [content, setContent] = useState(draft?.content || sharedPlan?.title || '');
   const [tags, setTags] = useState(draft?.tags || []);
   const [skinTypes, setSkinTypes] = useState(() => {
     if (Array.isArray(draft?.skinTypes)) return draft.skinTypes;
@@ -45,7 +54,11 @@ export default function CreatePostScreen({ navigation, route }) {
   const [dayIndex, setDayIndex] = useState(0);
   const [routineDays, setRoutineDays] = useState(() => draftDays.map((day, index) => Object.fromEntries(SLOTS.map(slot => [slot.key, draftProducts.filter(product => product.id.startsWith(`draft-${index}-${slot.key}-`)).map(product => product.id)]))));
   const routine = routineDays[dayIndex];
-  const [notes, setNotes] = useState(() => Object.fromEntries(draftDays.flatMap((day, index) => SLOTS.flatMap(slot => draftProducts.map(product => [`${index}:${slot.key}:${product.id}`, product.note || ''])))));
+  const [notes, setNotes] = useState(() => Object.fromEntries(draftDays.flatMap((day, index) =>
+    SLOTS.flatMap(slot => (day[slot.key] || []).map((step, stepIndex) => [
+      `${index}:${slot.key}:draft-${index}-${slot.key}-${stepIndex}`, step.note || '',
+    ]))
+  )));
   const [isPublishing, setIsPublishing] = useState(false);
   const scrollViewRef = useRef(null);
   const inputRefs = useRef({});
@@ -95,38 +108,6 @@ export default function CreatePostScreen({ navigation, route }) {
       if (scrollTimer.current) clearTimeout(scrollTimer.current);
     };
   }, []);
-
-  useEffect(() => {
-    if (prefillRoutineId) {
-      if (routineTitle || routineGoal) {
-        setContent(`[Chia sẻ Routine] ${routineTitle || ''}\n🎯 Mục tiêu: ${routineGoal || ''}\n\nRoutine này đã được mình test và thấy làn da cải thiện rõ rệt! Mọi người cùng tham khảo nhé ✨`);
-      }
-      setTags(current => current.includes('routine') ? current : [...current, 'routine']);
-
-      getRoutineDetail(prefillRoutineId)
-        .then(res => {
-          const dailies = res?.data?.data?.dailyRoutines;
-          if (dailies && dailies.length > 0) {
-            // Tự động map các ngày và sản phẩm
-            const newRoutineDays = dailies.map(d => {
-              const morningIds = (d.morningSteps || [])
-                .map(s => s.productId)
-                .filter(Boolean)
-                .map(id => id.toString());
-              const eveningIds = (d.eveningSteps || [])
-                .map(s => s.productId)
-                .filter(Boolean)
-                .map(id => id.toString());
-              return { morning: morningIds, evening: eveningIds };
-            });
-            if (newRoutineDays.length > 0) {
-              setRoutineDays(newRoutineDays);
-            }
-          }
-        })
-        .catch(err => console.log('Lỗi nạp prefill routine:', err));
-    }
-  }, [prefillRoutineId, routineTitle, routineGoal]);
 
   const usableProducts = useMemo(() => [...draftProducts, ...collection.filter(product => product.status === 'active')], [collection, draftProducts]);
 

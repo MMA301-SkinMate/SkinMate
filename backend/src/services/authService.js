@@ -13,6 +13,8 @@ const toPublicUser = (user) => ({
     id: user.id,
     fullName: user.fullName,
     email: user.email,
+    avatarUrl: user.avatarUrl || null,
+    phoneNumber: user.phoneNumber || '',
 });
 
 const emailAlreadyExists = () =>

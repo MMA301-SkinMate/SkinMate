@@ -1,16 +1,385 @@
 const TreatmentPlan = require('../models/TreatmentPlan');
-const DailyRoutine = require('../models/DailyRoutine');
 const Collection = require('../models/Collection');
 const User = require('../models/User');
+const CommunityPost = require('../models/CommunityPost');
+
+const notFound = (message) => {
+  const error = new Error(message);
+  error.status = 404;
+  return error;
+};
+
+/**
+ * 1. Thuật toán gợi ý chuỗi Routine (ID 8, 9)
+ * - Ráp từ sản phẩm active trong tủ đồ (loại bỏ sản phẩm expired)
+ * - Nếu thiếu bước điều trị -> Gợi ý sản phẩm ngoài tủ
+ * - Nếu da bình thường -> Tạo chu kỳ 7 ngày cấp ẩm căng bóng
+ */
+exports.generateRoutineChain = async (userId, targetConcern = 'Căng bóng cấp ẩm') => {
+  const user = await User.findById(userId);
+  if (!user) throw new Error('Không tìm thấy người dùng');
+
+  const concern = targetConcern || user.skinProfile?.currentConcerns?.[0] || 'Căng bóng cấp ẩm';
+  // Lấy các sản phẩm còn hạn trong tủ đồ
+  const products = await Collection.find({
+    userId,
+    status: 'active',
+    $or: [{ expirationDate: null }, { expirationDate: { $gt: new Date() } }],
+  });
+
+  // Tìm sản phẩm theo loại trong tủ đồ
+  const compatibleTypes = {
+    cleanser: ['cleanser'],
+    toner: ['toner'],
+    serum: ['serum', 'treatment'],
+    cream: ['cream', 'moisturizer'],
+    sunscreen: ['sunscreen'],
+  };
+  const findProduct = (type) => products.find((product) => compatibleTypes[type].includes(product.productType.toLowerCase()));
+
+  const cleanser = findProduct('cleanser');
+  const toner = findProduct('toner');
+  const serums = products.filter((product) => ['serum', 'treatment'].includes(product.productType.toLowerCase()));
+  const serum = serums.find((product) => (
+    !product.ingredients.some((ingredient) => /salicylic acid|bha|aha|glycolic acid|lactic acid/i.test(ingredient))
+  ));
+  const exfoliatingSerum = serums.find((product) => (
+    product.ingredients.some((ingredient) => /salicylic acid|bha|aha|glycolic acid|lactic acid/i.test(ingredient))
+  ));
+  const cream = findProduct('cream');
+  const sunscreen = findProduct('sunscreen');
+
+  const daysPayload = [];
+  const duration = 7;
+
+  for (let i = 1; i <= duration; i++) {
+    const isExfoliationDay = concern.toLowerCase().includes('mụn') && (i === 2 || i === 5);
+    const treatmentProduct = isExfoliationDay ? exfoliatingSerum : serum;
+    const treatmentIngredient = isExfoliationDay ? 'Salicylic Acid' : undefined;
+
+    daysPayload.push({
+      dayIndex: i,
+      morning: [
+        {
+          stepNumber: 1,
+          stepType: 'cleanser',
+          productId: cleanser ? cleanser._id : null,
+          productName: cleanser ? cleanser.productName : 'Sữa rửa mặt dịu nhẹ pH 5.5',
+          isExternalSuggestion: !cleanser,
+          usageNote: 'Làm sạch bã nhờn buổi sáng',
+        },
+        {
+          stepNumber: 2,
+          stepType: 'toner',
+          productId: toner ? toner._id : null,
+          productName: toner ? toner.productName : 'Toner cấp ẩm không cồn',
+          isExternalSuggestion: !toner,
+          usageNote: 'Cân bằng ẩm cho da',
+        },
+        {
+          stepNumber: 5,
+          stepType: 'sunscreen',
+          productId: sunscreen ? sunscreen._id : null,
+          productName: sunscreen ? sunscreen.productName : 'Kem chống nắng quang phổ rộng SPF 50+',
+          isExternalSuggestion: !sunscreen,
+          usageNote: 'Bảo vệ da bắt buộc buổi sáng',
+        },
+      ],
+      evening: [
+        {
+          stepNumber: 1,
+          stepType: 'cleanser',
+          productId: cleanser ? cleanser._id : null,
+          productName: cleanser ? cleanser.productName : 'Sữa rửa mặt làm sạch sâu',
+          isExternalSuggestion: !cleanser,
+        },
+        {
+          stepNumber: 2,
+          stepType: 'toner',
+          productId: toner ? toner._id : null,
+          productName: toner ? toner.productName : 'Toner cân bằng',
+          isExternalSuggestion: !toner,
+        },
+        {
+          stepNumber: 3,
+          stepType: 'treatment',
+          productId: treatmentProduct ? treatmentProduct._id : null,
+          productName: treatmentProduct
+            ? treatmentProduct.productName
+            : (isExfoliationDay ? 'Serum BHA 2% / Tẩy tế bào chết' : 'Serum phục hồi B5 / Hyaluronic Acid'),
+          targetActiveIngredient: treatmentIngredient,
+          isExternalSuggestion: !treatmentProduct,
+          usageNote: isExfoliationDay ? 'Tẩy da chết làm sạch sâu (cách ngày)' : 'Cấp ẩm phục hồi màng bảo vệ',
+        },
+        {
+          stepNumber: 4,
+          stepType: 'moisturizer',
+          productId: cream ? cream._id : null,
+          productName: cream ? cream.productName : 'Kem dưỡng khóa ẩm ban đêm',
+          isExternalSuggestion: !cream,
+        },
+      ],
+    });
+  }
+
+  // Lưu bản nháp (Draft)
+  const newPlan = await TreatmentPlan.create({
+    userId,
+    title: `Chuỗi Routine: ${concern}`,
+    targetConcern: concern,
+    durationDays: duration,
+    planPayload: daysPayload,
+    status: 'draft',
+  });
+
+  return newPlan;
+};
+
+/**
+ * 2. Kích hoạt chuỗi Routine từ bản nháp
+ */
+exports.activatePlan = async (userId, planId) => {
+  const plan = await TreatmentPlan.findOne({ _id: planId, userId });
+  if (!plan) throw notFound('Không tìm thấy chuỗi routine');
+  if (plan.status === 'active') return plan;
+  if (plan.status !== 'draft') {
+    const error = new Error('Chỉ có thể kích hoạt routine ở trạng thái gợi ý');
+    error.status = 400;
+    throw error;
+  }
+
+  await TreatmentPlan.updateMany({ userId, status: 'active' }, { status: 'completed' });
+  plan.status = 'active';
+  plan.isSkipped = false;
+  plan.startDate = new Date();
+  await plan.save();
+
+  return plan;
+};
+
+/**
+ * 3. Tra cứu lịch sử chuỗi Routine (ID 41, 42)
+ */
+exports.getLegacyRoutineHistory = async (userId) => {
+  const activePlans = await TreatmentPlan.find({ userId, status: 'active', startDate: { $ne: null } });
+  const now = new Date();
+  for (const plan of activePlans) {
+    const elapsedDays = Math.floor((now.getTime() - plan.startDate.getTime()) / (24 * 60 * 60 * 1000));
+    if (elapsedDays >= plan.durationDays) {
+      plan.status = 'completed';
+      plan.completedDate = new Date(
+        plan.startDate.getTime() + plan.durationDays * 24 * 60 * 60 * 1000
+      );
+      await plan.save();
+    }
+  }
+
+  const plans = await TreatmentPlan.find({
+    userId,
+    isSkipped: { $ne: true },
+    status: { $in: ['completed', 'canceled', 'cancelled'] },
+  }).sort({ createdAt: -1 }).lean();
+  return Promise.all(plans.map(async plan => ({ ...plan, planPayload: await getEmbeddedDays(plan, userId) })));
+};
+
+exports.skipPlan = async (userId, planId) => {
+  const plan = await TreatmentPlan.findOneAndUpdate(
+    { _id: planId, userId, status: 'draft' },
+    { $set: { isSkipped: true, status: 'canceled' } },
+    { new: true }
+  );
+  if (!plan) throw notFound('Không tìm thấy gợi ý routine có thể bỏ qua');
+  return plan;
+};
+
+/**
+ * 4. Copy chuỗi Routine cũ (ID 43)
+ * - Kiểm tra phác đồ đang chạy
+ * - Đối chiếu tủ đồ hiện tại: Tự tìm sản phẩm có hoạt chất tương đương lấp chỗ trống nếu sản phẩm cũ đã hết
+ */
+exports.copyOldRoutine = async (userId, oldPlanId, overrideActive = false) => {
+  const oldPlan = await TreatmentPlan.findOne({ _id: oldPlanId, userId });
+  if (!oldPlan) throw notFound('Không tìm thấy chuỗi routine cũ');
+
+  const activePlan = await TreatmentPlan.findOne({ userId, status: 'active' });
+  if (activePlan && !overrideActive) {
+    return {
+      needConfirmOverride: true,
+      message: 'Bạn đang có một phác đồ đang chạy. Bạn có muốn dừng phác đồ cũ để bắt đầu phác đồ này không?',
+    };
+  }
+
+  const currentProducts = await Collection.find({
+    userId,
+    status: 'active',
+    $or: [{ expirationDate: null }, { expirationDate: { $gt: new Date() } }],
+  });
+
+  const replacedItems = [];
+
+  // Duyệt và tự động thay thế nếu sản phẩm không còn trong tủ
+  const oldPayload = await getEmbeddedDays(oldPlan, userId);
+  const newPayload = oldPayload.map((day) => {
+    const mapStep = (step) => {
+      const exists = currentProducts.find((p) => p._id.toString() === step.productId?.toString());
+      if (exists) {
+        return step;
+      }
+
+      // Tìm sản phẩm cùng loại còn trong tủ để thay thế
+      const stepTypeAliases = {
+        moisturizer: ['cream', 'moisturizer'],
+        treatment: ['serum', 'treatment'],
+      };
+      const supportedTypes = stepTypeAliases[step.stepType] || [step.stepType];
+      const compatibleProducts = currentProducts.filter((p) => supportedTypes.includes(p.productType.toLowerCase()));
+      const fallback = step.targetActiveIngredient
+        ? compatibleProducts.find((product) => product.ingredients.some(
+          (ingredient) => ingredient.toLowerCase().includes(step.targetActiveIngredient.toLowerCase())
+        ))
+        : compatibleProducts[0];
+      if (fallback) {
+        replacedItems.push({
+          oldProduct: step.productName,
+          replacedWith: fallback.productName,
+        });
+        return {
+          ...(typeof step.toObject === 'function' ? step.toObject() : step),
+          productId: fallback._id,
+          productName: fallback.productName,
+          isExternalSuggestion: false,
+        };
+      }
+
+      return {
+        ...(typeof step.toObject === 'function' ? step.toObject() : step),
+        productId: null,
+        productName: step.productName,
+        isExternalSuggestion: true,
+      };
+    };
+
+    return {
+      dayIndex: day.dayIndex,
+      morning: day.morning.map(mapStep),
+      evening: day.evening.map(mapStep),
+    };
+  });
+
+  const copiedPlan = await TreatmentPlan.create({
+    userId,
+    title: `[Sao chép] ${oldPlan.title}`,
+    targetConcern: oldPlan.targetConcern,
+    durationDays: oldPlan.durationDays,
+    planPayload: newPayload,
+    status: 'active',
+    startDate: new Date(),
+  });
+
+  if (overrideActive && activePlan) {
+    await TreatmentPlan.updateOne(
+      { _id: activePlan._id, userId, status: 'active' },
+      { $set: { status: 'completed' } }
+    );
+  }
+
+  return {
+    copiedPlan,
+    replacedItems,
+  };
+};
+
+/**
+ * 5. Xuất payload để chia sẻ chuỗi Routine lên bài đăng Community (ID 44)
+ */
+exports.prepareRoutineForShare = async (userId, planId, { title, note, planPayload } = {}) => {
+  const plan = await TreatmentPlan.findOne({ _id: planId, userId });
+  if (!plan) throw notFound('Không tìm thấy chuỗi routine để chia sẻ');
+
+  if (typeof title !== 'string' || !title.trim()) {
+    const error = new Error('Vui lòng nhập tiêu đề bài chia sẻ');
+    error.status = 400;
+    throw error;
+  }
+  if (planPayload !== undefined && (!Array.isArray(planPayload) || planPayload.length !== plan.durationDays)) {
+    const error = new Error('Nội dung routine chia sẻ không hợp lệ');
+    error.status = 400;
+    throw error;
+  }
+
+  const user = await User.findById(userId).select('fullName').lean();
+  const days = (planPayload || await getEmbeddedDays(plan, userId)).map(day => {
+    const mapSteps = steps => (steps || []).map(step => ({
+      productName: step.productName,
+      productType: step.stepType,
+      note: step.usageNote || null,
+    }));
+    return { morning: mapSteps(day.morning), evening: mapSteps(day.evening) };
+  });
+  return CommunityPost.create({
+    userId,
+    authorName: user?.fullName,
+    content: [title.trim(), typeof note === 'string' ? note.trim() : ''].filter(Boolean).join('\n\n'),
+    sharedRoutine: { ...days[0], days },
+    status: 'published',
+  });
+};
+const DailyRoutine = require('../models/DailyRoutine');
 const Ingredient = require('../models/Ingredient');
 const { reEvaluateCloset } = require('../utils/scoreCalculator');
 const defaultIngredients = require('../seeder/ingredientData.json');
 
+const getEmbeddedDays = async (plan, userId) => {
+    if (plan.planPayload?.length) return plan.planPayload;
+    const days = await getPlanDays(plan, userId);
+    const mapStep = step => ({
+        stepNumber: step.stepNumber,
+        stepType: step.productType,
+        productId: step.productId,
+        productName: step.productName,
+        usageNote: step.instruction,
+        targetActiveIngredient: step.activeIngredient,
+        isExternalSuggestion: step.isExternalSuggestion,
+    });
+    return days.map(day => ({
+        dayIndex: day.dayNumber,
+        morning: (day.morningSteps || []).map(mapStep),
+        evening: (day.eveningSteps || []).map(mapStep),
+    }));
+};
+
+const getPlanDays = async (plan, userId) => {
+    const days = await DailyRoutine.find({ planId: plan._id, userId, date: { $exists: false } }).sort({ dayNumber: 1 }).lean();
+    if (days.length) return days;
+    return (plan.planPayload || []).map(day => {
+        const mapStep = step => ({
+            stepNumber: step.stepNumber,
+            stepName: step.stepType,
+            productType: step.stepType,
+            productId: step.productId,
+            productName: step.productName,
+            instruction: step.usageNote,
+            isExternalSuggestion: step.isExternalSuggestion,
+            activeIngredient: step.targetActiveIngredient,
+        });
+        return {
+            dayNumber: day.dayIndex,
+            morningSteps: (day.morning || []).map(mapStep),
+            eveningSteps: (day.evening || []).map(mapStep),
+        };
+    });
+};
+
 /**
  * Lấy Cẩm nang Do's & Don'ts theo loại da và dị ứng (UC 6, UC 10, UC 40)
  */
+const normalizeSkinType = skinType => ({
+    da_dau: 'oily', da_kho: 'dry', da_hon_hop: 'combination',
+    da_nhay_cam: 'sensitive', da_thuong: 'normal',
+}[skinType] || skinType || 'normal');
+
 const getSkinGuide = async (skinType = 'normal', allergies = []) => {
-    const normalizedType = skinType.toLowerCase();
+    const normalizedType = normalizeSkinType(skinType).toLowerCase();
     const normalizedAllergies = (allergies || []).map(a => a.toLowerCase().trim());
 
     // Tìm từ DB hoặc fallback vào JSON seeder
@@ -26,7 +395,7 @@ const getSkinGuide = async (skinType = 'normal', allergies = []) => {
         // Kiểm tra Do's
         if (item.dos && item.dos.includes(normalizedType)) {
             // Không được trùng với dị ứng của user
-            const isAllergic = normalizedAllergies.some(a => 
+            const isAllergic = normalizedAllergies.some(a =>
                 item.name.toLowerCase().includes(a) || (item.aliases || []).some(al => al.toLowerCase().includes(a))
             );
             if (!isAllergic) {
@@ -47,7 +416,7 @@ const getSkinGuide = async (skinType = 'normal', allergies = []) => {
             reason = `Không phù hợp cho da ${skinType}`;
         }
         // Nếu user dị ứng
-        const allergicMatch = normalizedAllergies.find(a => 
+        const allergicMatch = normalizedAllergies.find(a =>
             a && (item.name.toLowerCase().includes(a) || (item.aliases || []).some(al => al.toLowerCase().includes(a)))
         );
         if (allergicMatch) {
@@ -165,7 +534,7 @@ const generateRoutinePlan = async (userId) => {
     if (!user) throw new Error('Không tìm thấy người dùng');
 
     const skinProfile = user.skinProfile || {};
-    const skinType = (skinProfile.skinType || 'normal').toLowerCase();
+    const skinType = normalizeSkinType(skinProfile.skinType).toLowerCase();
     const concerns = (skinProfile.currentConcerns || []).map(c => c.toLowerCase());
 
     // Lấy tủ đồ của user (chỉ lấy status = 'active' và CHƯA hết hạn)
@@ -374,11 +743,15 @@ const generateRoutinePlan = async (userId) => {
  * Kích hoạt hoặc lưu nháp gợi ý chuỗi routine (UC 9)
  */
 const activateRoutinePlan = async (userId, planId) => {
-    // Nếu kích hoạt, các plan active trước đó sẽ được chuyển sang completed hoặc cancelled
+    const plan = await TreatmentPlan.findOne({ _id: planId, userId });
+    if (!plan) throw notFound('Không tìm thấy phác đồ routine');
+    if (plan.status === 'active') return plan;
+    if (plan.status !== 'draft') {
+        const error = new Error('Only draft routines can be activated.');
+        error.status = 400;
+        throw error;
+    }
     await TreatmentPlan.updateMany({ userId, status: 'active' }, { status: 'cancelled' });
-
-    const plan = await TreatmentPlan.findById(planId);
-    if (!plan) throw new Error('Không tìm thấy phác đồ routine');
 
     plan.status = 'active';
     plan.startDate = new Date();
@@ -387,14 +760,13 @@ const activateRoutinePlan = async (userId, planId) => {
     plan.endDate = end;
     await plan.save();
 
-    await DailyRoutine.updateMany({ planId }, { isDraft: false });
+    await DailyRoutine.updateMany({ planId, userId }, { isDraft: false });
     return plan;
 };
 
-const dismissRoutineSuggestion = async (planId) => {
-    // Lưu nháp để sau này người dùng có thể lấy ra lại (UC 9)
-    const plan = await TreatmentPlan.findById(planId);
-    if (!plan) throw new Error('Không tìm thấy phác đồ routine');
+const dismissRoutineSuggestion = async (userId, planId) => {
+    const plan = await TreatmentPlan.findOne({ _id: planId, userId, status: 'draft' });
+    if (!plan) throw notFound('Không tìm thấy gợi ý routine');
     plan.status = 'draft';
     await plan.save();
     return { message: 'Đã lưu bản nháp routine thành công' };
@@ -453,23 +825,28 @@ const updateSkinProfileWithImpact = async (userId, newProfile, forceReset = fals
 /**
  * Lấy lịch sử chuỗi Routine (UC 41)
  */
+const getMyRoutine = async (userId) => {
+    return TreatmentPlan.find({
+        userId,
+        status: { $in: ['active', 'draft'] },
+    }).sort({ createdAt: -1 }).lean();
+};
+
 const getRoutineHistory = async (userId) => {
-    const plans = await TreatmentPlan.find({ userId })
-        .sort({ createdAt: -1 })
-        .lean();
-    return plans;
+    return TreatmentPlan.find({
+        userId,
+        status: { $in: ['completed', 'cancelled', 'canceled'] },
+    }).sort({ createdAt: -1 }).lean();
 };
 
 /**
  * Lấy chi tiết chuỗi routine theo ngày và buổi sáng/tối (UC 9, UC 42)
  */
-const getRoutineDetail = async (planId) => {
-    const plan = await TreatmentPlan.findById(planId).lean();
-    if (!plan) throw new Error('Không tìm thấy chuỗi routine');
+const getRoutineDetail = async (userId, planId) => {
+    const plan = await TreatmentPlan.findOne({ _id: planId, userId }).lean();
+    if (!plan) throw notFound('Không tìm thấy chuỗi routine');
 
-    const dailyRoutines = await DailyRoutine.find({ planId })
-        .sort({ dayNumber: 1 })
-        .lean();
+    const dailyRoutines = await getPlanDays(plan, userId);
 
     return {
         plan,
@@ -481,11 +858,10 @@ const getRoutineDetail = async (planId) => {
  * Kiểm tra đối chiếu trước khi Copy chuỗi routine cũ (UC 43)
  */
 const checkCopyRoutineCompatibility = async (userId, sourcePlanId) => {
-    const sourcePlan = await TreatmentPlan.findById(sourcePlanId);
-    if (!sourcePlan) throw new Error('Không tìm thấy chuỗi routine nguồn');
+    const sourcePlan = await TreatmentPlan.findOne({ _id: sourcePlanId, userId });
+    if (!sourcePlan) throw notFound('Không tìm thấy chuỗi routine nguồn');
 
-    const dailyRoutines = await DailyRoutine.find({ planId: sourcePlanId });
-    const user = await User.findById(userId);
+    const dailyRoutines = await getPlanDays(sourcePlan, userId);
 
     // Kiểm tra xem hiện tại user có đang dùng chuỗi routine nào không
     const activePlan = await TreatmentPlan.findOne({ userId, status: 'active' });
@@ -495,7 +871,6 @@ const checkCopyRoutineCompatibility = async (userId, sourcePlanId) => {
     const usableClosetProducts = closetProducts.filter(p => isProductUsable(p));
 
     const missingProducts = [];
-    const replacedProducts = [];
 
     // Duyệt qua tất cả các bước trong routine nguồn
     const checkedProductIds = new Set();
@@ -547,8 +922,9 @@ const checkCopyRoutineCompatibility = async (userId, sourcePlanId) => {
  */
 const executeCopyRoutine = async (userId, sourcePlanId, { userChoice = 'start_now' }) => {
     const compatibility = await checkCopyRoutineCompatibility(userId, sourcePlanId);
-    const sourcePlan = await TreatmentPlan.findById(sourcePlanId);
-    const sourceDailies = await DailyRoutine.find({ planId: sourcePlanId });
+    const sourcePlan = await TreatmentPlan.findOne({ _id: sourcePlanId, userId });
+    if (!sourcePlan) throw notFound('Không tìm thấy chuỗi routine nguồn');
+    const sourceDailies = await getPlanDays(sourcePlan, userId);
 
     if (userChoice === 'start_now') {
         // Hủy bỏ routine cũ đang chạy
@@ -582,13 +958,13 @@ const executeCopyRoutine = async (userId, sourcePlanId, { userChoice = 'start_no
             const repl = replacementMap[step.productName];
             if (repl) {
                 return {
-                    ...step.toObject(),
+                    ...step,
                     productId: repl.id,
                     productName: repl.name,
                     productType: repl.productType,
                 };
             }
-            return step.toObject();
+            return { ...step };
         };
 
         const newDaily = new DailyRoutine({
@@ -612,11 +988,11 @@ const executeCopyRoutine = async (userId, sourcePlanId, { userChoice = 'start_no
 /**
  * Chuẩn bị dữ liệu chuỗi routine để chia sẻ lên cộng đồng (UC 44)
  */
-const prepareRoutineForShare = async (planId) => {
-    const plan = await TreatmentPlan.findById(planId).lean();
-    if (!plan) throw new Error('Không tìm thấy chuỗi routine');
+const prepareRoutineForShare = async (userId, planId) => {
+    const plan = await TreatmentPlan.findOne({ _id: planId, userId }).lean();
+    if (!plan) throw notFound('Không tìm thấy chuỗi routine');
 
-    const dailies = await DailyRoutine.find({ planId }).sort({ dayNumber: 1 }).lean();
+    const dailies = await getPlanDays(plan, userId);
 
     // Tóm tắt các bước sáng & tối đại diện
     const morningFlow = dailies[0]?.morningSteps?.map(s => s.productName) || [];
@@ -637,15 +1013,16 @@ const prepareRoutineForShare = async (planId) => {
     };
 };
 
-module.exports = {
+Object.assign(exports, {
     getSkinGuide,
     generateRoutinePlan,
     activateRoutinePlan,
     dismissRoutineSuggestion,
     updateSkinProfileWithImpact,
+    getMyRoutine,
     getRoutineHistory,
     getRoutineDetail,
     checkCopyRoutineCompatibility,
     executeCopyRoutine,
-    prepareRoutineForShare,
-};
+    getRoutineSharePreview: prepareRoutineForShare,
+});
