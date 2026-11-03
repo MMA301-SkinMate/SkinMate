@@ -7,6 +7,8 @@ import AuthStackNav from "./AuthStackNav";
 import RootNavigator from "./RootNavigator";
 import { CollectionProvider } from "../context/CollectionContext";
 import { CommunityProvider } from "../context/CommunityContext";
+import { AppProvider } from "../context/AppContext";
+import { RoutineProvider } from "../context/RoutineContext";
 import ExpiredProductAlertModal from "../components/collection/ExpiredProductAlertModal";
 import { AppText } from "../components/common/AppText";
 import { Button } from "../components/common/Button";
@@ -44,8 +46,12 @@ function AuthenticatedApp() {
   return (
     <CollectionProvider>
       <CommunityProvider>
-        <RootNavigator />
-        <ExpiredProductAlertModal />
+        <AppProvider>
+          <RoutineProvider>
+            <RootNavigator />
+            <ExpiredProductAlertModal />
+          </RoutineProvider>
+        </AppProvider>
       </CommunityProvider>
     </CollectionProvider>
   );

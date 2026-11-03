@@ -18,6 +18,7 @@ const userSchema = new mongoose.Schema(
         },
         passwordHash: { type: String, required: true, select: false },
         avatarUrl: { type: String, default: null },
+        phoneNumber: { type: String, default: '', trim: true, maxlength: 20 },
         googleSubject: { type: String, default: null },
         passwordResetTokenHash: { type: String, default: null, select: false },
         passwordResetExpiresAt: { type: Date, default: null },

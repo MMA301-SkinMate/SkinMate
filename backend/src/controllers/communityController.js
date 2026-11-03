@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const CommunityPost = require('../models/CommunityPost');
-const Collection = require('../models/Collection');
+const TreatmentPlan = require('../models/TreatmentPlan');
+const DailyRoutine = require('../models/DailyRoutine');
 const { uploadToCloudinary } = require('../services/cloudinaryService');
 const { notFound } = require('../validations/postDto');
 
@@ -155,33 +156,53 @@ exports.toggleLike = async (req, res, next) => {
   }
 };
 
-// Copies the shared routine into the viewer's collection. Products are created
-// as active because draft collection items expire through a TTL index.
+// Copies the shared routine into the viewer's My Routine as a draft.
 exports.copyRoutine = async (req, res, next) => {
   try {
-    const userId = currentUserId(req);
+    const userId = req.user.id;
     const post = await CommunityPost.findOne({ _id: req.params.id, status: 'published' }).lean();
     if (!post) return notFound(res);
 
-    const toProducts = (steps, slot) => steps.map((step, index) => ({
-      userId,
-      productName: step.productName,
-      productType: step.productType,
-      productIcon: step.productIcon || undefined,
-      note: step.note || null,
-      status: 'active',
-      routineUsage: { morning: slot === 'morning', evening: slot === 'evening', step: index + 1 },
-    }));
     const days = post.sharedRoutine?.days?.length ? post.sharedRoutine.days : [post.sharedRoutine || {}];
-    const products = days.flatMap((day, dayIndex) => [
-      ...toProducts(day.morning || [], 'morning'),
-      ...toProducts(day.evening || [], 'evening'),
-    ].map(product => ({ ...product, note: days.length > 1 ? `Day ${dayIndex + 1}: ${product.note || ''}`.trim() : product.note })));
-    if (!products.length) return res.status(400).json({ error: { message: 'This post has no routine to copy', code: 'EMPTY_ROUTINE' } });
+    const routineDays = days.map((day, dayIndex) => ({
+      dayNumber: dayIndex + 1,
+      morningSteps: (day.morning || []).map((step, index) => ({
+        stepNumber: step.stepNumber || index + 1,
+        stepName: step.productType || 'Morning step',
+        productType: step.productType || 'treatment',
+        productId: null,
+        productName: step.productName,
+        instruction: step.note || '',
+        isExternalSuggestion: true,
+      })),
+      eveningSteps: (day.evening || []).map((step, index) => ({
+        stepNumber: step.stepNumber || index + 1,
+        stepName: step.productType || 'Evening step',
+        productType: step.productType || 'treatment',
+        productId: null,
+        productName: step.productName,
+        instruction: step.note || '',
+        isExternalSuggestion: true,
+      })),
+    }));
 
-    const created = await Collection.insertMany(products);
+    if (!routineDays.some(day => day.morningSteps.length || day.eveningSteps.length)) {
+      return res.status(400).json({ error: { message: 'This post has no routine to copy', code: 'EMPTY_ROUTINE' } });
+    }
+
+    const plan = await TreatmentPlan.create({
+      userId,
+      title: `Cộng đồng · ${post.content || 'Routine được chia sẻ'}`.slice(0, 150),
+      goal: 'Routine được sao chép từ Cộng đồng',
+      durationDays: routineDays.length,
+      status: 'draft',
+      isOriginalSuggested: false,
+      notes: `Copied from community post ${post._id}`,
+    });
+
+    await DailyRoutine.insertMany(routineDays.map(day => ({ ...day, planId: plan._id, userId, isDraft: true })));
     const updated = await CommunityPost.findByIdAndUpdate(post._id, { $inc: { copiesCount: 1 } }, { returnDocument: 'after' }).lean();
-    res.status(201).json({ copiedCount: created.length, post: serialize(updated, userId) });
+    return res.status(201).json({ copiedCount: routineDays.length, plan, post: serialize(updated, userId) });
   } catch (error) {
     next(error);
   }

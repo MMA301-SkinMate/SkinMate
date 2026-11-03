@@ -3,11 +3,11 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { Text, TouchableOpacity, StyleSheet, Platform, View } from 'react-native';
 import { COLORS } from '../constants/colors';
-import HomeScreen from '../screens/home/HomeScreen';
+import HomeScreen from '../screens/home/HomeScreen.jsx';
 import MyCollectionScreen from '../screens/collection/MyCollectionScreen';
 import ScanScreen from '../screens/scan/ScanScreen';
 import CommunityScreen from '../screens/community/CommunityScreen';
-import ProfileScreen from '../screens/profile/ProfileScreen';
+import ProfileScreen from '../screens/profile/ProfileScreen.jsx';
 
 const Tab = createBottomTabNavigator();
 

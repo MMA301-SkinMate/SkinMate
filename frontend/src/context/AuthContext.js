@@ -90,6 +90,18 @@ export function AuthProvider({ children }) {
     };
   }, [session, enqueue]);
 
+  const updateUser = useCallback(async (user) => {
+    await enqueue(async () => {
+      const current = sessionRef.current;
+      if (!current || current.user.id !== user.id) return;
+      const saved = await saveSession({ ...current, user: { ...current.user, ...user } });
+      if (mounted.current && sessionRef.current === current) {
+        sessionRef.current = saved;
+        setSession(saved);
+      }
+    });
+  }, [enqueue]);
+
   const logout = useCallback(async () => {
     await enqueue(clearStoredSession);
     restoreVersion.current += 1;
@@ -112,6 +124,7 @@ export function AuthProvider({ children }) {
         isAuthenticated: Boolean(session),
         restore,
         establishSession,
+        updateUser,
         logout,
         notice,
         dismissNotice: () => setNotice(null),

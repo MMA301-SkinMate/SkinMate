@@ -8,13 +8,11 @@ import { Colors } from '../../constants/theme';
 import { SKIN_TYPES, SKIN_TYPE_LABELS, formatPostTags, countRoutineSteps } from '../../constants/community';
 import PostAuthorRow from '../../components/community/PostAuthorRow';
 import { useCommunity } from '../../context/CommunityContext';
-import { useCollection } from '../../context/CollectionContext';
 
 const FILTERS = [null, ...SKIN_TYPES];
 
 export default function CommunityScreen({ navigation }) {
   const { posts, skinTypeFilter, setSkinTypeFilter, isCommunityLoading, communityError, refreshPosts, toggleLike, copyRoutine } = useCommunity();
-  const { refreshCollection } = useCollection();
   const [copyingId, setCopyingId] = useState(null);
   const [drafts, setDrafts] = useState([]);
   useFocusEffect(useCallback(() => {
@@ -33,9 +31,11 @@ export default function CommunityScreen({ navigation }) {
     if (copyingId) return;
     setCopyingId(id);
     try {
-      const result = await copyRoutine(id);
-      await refreshCollection();
-      Alert.alert('Copied', `${result.copiedCount} products were added to your collection.`);
+      await copyRoutine(id);
+      Alert.alert('Routine saved', 'The routine was added to My Routine as a draft.', [
+        { text: 'View My Routine', onPress: () => navigation.navigate('Profile') },
+        { text: 'Stay here', style: 'cancel' },
+      ]);
     } catch (error) {
       Alert.alert('Error', error.message || 'Unable to copy this routine.');
     } finally {
