@@ -21,6 +21,7 @@ export default function LoginScreen(props) {
       footer={<LoginFooter busy={login.busy} onRegister={login.goToRegister} />}
     >
       <LoginForm form={login.form} disabled={login.disabled} />
+      <Button title="Forgot password?" variant="ghost" size="sm" disabled={login.busy} onPress={() => props.navigation.navigate('ForgotPassword')} />
       {!!login.feedback && (
         <AlertBanner
           tone={login.pendingSession ? "warning" : "error"}

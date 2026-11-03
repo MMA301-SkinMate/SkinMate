@@ -8,6 +8,7 @@ import { useAuth } from "./useAuth";
 import {
   REGISTER_COPY as COPY,
   CAN_REGISTER,
+  PASSWORD_REQUIREMENTS,
 } from "../constants/register";
 
 const registerSchema = z
@@ -26,7 +27,8 @@ const registerSchema = z
     password: z
       .string()
       .min(8, COPY.validation.password)
-      .max(128, COPY.validation.password),
+      .max(128, COPY.validation.password)
+      .refine((value) => PASSWORD_REQUIREMENTS.every((rule) => rule.test(value)), COPY.validation.password),
     confirmPassword: z.string(),
     acceptedTerms: z
       .boolean()
@@ -115,7 +117,13 @@ export default function useRegister({ navigation, route }) {
               ) {
                 setError(detail.field, {
                   type: "server",
-                  message: detail.message,
+                  message: ({
+                    fullName: COPY.validation.name,
+                    email: COPY.validation.email,
+                    password: COPY.validation.password,
+                    confirmPassword: COPY.validation.confirmation,
+                    acceptedTerms: COPY.validation.consent,
+                  })[detail.field] || COPY.errors.validation,
                 });
               }
             });
@@ -180,10 +188,6 @@ export default function useRegister({ navigation, route }) {
     policy,
     helpVisible,
     disabled: busy || Boolean(pendingSession),
-    passwordHelperText:
-      password.length >= 8 && password.length <= 128
-        ? COPY.passwordValid
-        : COPY.passwordHint,
     confirmationHelperText: confirmation
       ? confirmation === password
         ? COPY.passwordsMatch

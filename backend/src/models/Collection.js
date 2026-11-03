@@ -50,6 +50,12 @@ const collectionSchema = new mongoose.Schema(
             ]
         },
 
+        // productImageUrl: {
+        //     type: String,
+        //     default: null,
+        //     trim: true,
+        // },
+
         ingredients: {
             type: [String],
             default: [],

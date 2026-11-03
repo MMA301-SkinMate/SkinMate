@@ -36,4 +36,7 @@ const login = async ({ email, password }) =>
     ),
   );
 
-export default { register, login };
+const forgotPassword = async (email) => unwrap(await axiosClient.post('/auth/forgot-password', { email }, { timeout: 20000 }));
+const resetPassword = async (payload) => unwrap(await axiosClient.post('/auth/reset-password', payload, { timeout: 20000 }));
+
+export default { register, login, forgotPassword, resetPassword };

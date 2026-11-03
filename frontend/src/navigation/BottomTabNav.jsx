@@ -1,18 +1,17 @@
-import React from "react";
+import React from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   Platform,
-} from "react-native";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Ionicons } from "@expo/vector-icons";
-
-import { COLORS } from "../constants/colors";
+} from 'react-native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
+import { COLORS } from '../constants/colors';
 
 import HomeScreen from '../screens/home/HomeScreen';
-import CollectionScreen from '../screens/collection/CollectionScreen';
+import MyCollectionScreen from '../screens/collection/MyCollectionScreen';
 import ScanStackNav from './ScanStackNav';
 import CommunityScreen from '../screens/community/CommunityScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
@@ -20,11 +19,7 @@ import ProfileScreen from '../screens/profile/ProfileScreen';
 const Tab = createBottomTabNavigator();
 
 const CustomScanButton = ({ onPress }) => (
-  <TouchableOpacity
-    style={styles.scanButtonContainer}
-    onPress={onPress}
-    activeOpacity={0.85}
-  >
+  <TouchableOpacity style={styles.scanButtonContainer} onPress={onPress} activeOpacity={0.85}>
     <View style={styles.scanButtonInner}>
       <Ionicons name="scan-outline" size={26} color={COLORS.textLight} />
     </View>
@@ -32,7 +27,7 @@ const CustomScanButton = ({ onPress }) => (
   </TouchableOpacity>
 );
 
-const BottomTabNav = () => {
+export default function BottomTabNav() {
   return (
     <Tab.Navigator
       screenOptions={{
@@ -47,7 +42,7 @@ const BottomTabNav = () => {
         name="Home"
         component={HomeScreen}
         options={{
-          tabBarLabel: "Home",
+          tabBarLabel: 'Home',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home-outline" size={size} color={color} />
           ),
@@ -55,9 +50,9 @@ const BottomTabNav = () => {
       />
       <Tab.Screen
         name="Collection"
-        component={CollectionScreen}
+        component={MyCollectionScreen}
         options={{
-          tabBarLabel: "Collection",
+          tabBarLabel: 'Collection',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="albums-outline" size={size} color={color} />
           ),
@@ -75,7 +70,7 @@ const BottomTabNav = () => {
         name="Community"
         component={CommunityScreen}
         options={{
-          tabBarLabel: "Community",
+          tabBarLabel: 'Community',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="grid-outline" size={size} color={color} />
           ),
@@ -85,7 +80,7 @@ const BottomTabNav = () => {
         name="Profile"
         component={ProfileScreen}
         options={{
-          tabBarLabel: "Profile",
+          tabBarLabel: 'Profile',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-outline" size={size} color={color} />
           ),
@@ -93,15 +88,15 @@ const BottomTabNav = () => {
       />
     </Tab.Navigator>
   );
-};
+}
 
 const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: COLORS.background,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
-    height: Platform.OS === "ios" ? 88 : 68,
-    paddingBottom: Platform.OS === "ios" ? 28 : 8,
+    height: Platform.OS === 'ios' ? 88 : 68,
+    paddingBottom: Platform.OS === 'ios' ? 28 : 8,
     paddingTop: 8,
     elevation: 8,
     shadowColor: COLORS.shadow,
@@ -109,36 +104,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
   },
-  tabBarLabel: {
-    fontSize: 11,
-    fontWeight: "500",
-    marginTop: -2,
-  },
-  scanButtonContainer: {
-    top: -16,
-    justifyContent: "center",
-    alignItems: "center",
-    flex: 1,
-  },
+  tabBarLabel: { fontSize: 11, fontWeight: '500', marginTop: -2 },
+  scanButtonContainer: { top: -16, justifyContent: 'center', alignItems: 'center', flex: 1 },
   scanButtonInner: {
     width: 52,
     height: 52,
     borderRadius: 26,
     backgroundColor: COLORS.primary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 6,
   },
-  scanLabel: {
-    fontSize: 11,
-    fontWeight: "500",
-    color: COLORS.textSecondary,
-    marginTop: 4,
-  },
+  scanLabel: { fontSize: 11, fontWeight: '500', color: COLORS.textSecondary, marginTop: 4 },
 });
-
-export default BottomTabNav;

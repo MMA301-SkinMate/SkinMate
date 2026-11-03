@@ -229,7 +229,7 @@ const openApi = {
                         minLength: 8,
                         maxLength: 128,
                         description:
-                            'Giữ nguyên khoảng trắng và ký tự tiếng Việt.',
+                            'Cần ít nhất một chữ in hoa A–Z và một ký tự đặc biệt (không tính chữ, số hoặc khoảng trắng). Giữ nguyên khoảng trắng và ký tự tiếng Việt.',
                     },
                     confirmPassword: {
                         type: 'string',

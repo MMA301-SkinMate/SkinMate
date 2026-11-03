@@ -98,7 +98,7 @@ export const AppModal = ({
               {canDismiss && (
                 <IconButton
                   icon="close"
-                  accessibilityLabel="Đóng hộp thoại"
+                  accessibilityLabel="Close dialog"
                   onPress={() => requestClose("close")}
                 />
               )}

@@ -41,6 +41,34 @@ const errorHandler = (err, req, res, next) => {
     }
 
     if (statusCode >= 500) {
+        const knownErrorTypes = new Set([
+            'Error', 'TypeError', 'ReferenceError', 'ValidationError',
+            'MongoServerError', 'MongoNetworkError', 'MongooseError',
+            'JsonWebTokenError', 'TokenExpiredError',
+        ]);
+        const knownFields = new Set([
+            'fullName', 'email', 'passwordHash', 'termsAcceptedAt',
+            'termsVersion', 'privacyVersion', 'userId',
+            'refreshTokenHash', 'expiresAt', 'revokedAt',
+        ]);
+        const mongoFailure = err.name === 'MongoServerError'
+            ? [
+                ['TRANSACTIONS_UNSUPPORTED', /Transaction numbers are only allowed|does not support (?:retryable writes|transactions)/i],
+                ['DATABASE_UNAUTHORIZED', /not authorized|unauthorized/i],
+                ['DATABASE_AUTHENTICATION_FAILED', /authentication failed|bad auth/i],
+                ['DUPLICATE_KEY', /duplicate key/i],
+                ['DATABASE_VALIDATION_FAILED', /document failed validation/i],
+            ].find(([, pattern]) => pattern.test(String(err.message || '')))?.[0] || 'UNCLASSIFIED'
+            : undefined;
+        const diagnostic = {
+            mongoFailure,
+            errorType: knownErrorTypes.has(err.name) ? err.name : 'UnknownError',
+            databaseCode: Number.isInteger(err.code) ? err.code : undefined,
+            validationFields: err.name === 'ValidationError'
+                ? Object.keys(err.errors || {}).filter(field => knownFields.has(field))
+                : [],
+        };
+        req.log?.error(diagnostic, 'Internal request error (sanitized)');
         code = 'INTERNAL_SERVER_ERROR';
         message = 'Internal server error.';
         details = [];

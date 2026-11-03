@@ -199,5 +199,26 @@ const addProduct = async (req, res) => {
     }
 };
 
+const getAllProduct = async (req, res) => {
+
+}
+
+const getProductById = async (req, res) => {
+
+}
+
+const editProduct = async (req, res) => {
+
+}
+
+const deleteProduct = async (req, res) => {
+
+}
+
+const markProductOutOfStock = async (req, res) => {
+
+}
+
+
 
 module.exports = { analyzeProduct, saveDraft, addProduct };

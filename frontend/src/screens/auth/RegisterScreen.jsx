@@ -28,7 +28,6 @@ export default function RegisterScreen(props) {
       <RegisterForm
         form={register.form}
         disabled={register.disabled}
-        passwordHelperText={register.passwordHelperText}
         confirmationHelperText={register.confirmationHelperText}
       />
       <TermsConsent

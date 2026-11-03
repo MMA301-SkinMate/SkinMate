@@ -1,14 +1,20 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from '@expo/vector-icons';
 import {
-  ScrollView,
+  KeyboardAwareScrollView,
+} from 'react-native-keyboard-aware-scroll-view';
+import {
+  Keyboard,
+  Platform,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-} from "react-native";
-import { COLORS } from "../../../constants/colors";
-import { SIZES } from "../../../constants/theme";
+} from 'react-native';
+import { useEffect, useRef } from 'react';
+import { COLORS } from '../../../constants/colors';
+import { SIZES } from '../../../constants/theme';
 
 const IngredientList = ({
   ingredientList,
@@ -22,19 +28,41 @@ const IngredientList = ({
   isEditing,
   handleAddNew,
 }) => {
+  const scrollViewRef = useRef(null);
+
+  useEffect(() => {
+    if (editingIndex !== null) {
+      const timeout = setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
+      return () => clearTimeout(timeout);
+    }
+    return undefined;
+  }, [editingIndex]);
+
   return (
-    <ScrollView
+    <KeyboardAwareScrollView
+      ref={scrollViewRef}
       style={styles.listContainer}
       contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={true}
+      showsVerticalScrollIndicator
       keyboardShouldPersistTaps="handled"
-      nestedScrollEnabled={true}
+      keyboardDismissMode="on-drag"
+      nestedScrollEnabled
+      enableOnAndroid
+      enableAutomaticScroll
+      extraScrollHeight={Platform.OS === 'ios' ? 40 : 60}
+      extraHeight={Platform.OS === 'ios' ? 40 : 60}
+      enableResetScrollToCoords
     >
-      <View style={styles.badgeContainer}>
+      <Pressable
+        onPress={() => {
+          if (isEditing) saveCurrentEdit();
+          Keyboard.dismiss();
+        }}
+        style={styles.badgeContainer}
+      >
         {ingredientList.map((item, index) => {
           const isCurrentlyEditing = isEditing && editingIndex === index;
-          const isMarkedForDelete =
-            isEditing && selectedForDelete.includes(index);
+          const isMarkedForDelete = isEditing && selectedForDelete.includes(index);
 
           if (isCurrentlyEditing) {
             return (
@@ -57,20 +85,12 @@ const IngredientList = ({
             return (
               <TouchableOpacity
                 key={index}
-                style={[
-                  styles.badge,
-                  isMarkedForDelete && styles.badgeMarkedForDelete,
-                ]}
+                style={[styles.badge, isMarkedForDelete && styles.badgeMarkedForDelete]}
                 onPress={() => handleBadgePress(index)}
                 onLongPress={() => handleBadgeLongPress(index)}
                 activeOpacity={0.7}
               >
-                <Text
-                  style={[
-                    styles.badgeText,
-                    isMarkedForDelete && styles.badgeTextDeleted,
-                  ]}
-                >
+                <Text style={[styles.badgeText, isMarkedForDelete && styles.badgeTextDeleted]}>
                   {item}
                 </Text>
               </TouchableOpacity>
@@ -83,84 +103,27 @@ const IngredientList = ({
             </View>
           );
         })}
-
-        {/* Add button at the end */}
         {isEditing && (
-          <TouchableOpacity
-            style={styles.addBtn}
-            onPress={handleAddNew}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity style={styles.addBtn} onPress={handleAddNew} activeOpacity={0.7}>
             <Ionicons name="add" size={16} color={COLORS.primary} />
           </TouchableOpacity>
         )}
-      </View>
-    </ScrollView>
+      </Pressable>
+    </KeyboardAwareScrollView>
   );
 };
 
 export default IngredientList;
 
 const styles = StyleSheet.create({
-  listContainer: {
-    flex: 1,
-    minHeight: 200,
-    maxHeight: 460,
-    marginBottom: SIZES.base,
-  },
-  scrollContent: {
-    paddingVertical: 2,
-  },
-  badgeContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: SIZES.base - 2,
-  },
-  badge: {
-    backgroundColor: COLORS.surface,
-    paddingHorizontal: 5,
-    paddingVertical: 4,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: COLORS.borderDark,
-  },
-  badgeText: {
-    fontSize: SIZES.small,
-    color: COLORS.textMain,
-    fontWeight: "500",
-  },
-  badgeMarkedForDelete: {
-    borderColor: COLORS.error,
-    borderWidth: 1,
-    backgroundColor: COLORS.pink,
-  },
-  badgeTextDeleted: {
-    color: COLORS.error,
-    fontWeight: "600",
-  },
-  badgeEditing: {
-    borderColor: COLORS.primary,
-    borderWidth: 1.5,
-    backgroundColor: COLORS.card,
-    paddingVertical: 2,
-    paddingHorizontal: 6,
-  },
-  badgeInput: {
-    fontSize: SIZES.small,
-    color: COLORS.textMain,
-    fontWeight: "500",
-    padding: 0,
-    minWidth: 50,
-  },
-  addBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-    borderStyle: "dashed",
-    backgroundColor: COLORS.surface,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  listContainer: { flex: 1, minHeight: 100, maxHeight: 360, marginBottom: SIZES.base },
+  scrollContent: { paddingVertical: 2, flexGrow: 1 },
+  badgeContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: SIZES.base - 2, flex: 1 },
+  badge: { backgroundColor: COLORS.surface, paddingHorizontal: 5, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: COLORS.borderDark },
+  badgeEditing: { borderColor: COLORS.primary, borderWidth: 1.5, backgroundColor: COLORS.card, paddingVertical: 2, paddingHorizontal: 6 },
+  badgeMarkedForDelete: { borderColor: COLORS.error, borderWidth: 1, backgroundColor: '#fef2f2' },
+  badgeText: { color: COLORS.textMain, fontSize: SIZES.small, fontWeight: '500' },
+  badgeTextDeleted: { color: COLORS.error, fontWeight: '600' },
+  badgeInput: { minWidth: 50, padding: 0, color: COLORS.textMain, fontSize: SIZES.small, fontWeight: '500' },
+  addBtn: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: COLORS.primary, borderStyle: 'dashed', backgroundColor: COLORS.surface, alignItems: 'center', justifyContent: 'center' },
 });

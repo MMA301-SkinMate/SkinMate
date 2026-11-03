@@ -1,6 +1,14 @@
 import { COLORS, withOpacity } from './colors';
 import { FONT_FAMILIES } from './fonts';
 
+export const Colors = {
+  ...COLORS,
+  dark: COLORS.primaryDark,
+  muted: COLORS.textSecondary,
+  text: COLORS.textMain,
+  danger: COLORS.error,
+};
+
 export { FONT_FAMILIES } from './fonts';
 
 export const SPACING = {

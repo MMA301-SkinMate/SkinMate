@@ -81,7 +81,7 @@ const login = async (input, config) => {
         input.password
     );
 
-    if (!user || !passwordMatches) {
+    if (!user || user.isActive === false || !passwordMatches) {
         throw new AppError(
             'Email hoặc mật khẩu không đúng.',
             401,
