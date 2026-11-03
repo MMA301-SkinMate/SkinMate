@@ -4,6 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "node test_api.js",
+    "test:scan": "node test_scan.js",
     "seed": "node src/seeder/seedIngredients.js",
     "start": "node server.js",
     "dev": "nodemon server.js"

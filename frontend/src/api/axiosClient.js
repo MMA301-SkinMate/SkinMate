@@ -1,4 +1,5 @@
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ENV } from '../constants/env';
 
 const axiosClient = axios.create({
@@ -44,6 +45,15 @@ axiosClient.interceptors.request.use(
             } else if (config.url.startsWith('api/')) {
                 config.url = config.url.replace(/^api/, '');
             }
+        }
+
+        try {
+            const token = await AsyncStorage.getItem('user_token');
+            if (token && !config.headers['Authorization']) {
+                config.headers['Authorization'] = `Bearer ${token}`;
+            }
+        } catch {
+            // AsyncStorage read failure ignored in interceptor
         }
 
         const isFormData =

@@ -8,7 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 
-import BottomTabNavigator from './src/navigation/BottomTabNav';
+import AppNavigator from './src/navigation/AppNavigator';
 import { FONT_ASSETS } from './src/constants/fonts';
 import { ENV } from './src/constants/env';
 import { CommonOverlayProvider } from './src/components/common/CommonOverlayProvider';
@@ -48,7 +48,7 @@ export default function App() {
               <View style={{ flex: 1 }} onLayout={handleReady}><ComponentPreviewScreen /></View>
             ) : (
               <NavigationContainer onReady={handleReady}>
-                <BottomTabNavigator />
+                <AppNavigator />
               </NavigationContainer>
             )}
           </CommonOverlayProvider>

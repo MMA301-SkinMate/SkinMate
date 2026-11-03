@@ -32,6 +32,13 @@ const scanIngredients = async (req, res, next) => {
       error.message?.includes('overloaded')
     ) {
       userMessage = 'Hệ thống AI đang quá tải. Vui lòng thử lại sau!';
+    } else if (error.message?.includes('GEMINI_API_KEY') || error.message?.includes('API key')) {
+      userMessage = error.message || 'Chưa cấu hình GEMINI_API_KEY trong file .env hoặc API key không hợp lệ!';
+      return res.status(400).json({
+        success: false,
+        message: userMessage,
+        error: error.message,
+      });
     }
     return res.status(500).json({
       success: false,

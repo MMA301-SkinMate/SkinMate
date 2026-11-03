@@ -11,6 +11,7 @@ coverage/
 
 # IDE & Editor
 .vscode/
+.vscode-temp/
 .idea/
 *.swp
 *.swo
