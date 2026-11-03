@@ -63,23 +63,26 @@ const communityPostSchema = new mongoose.Schema(
       morning: { type: [routineStepSchema], default: [] },
       evening: { type: [routineStepSchema], default: [] },
       days: {
-        type: [new mongoose.Schema({
-          morning: { type: [routineStepSchema], default: [] },
-          evening: { type: [routineStepSchema], default: [] },
-        }, { _id: false })],
+        type: [
+          {
+            dayNumber: { type: Number, min: 1, max: 31 },
+            morning: { type: [routineStepSchema], default: [] },
+            evening: { type: [routineStepSchema], default: [] },
+          },
+        ],
         default: undefined,
       },
-    },
-
-    likedBy: {
-      type: [mongoose.Schema.Types.ObjectId],
-      default: [],
     },
 
     likesCount: {
       type: Number,
       default: 0,
       min: 0,
+    },
+
+    likedUserIds: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+      default: [],
     },
 
     copiesCount: {

@@ -54,13 +54,14 @@ const collectionSchema = new mongoose.Schema(
         productIcon: {
             type: String,
             enum: productIcons,
+            default: 'serum',
         },
 
-        // productImageUrl: {
-        //     type: String,
-        //     default: null,
-        //     trim: true,
-        // },
+        productImageUrl: {
+            type: String,
+            default: null,
+            trim: true,
+        },
 
         ingredients: {
             type: [String],
@@ -92,6 +93,7 @@ const collectionSchema = new mongoose.Schema(
             default: null,
             min: 1,
         },
+
         finalExpiryDate: {
             type: Date,
             default: null,
@@ -116,6 +118,27 @@ const collectionSchema = new mongoose.Schema(
             default: false,
         },
 
+        brand: {
+            type: String,
+            default: '',
+            trim: true,
+            maxlength: 100,
+        },
+
+        size: {
+            type: String,
+            default: '',
+            trim: true,
+            maxlength: 50,
+        },
+
+        remainingPercent: {
+            type: Number,
+            default: 100,
+            min: 0,
+            max: 100,
+        },
+
         routineUsage: {
             morning: {
                 type: Boolean,
@@ -137,7 +160,6 @@ const collectionSchema = new mongoose.Schema(
     }
 );
 
-
 collectionSchema.index(
     { createdAt: 1 },
     {
@@ -145,7 +167,6 @@ collectionSchema.index(
         partialFilterExpression: { status: 'draft' },
     }
 );
-
 
 collectionSchema.index({ userId: 1, status: 1 });
 collectionSchema.index({ userId: 1, expirationDate: 1 });
