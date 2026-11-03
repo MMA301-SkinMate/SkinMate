@@ -24,18 +24,6 @@ const userSchema = new mongoose.Schema(
         googleExchangeCodeHash: { type: String, default: null, select: false },
         googleExchangeCodeExpiresAt: { type: Date, default: null },
         skinProfile: {
-            skinType: { type: String, default: null },
-            allergies: { type: [String], default: [] },
-            currentConcerns: { type: [String], default: [] },
-        },
-        isActive: { type: Boolean, default: true },
-        lastLoginAt: { type: Date, default: null },
-        passwordChangedAt: { type: Date, default: null },
-        emailVerified: { type: Boolean, default: false },
-        termsAcceptedAt: { type: Date, required: true },
-        termsVersion: { type: String, required: true },
-        privacyVersion: { type: String, required: true },
-        skinProfile: {
             skinType: {
                 type: String,
                 enum: [
@@ -48,6 +36,8 @@ const userSchema = new mongoose.Schema(
                 ],
                 default: 'Da_Thuong',
             },
+            allergies: { type: [String], default: [] },
+            currentConcerns: { type: [String], default: [] },
             customDonts: {
                 type: [String],
                 default: [],
@@ -55,8 +45,15 @@ const userSchema = new mongoose.Schema(
             customDos: {
                 type: [String],
                 default: [],
-            }
+            },
         },
+        isActive: { type: Boolean, default: true },
+        lastLoginAt: { type: Date, default: null },
+        passwordChangedAt: { type: Date, default: null },
+        emailVerified: { type: Boolean, default: false },
+        termsAcceptedAt: { type: Date, required: true },
+        termsVersion: { type: String, required: true },
+        privacyVersion: { type: String, required: true },
     },
     {
         timestamps: true,
@@ -69,15 +66,10 @@ const userSchema = new mongoose.Schema(
             },
         },
     }
-)
+);
 
 userSchema.index({ email: 1 }, { unique: true });
-userSchema.index(
-    { googleSubject: 1 },
-    {
-        unique: true,
-        partialFilterExpression: { googleSubject: { $type: 'string' } },
-    }
-);
+// Must match the existing Atlas index: sparse: true (NOT partialFilterExpression)
+userSchema.index({ googleSubject: 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model('User', userSchema);

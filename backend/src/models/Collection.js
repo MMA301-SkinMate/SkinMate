@@ -1,5 +1,34 @@
 const mongoose = require('mongoose');
 
+const productTypes = [
+    'cleanser',
+    'toner',
+    'essences',
+    'cream',
+    'oil',
+    'serum',
+    'treatment',
+    'moisturizer',
+    'sunscreen',
+    'mask',
+    'exfoliant',
+    'others',
+];
+
+const productIcons = [
+    'serum',
+    'chai_to',
+    'hu',
+    'tuyp_xanh',
+    'oil',
+    'pum',
+    'mask',
+    'tuyp',
+    'xit',
+];
+
+const statuses = ['draft', 'active', 'finished', 'expired'];
+
 const collectionSchema = new mongoose.Schema(
     {
         userId: {
@@ -19,35 +48,12 @@ const collectionSchema = new mongoose.Schema(
         productType: {
             type: String,
             required: true,
-            enum: [
-                'cleanser',
-                'toner',
-                'essences',
-                'cream',
-                'oil',
-                'serum',
-                'treatment',
-                'moisturizer',
-                'sunscreen',
-                'mask',
-                'exfoliant',
-                'others',
-            ],
+            enum: productTypes,
         },
 
         productIcon: {
             type: String,
-            enum: [
-                'serum',
-                'chai_to',
-                'hu',
-                'tuyp_xanh',
-                'oil',
-                'pum',
-                'mask',
-                'tuyp',
-                'xit'
-            ]
+            enum: productIcons,
         },
 
         // productImageUrl: {
@@ -100,7 +106,7 @@ const collectionSchema = new mongoose.Schema(
 
         status: {
             type: String,
-            enum: ['draft', 'active', 'finished', 'expired'],
+            enum: statuses,
             default: 'draft',
             index: true,
         },
@@ -144,4 +150,9 @@ collectionSchema.index(
 collectionSchema.index({ userId: 1, status: 1 });
 collectionSchema.index({ userId: 1, expirationDate: 1 });
 
-module.exports = mongoose.model('Collection', collectionSchema);
+const Collection = mongoose.model('Collection', collectionSchema);
+
+module.exports = Collection;
+module.exports.productTypes = productTypes;
+module.exports.productIcons = productIcons;
+module.exports.statuses = statuses;

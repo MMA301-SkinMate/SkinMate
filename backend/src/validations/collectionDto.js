@@ -17,7 +17,7 @@ const fields = {
   }).allow(null),
   openedDate: Joi.date().iso().allow(null),
   expirationDate: Joi.date().iso().allow(null),
-  paoDays: Joi.number().integer().min(1).max(3650).allow(null),
+  paoMonths: Joi.number().integer().min(1).max(3650).allow(null),
   note: Joi.string().trim().max(1000).allow(null, ''),
   status: Joi.string().valid(...statuses),
   continueAfterExpiry: Joi.boolean(),
