@@ -1,4 +1,4 @@
-import { View, StyleSheet, StatusBar, TouchableOpacity, Text } from 'react-native';
+import { ActivityIndicator, View, StyleSheet, StatusBar, TouchableOpacity, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../../constants/colors';
 import ScanPermissionView from '../../components/scan/ScanPermissionView';
@@ -33,7 +33,11 @@ const ScanScreen = ({ navigation }) => {
 
   // Loading permission state
   if (!permission) {
-    return <View style={styles.container} />;
+    return (
+      <View style={[styles.container, styles.permissionLoading]}>
+        <ActivityIndicator size="large" color={COLORS.primaryLight} />
+      </View>
+    );
   }
 
   // Permission not granted -> Request access view
@@ -46,18 +50,18 @@ const ScanScreen = ({ navigation }) => {
     );
   }
 
-  const handleTestWithMockData = () => {
-    const mockIngredients = [
-      'Water',
-      'Glycerin',
-      'Niacinamide',
-      'Hyaluronic Acid',
-      'Salicylic Acid',
-      'Phenoxyethanol'
-    ];
+  // const handleTestWithMockData = () => {
+  //   const mockIngredients = [
+  //     'Water',
+  //     'Glycerin',
+  //     'Niacinamide',
+  //     'Hyaluronic Acid',
+  //     'Salicylic Acid',
+  //     'Phenoxyethanol'
+  //   ];
 
-    navigation.navigate('ProductInfoDetail', { ingredientList: mockIngredients });
-  }
+  //   navigation.navigate('ProductInfoDetail', { ingredientList: mockIngredients });
+  // }
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
@@ -99,14 +103,14 @@ const ScanScreen = ({ navigation }) => {
         />
       )}
 
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={styles.devMockBtn}
         onPress={handleTestWithMockData}
         activeOpacity={0.8}
       >
         <Ionicons name="bug-outline" size={18} color="#FFF" />
         <Text style={styles.devMockText}>Test Nhanh (Mock Data)</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </View>
   );
 }
@@ -119,22 +123,26 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.shadow,
     justifyContent: 'space-between',
   },
-  devMockBtn: {
-    position: 'absolute',
-    top: 60,
-    right: 20,
-    flexDirection: 'row',
-    backgroundColor: 'rgba(239, 68, 68, 0.85)', // Màu đỏ nổi bật cho chế độ dev
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+  permissionLoading: {
     alignItems: 'center',
-    gap: 6,
-    zIndex: 999,
+    justifyContent: 'center',
   },
-  devMockText: {
-    color: '#FFF',
-    fontSize: 12,
-    fontWeight: '700',
-  },
+  // devMockBtn: {
+  //   position: 'absolute',
+  //   top: 60,
+  //   right: 20,
+  //   flexDirection: 'row',
+  //   backgroundColor: 'rgba(239, 68, 68, 0.85)', // Màu đỏ nổi bật cho chế độ dev
+  //   paddingHorizontal: 12,
+  //   paddingVertical: 8,
+  //   borderRadius: 20,
+  //   alignItems: 'center',
+  //   gap: 6,
+  //   zIndex: 999,
+  // },
+  // devMockText: {
+  //   color: '#FFF',
+  //   fontSize: 12,
+  //   fontWeight: '700',
+  // },
 });

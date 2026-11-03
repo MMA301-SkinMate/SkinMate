@@ -1,13 +1,26 @@
+/**
+ * collectionController.js
+ *
+ * Handlers are split into two groups:
+ *  A) Scan-flow handlers (analyzeProduct, saveDraft, addProduct) — preserved exactly.
+ *  B) Collection CRUD handlers — delegated cleanly to collectionService.
+ */
+
 const mongoose = require('mongoose');
-const Collection = require('../models/Collection');
-const User = require('../models/User');
+const Collection  = require('../models/Collection');
+const User        = require('../models/User');
 const DailyRoutine = require('../models/DailyRoutine');
+const collectionService = require('../services/collectionService');
 const { calculateProductScores } = require('../services/analysisService');
 const { analyzeProductByScores } = require('../services/geminiService');
 
+// ============================================================
+// A) SCAN-FLOW HANDLERS (do NOT modify — preserved from scan)
+// ============================================================
+
 const analyzeProduct = async (req, res) => {
     try {
-        const { productName, productType, productIcon, ingredientList, userId: bodyUserId } = req.body;
+        const { productName, productType, ingredientList, userId: bodyUserId } = req.body;
         const ingredients = Array.isArray(ingredientList) && ingredientList.length > 0
             ? ingredientList
             : (Array.isArray(req.body.ingredients) ? req.body.ingredients : []);
@@ -46,13 +59,14 @@ const analyzeProduct = async (req, res) => {
             }
         }
 
-        const userClosetProducts = await Collection.find({ userId: user._id, status: 'active' }).select('productName productType ingredients');
+        const userClosetProducts = await Collection.find({ userId: user._id, status: { $in: ['active', 'expired_warning'] } })
+            .select('productName productType ingredients');
 
         const scores = calculateProductScores({
             ingredients,
             skinType,
             todayCondition,
-            routineIngredients
+            routineIngredients,
         });
 
         let aiResponse = null;
@@ -60,45 +74,45 @@ const analyzeProduct = async (req, res) => {
             aiResponse = await analyzeProductByScores({
                 productName,
                 productType,
-                baseScore: scores.baseScore,
+                baseScore:       scores.baseScore,
                 contextualScore: scores.contextualScore,
                 skinType,
                 todayCondition,
                 ingredients,
-                userClosetProducts
+                userClosetProducts,
             });
         } catch (aiError) {
             console.warn('[collectionController] AI analysis error, using fallback:', aiError.message);
         }
 
         const analysisResult = {
-            baseScore: scores.baseScore,
+            baseScore:       scores.baseScore,
             contextualScore: scores.contextualScore,
             verdict: aiResponse?.verdict || {
-                text: `Sản phẩm có độ phù hợp ${scores.contextualScore}% với tình trạng da hiện tại.`,
+                text:       `Sản phẩm có độ phù hợp ${scores.contextualScore}% với tình trạng da hiện tại.`,
                 badgeLevel: scores.contextualScore >= 80 ? 'success' : scores.contextualScore >= 50 ? 'warning' : 'danger',
             },
             conflictResolution: aiResponse?.conflictResolution || {
                 hasConflict: false,
-                details: 'Chưa phát hiện xung đột hoạt chất nghiêm trọng với chu trình hiện tại.',
+                details:     'Chưa phát hiện xung đột hoạt chất nghiêm trọng với chu trình hiện tại.',
             },
             pairingRecommendation: aiResponse?.pairingRecommendation || {
                 matchedProductInCloset: null,
-                advice: 'Nên chọn thêm các sản phẩm phục hồi dịu nhẹ.',
-                ingredientsToAdd: ['Panthenol (B5)', 'Ceramide'],
-                ingredientsToAvoid: [],
+                advice:              'Nên chọn thêm các sản phẩm phục hồi dịu nhẹ.',
+                ingredientsToAdd:    ['Panthenol (B5)', 'Ceramide'],
+                ingredientsToAvoid:  [],
             },
             futurePlan: aiResponse?.futurePlan || {
                 frequency: '2 - 3 lần / tuần',
-                timing: 'Buổi tối',
-                notes: 'Test thử trên vùng da nhỏ trước khi sử dụng chính thức.',
+                timing:    'Buổi tối',
+                notes:     'Test thử trên vùng da nhỏ trước khi sử dụng chính thức.',
             },
         };
 
         return res.status(200).json({
             success: true,
             message: 'Product analysis successful',
-            data: analysisResult
+            data:    analysisResult,
         });
 
     } catch (error) {
@@ -111,10 +125,7 @@ const saveDraft = async (req, res) => {
     try {
         const userId = req.user?.id || req.body?.userId;
         if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-            return res.status(401).json({
-                success: false,
-                message: 'Please login to save draft',
-            });
+            return res.status(401).json({ success: false, message: 'Please login to save draft' });
         }
 
         const { productName, productType, productIcon, ingredients, status, analysisResult } = req.body;
@@ -128,25 +139,19 @@ const saveDraft = async (req, res) => {
             status: status || 'draft',
         };
 
-        if (analysisResult) {
-            productData.analysisResult = analysisResult;
-        }
+        if (analysisResult) productData.analysisResult = analysisResult;
 
         const savedProduct = await Collection.create(productData);
 
         return res.status(201).json({
             success: true,
             message: 'Product saved successfully',
-            data: savedProduct
+            data:    savedProduct,
         });
 
     } catch (error) {
         console.error('Product save error:', error);
-        return res.status(500).json({
-            success: false,
-            message: 'Failed to save product',
-            error: error.message
-        });
+        return res.status(500).json({ success: false, message: 'Failed to save product', error: error.message });
     }
 };
 
@@ -154,297 +159,144 @@ const addProduct = async (req, res) => {
     try {
         const userId = req.user?.id || req.body?.userId;
         if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-            return res.status(401).json({
-                success: false,
-                message: 'Please login to add product',
-            });
+            return res.status(401).json({ success: false, message: 'Please login to add product' });
         }
 
-        const {
-            productName,
-            productType,
-            productIcon,
-            ingredients,
-            status,
-            analysisResult,
-            openedDate,
-            expiryDate,
-            expirationDate,
-            paoMonths,
-            finalExpiryDate,
-            note,
-            notes,
-            continueAfterExpiry,
-            routineUsage,
-        } = req.body;
-
-        const productData = {
-            userId,
-            productName,
-            productType,
-            productIcon,
-            ingredients,
-            status: status || 'active',
-            openedDate: openedDate || null,
-            expirationDate: expirationDate || expiryDate || null,
-            paoMonths: paoMonths || null,
-            finalExpiryDate: finalExpiryDate || null,
-            note: note || notes || null,
-            continueAfterExpiry: continueAfterExpiry || false,
-            routineUsage: routineUsage || { morning: false, evening: false, step: null },
-        };
-
-        if (analysisResult) {
-            productData.analysisResult = analysisResult;
-        }
-
-        const savedProduct = await Collection.create(productData);
+        const savedProduct = await collectionService.createProduct(userId, req.body);
 
         return res.status(201).json({
             success: true,
             message: 'Product saved successfully',
-            data: savedProduct
+            data:    savedProduct,
         });
 
     } catch (error) {
         console.error('Product save error:', error);
-        return res.status(500).json({
-            success: false,
-            message: 'Failed to save product',
-            error: error.message
-        });
+        return res.status(500).json({ success: false, message: 'Failed to save product', error: error.message });
     }
 };
 
-const getAllProduct = async (req, res) => {
+// ============================================================
+// B) COLLECTION CRUD HANDLERS — delegated to collectionService
+// ============================================================
+
+/** GET /collections?tab=active|used */
+const listProducts = async (req, res) => {
     try {
-        const userId = req.user?.id || req.query?.userId;
-        if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-            return res.status(401).json({
-                success: false,
-                message: 'Please login to view your closet',
-            });
-        }
+        const userId = req.user.id;
+        const { tab = 'active' } = req.query;
 
-        const { status, type, search } = req.query;
-        const filter = { userId };
+        // Lazily bump expired products to expired_warning
+        await collectionService.checkAndUpdateExpiryStatuses(userId);
 
-        if (status) {
-            if (status === 'in_use' || status === 'active') {
-                filter.status = 'active';
-            } else if (status === 'used' || status === 'finished') {
-                filter.status = { $in: ['finished', 'expired'] };
-            } else if (status === 'draft') {
-                filter.status = 'draft';
-            } else if (status === 'expired') {
-                filter.status = 'expired';
-            } else {
-                filter.status = status;
-            }
-        }
-
-        if (type) {
-            filter.productType = type;
-        }
-
-        if (search && search.trim()) {
-            filter.productName = { $regex: search.trim(), $options: 'i' };
-        }
-
-        const products = await Collection.find(filter).sort({ createdAt: -1 }).lean();
+        const products = await collectionService.getAllProducts(userId, { tab });
 
         return res.status(200).json({
-            success: true,
-            message: 'Get products successfully',
-            data: products,
-            products,
+            success:  true,
+            message:  'Products fetched successfully',
+            data:     products,
+            products, // backward-compat alias
         });
-    } catch (error) {
-        console.error('Get all products error:', error);
-        return res.status(500).json({
-            success: false,
-            message: 'Failed to get products',
-            error: error.message,
-        });
+    } catch (err) {
+        console.error('[listProducts]', err.message);
+        return res.status(err.statusCode || 500).json({ success: false, message: err.message });
     }
 };
 
-const getProductById = async (req, res) => {
+/** GET /collections/:id */
+const getProduct = async (req, res) => {
     try {
-        const userId = req.user?.id;
-        const { id } = req.params;
-
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({ success: false, message: 'Invalid product ID' });
-        }
-
-        const filter = { _id: id };
-        if (userId) filter.userId = userId;
-
-        const product = await Collection.findOne(filter).lean();
-        if (!product) {
-            return res.status(404).json({ success: false, message: 'Not found product' });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: 'Get product successfully',
-            data: product,
-            product,
-        });
-    } catch (error) {
-        console.error('Get product by id error:', error);
-        return res.status(500).json({
-            success: false,
-            message: 'Failed to get product',
-            error: error.message,
-        });
+        const product = await collectionService.getProductById(req.user.id, req.params.id);
+        return res.status(200).json({ success: true, data: product, product });
+    } catch (err) {
+        return res.status(err.statusCode || 500).json({ success: false, message: err.message });
     }
 };
 
+/** PATCH /collections/:id */
 const editProduct = async (req, res) => {
     try {
-        const userId = req.user?.id;
-        const { id } = req.params;
-
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({ success: false, message: 'Invalid product ID' });
-        }
-
-        const filter = { _id: id };
-        if (userId) filter.userId = userId;
-
-        const {
-            productName,
-            productType,
-            productIcon,
-            ingredients,
-            analysisResult,
-            openedDate,
-            expiryDate,
-            expirationDate,
-            paoMonths,
-            finalExpiryDate,
-            note,
-            status,
-            continueAfterExpiry,
-            routineUsage,
-        } = req.body;
-
-        const updateData = {};
-        if (productName !== undefined) updateData.productName = productName;
-        if (productType !== undefined) updateData.productType = productType;
-        if (productIcon !== undefined) updateData.productIcon = productIcon;
-        if (ingredients !== undefined) updateData.ingredients = ingredients;
-        if (analysisResult !== undefined) updateData.analysisResult = analysisResult;
-        if (openedDate !== undefined) updateData.openedDate = openedDate;
-        if (expirationDate !== undefined || expiryDate !== undefined) {
-            updateData.expirationDate = expirationDate || expiryDate;
-        }
-        if (paoMonths !== undefined) updateData.paoMonths = paoMonths;
-        if (finalExpiryDate !== undefined) updateData.finalExpiryDate = finalExpiryDate;
-        if (note !== undefined) updateData.note = note;
-        if (status !== undefined) updateData.status = status;
-        if (continueAfterExpiry !== undefined) updateData.continueAfterExpiry = continueAfterExpiry;
-        if (routineUsage !== undefined) updateData.routineUsage = routineUsage;
-
-        const updated = await Collection.findOneAndUpdate(filter, updateData, { new: true, runValidators: true }).lean();
-        if (!updated) {
-            return res.status(404).json({ success: false, message: 'Not found product' });
-        }
-
+        const product = await collectionService.updateProduct(req.user.id, req.params.id, req.body);
         return res.status(200).json({
             success: true,
-            message: 'Updated product successfully',
-            data: updated,
-            product: updated,
+            message: 'Cập nhật thành công',
+            data:    product,
+            product,
         });
-    } catch (error) {
-        console.error('Edit product error:', error);
-        return res.status(500).json({
-            success: false,
-            message: 'Failed to update product',
-            error: error.message,
-        });
+    } catch (err) {
+        return res.status(err.statusCode || 500).json({ success: false, message: err.message });
     }
 };
 
-const deleteProduct = async (req, res) => {
+/** DELETE /collections/:id */
+const removeProduct = async (req, res) => {
     try {
-        const userId = req.user?.id;
-        const { id } = req.params;
-
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({ success: false, message: 'Invalid product ID' });
-        }
-
-        const filter = { _id: id };
-        if (userId) filter.userId = userId;
-
-        const deleted = await Collection.findOneAndDelete(filter);
-        if (!deleted) {
-            return res.status(404).json({ success: false, message: 'Not found product' });
-        }
-
+        const result = await collectionService.deleteProduct(req.user.id, req.params.id);
         return res.status(200).json({
-            success: true,
-            message: 'Deleted product successfully',
+            success:      true,
+            message:      result.wasInRoutine
+                ? 'Sản phẩm đã được xóa. Hệ thống đã tự động điều chỉnh routine của bạn.'
+                : 'Sản phẩm đã được xóa.',
+            wasInRoutine: result.wasInRoutine,
+            replacedWith: result.replacedWith,
         });
-    } catch (error) {
-        console.error('Delete product error:', error);
-        return res.status(500).json({
-            success: false,
-            message: 'Failed to delete product',
-            error: error.message,
-        });
+    } catch (err) {
+        return res.status(err.statusCode || 500).json({ success: false, message: err.message });
     }
 };
 
-const markProductOutOfStock = async (req, res) => {
+/** POST /collections/:id/finish */
+const finishProduct = async (req, res) => {
     try {
-        const userId = req.user?.id;
-        const { id } = req.params;
-
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({ success: false, message: 'Invalid product ID' });
-        }
-
-        const filter = { _id: id };
-        if (userId) filter.userId = userId;
-
-        const updated = await Collection.findOneAndUpdate(
-            filter,
-            { status: 'finished' },
-            { new: true }
-        ).lean();
-
-        if (!updated) {
-            return res.status(404).json({ success: false, message: 'Not found product' });
-        }
-
+        const result = await collectionService.markAsUsedUp(req.user.id, req.params.id);
         return res.status(200).json({
-            success: true,
-            message: 'Marked as out of stock successfully',
-            data: updated,
-            product: updated,
+            success:      true,
+            message:      result.wasInRoutine
+                ? 'Sản phẩm đã được đánh dấu dùng hết. Routine đã được cập nhật.'
+                : 'Sản phẩm đã được đánh dấu dùng hết.',
+            data:         result.product,
+            product:      result.product,
+            wasInRoutine: result.wasInRoutine,
+            replacedWith: result.replacedWith,
         });
-    } catch (error) {
-        console.error('Mark out of stock error:', error);
-        return res.status(500).json({
-            success: false,
-            message: 'Failed to mark product out of stock',
-            error: error.message,
-        });
+    } catch (err) {
+        return res.status(err.statusCode || 500).json({ success: false, message: err.message });
+    }
+};
+
+/** GET /collections/expired-alerts */
+const getExpiredAlerts = async (req, res) => {
+    try {
+        await collectionService.checkAndUpdateExpiryStatuses(req.user.id);
+        const products = await collectionService.getExpiredWarningProducts(req.user.id);
+        return res.status(200).json({ success: true, data: products });
+    } catch (err) {
+        return res.status(err.statusCode || 500).json({ success: false, message: err.message });
+    }
+};
+
+/** POST /collections/:id/resolve-expiry  body: { action: 'stop' | 'continue' } */
+const resolveExpiredAlert = async (req, res) => {
+    try {
+        const { action } = req.body;
+        const product = await collectionService.resolveExpiredProduct(req.user.id, req.params.id, action);
+        return res.status(200).json({ success: true, data: product, product });
+    } catch (err) {
+        return res.status(err.statusCode || 500).json({ success: false, message: err.message });
     }
 };
 
 module.exports = {
+    // Scan-flow (unchanged)
     analyzeProduct,
     saveDraft,
     addProduct,
-    getAllProduct,
-    getProductById,
+    // Collection CRUD
+    listProducts,
+    getProduct,
     editProduct,
-    deleteProduct,
-    markProductOutOfStock,
+    removeProduct,
+    finishProduct,
+    getExpiredAlerts,
+    resolveExpiredAlert,
 };

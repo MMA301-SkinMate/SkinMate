@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { COLORS } from '../../constants/colors';
 import { SHADOWS, SIZES } from '../../constants/theme';
-import { useScanResultEdit } from '../../hooks/useScanResultEdit';
+import useScanResultEdit from '../../hooks/useScanResultEdit';
 import IngredientList from './resultModal/IngredientList';
 import ResultFooter from './resultModal/ResultFooter';
 import ResultHeader from './resultModal/ResultHeader';

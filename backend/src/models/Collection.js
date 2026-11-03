@@ -1,6 +1,9 @@
 const mongoose = require('mongoose');
 
-const productTypes = [
+// ---------------------------------------------------------------------------
+// Constants — exported so frontend constants (product-icons.js) stay in sync
+// ---------------------------------------------------------------------------
+const PRODUCT_TYPE_VALUES = [
     'cleanser',
     'toner',
     'essences',
@@ -15,7 +18,7 @@ const productTypes = [
     'others',
 ];
 
-const productIcons = [
+const PRODUCT_ICON_VALUES = [
     'serum',
     'chai_to',
     'hu',
@@ -27,65 +30,84 @@ const productIcons = [
     'xit',
 ];
 
-const statuses = ['draft', 'active', 'finished', 'expired'];
+// draft      — scanned but not confirmed
+// active     — currently in use
+// used_up    — manually marked as finished / empty
+// expired_warning — expirationDate <= today+7 days; shown in popup; kept in
+//               "Đang sử dụng" tab when continueAfterExpiry=true
+const COLLECTION_STATUSES = ['draft', 'active', 'used_up', 'expired_warning'];
+
+// ---------------------------------------------------------------------------
+// Schema
+// ---------------------------------------------------------------------------
+const analysisResultSchema = new mongoose.Schema(
+    {
+        baseScore:             { type: Number, default: null },
+        contextualScore:       { type: Number, default: null },
+        verdict:               { type: mongoose.Schema.Types.Mixed, default: null },
+        conflictResolution:    { type: mongoose.Schema.Types.Mixed, default: null },
+        pairingRecommendation: { type: mongoose.Schema.Types.Mixed, default: null },
+        futurePlan:            { type: mongoose.Schema.Types.Mixed, default: null },
+    },
+    { _id: false }
+);
 
 const collectionSchema = new mongoose.Schema(
     {
         userId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User',
+            type:     mongoose.Schema.Types.ObjectId,
+            ref:      'User',
             required: true,
-            index: true,
+            index:    true,
         },
 
         productName: {
-            type: String,
-            required: true,
-            trim: true,
+            type:      String,
+            required:  true,
+            trim:      true,
             maxlength: 150,
         },
 
         productType: {
-            type: String,
+            type:     String,
             required: true,
-            enum: productTypes,
+            enum:     PRODUCT_TYPE_VALUES,
         },
 
         productIcon: {
-            type: String,
-            enum: productIcons,
+            type:    String,
+            enum:    PRODUCT_ICON_VALUES,
             default: 'serum',
         },
 
+        // Array of raw ingredient strings — used for conflict-check in routines
         ingredients: {
-            type: [String],
+            type:    [String],
             default: [],
         },
 
+        // Embedded AI-analysis result from scan flow (optional)
         analysisResult: {
-            baseScore: { type: Number, default: 70 },
-            contextualScore: { type: Number, default: 70 },
-            verdict: { type: mongoose.Schema.Types.Mixed, default: null },
-            conflictResolution: { type: mongoose.Schema.Types.Mixed, default: null },
-            pairingRecommendation: { type: mongoose.Schema.Types.Mixed, default: null },
-            bestPairingInCloset: { type: mongoose.Schema.Types.Mixed, default: null },
-            futurePlan: { type: mongoose.Schema.Types.Mixed, default: null },
+            type:    analysisResultSchema,
+            default: null,
         },
 
         openedDate: {
-            type: Date,
+            type:    Date,
             default: null,
         },
 
-        expirationDate: {
-            type: Date,
-            default: null,
-        },
-
-        paoMonths: {
+        durationMonths: {
             type: Number,
-            default: null,
             min: 1,
+            max: 3650,
+            default: null,
+        },
+
+        // Computed by client (either direct date or openedDate + durationMonths)
+        expirationDate: {
+            type:    Date,
+            default: null,
         },
 
         finalExpiryDate: {
@@ -94,59 +116,56 @@ const collectionSchema = new mongoose.Schema(
         },
 
         note: {
-            type: String,
-            default: null,
-            trim: true,
+            type:      String,
+            trim:      true,
             maxlength: 1000,
+            default:   null,
         },
 
         status: {
-            type: String,
-            enum: statuses,
+            type:    String,
+            enum:    COLLECTION_STATUSES,
             default: 'draft',
-            index: true,
+            index:   true,
         },
 
+        // true  → keep product in "Đang sử dụng" with red badge after expiry
+        // false → product should be surfaced in expired-alert popup
         continueAfterExpiry: {
-            type: Boolean,
+            type:    Boolean,
             default: false,
         },
-
-        routineUsage: {
-            morning: {
-                type: Boolean,
-                default: false,
-            },
-            evening: {
-                type: Boolean,
-                default: false,
-            },
-            step: {
-                type: Number,
-                default: null,
-                min: 1,
-            },
-        },
     },
-    {
-        timestamps: true,
-    }
+    { timestamps: true }
 );
 
+// ---------------------------------------------------------------------------
+// Indexes
+// ---------------------------------------------------------------------------
+
+// Auto-delete drafts after 30 days (user never confirmed them)
 collectionSchema.index(
     { createdAt: 1 },
     {
-        expireAfterSeconds: 2592000, // 30 days
-        partialFilterExpression: { status: 'draft' },
+        expireAfterSeconds:        2592000, // 30 days
+        partialFilterExpression:   { status: 'draft' },
     }
 );
 
 collectionSchema.index({ userId: 1, status: 1 });
 collectionSchema.index({ userId: 1, expirationDate: 1 });
 
+// ---------------------------------------------------------------------------
+// Model & named exports
+// ---------------------------------------------------------------------------
 const Collection = mongoose.model('Collection', collectionSchema);
 
 module.exports = Collection;
-module.exports.productTypes = productTypes;
-module.exports.productIcons = productIcons;
-module.exports.statuses = statuses;
+module.exports.COLLECTION_STATUSES  = COLLECTION_STATUSES;
+module.exports.PRODUCT_TYPE_VALUES  = PRODUCT_TYPE_VALUES;
+module.exports.PRODUCT_ICON_VALUES  = PRODUCT_ICON_VALUES;
+
+// Backward-compat aliases used by collectionDto.js / other code
+module.exports.productTypes = PRODUCT_TYPE_VALUES;
+module.exports.productIcons = PRODUCT_ICON_VALUES;
+module.exports.statuses     = COLLECTION_STATUSES;

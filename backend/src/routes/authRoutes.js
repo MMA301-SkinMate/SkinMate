@@ -27,6 +27,7 @@ const createAuthRoutes = () => {
         validateLogin,
         authController.login
     );
+    router.post('/refresh', authController.refresh);
 
     router.post('/forgot-password', createRegisterRateLimiter(), validateForgotPassword, async (req, res) => {
         const result = await passwordResetService.requestReset(req.body, req.app.locals.config);

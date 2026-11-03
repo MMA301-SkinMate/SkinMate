@@ -3,6 +3,7 @@ import { AppState } from "react-native";
 import {
   clearStoredSession,
   isSessionActive,
+  isRefreshTokenActive,
   loadAuthentication,
   saveSession,
 } from "../services/authStorage";
@@ -70,7 +71,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (!session) return undefined;
     const checkExpiry = () => {
-      if (!sessionRef.current || isSessionActive(sessionRef.current)) return;
+      if (!sessionRef.current || isRefreshTokenActive(sessionRef.current)) return;
       sessionRef.current = null;
       setSession(null);
       setNotice({ id: Date.now(), message: AUTH_MESSAGES.expired });
@@ -79,7 +80,7 @@ export function AuthProvider({ children }) {
     };
     const timer = setTimeout(
       checkExpiry,
-      Math.max(0, Date.parse(session.accessTokenExpiresAt) - Date.now()),
+      Math.max(0, Date.parse(session.refreshTokenExpiresAt) - Date.now()),
     );
     const listener = AppState.addEventListener("change", (state) => {
       if (state === "active") checkExpiry();

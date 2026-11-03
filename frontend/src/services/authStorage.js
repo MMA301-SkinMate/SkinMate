@@ -41,6 +41,12 @@ export const isSessionActive = (session) =>
     Date.parse(session.refreshTokenExpiresAt) > Date.now(),
   );
 
+export const isRefreshTokenActive = (session) =>
+  Boolean(
+    session &&
+    Date.parse(session.refreshTokenExpiresAt) > Date.now(),
+  );
+
 export const clearStoredSession = () =>
   SecureStore.deleteItemAsync(SESSION_KEY);
 
@@ -53,7 +59,9 @@ export const loadAuthentication = async () => {
   } catch {
     session = null;
   }
-  if (!isSessionActive(session)) {
+  // An expired access token is refreshable. Only discard the session when the
+  // long-lived refresh token is missing or expired.
+  if (!isRefreshTokenActive(session)) {
     await clearStoredSession();
     session = null;
   }

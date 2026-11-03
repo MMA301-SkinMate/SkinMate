@@ -1,6 +1,33 @@
 import axios from 'axios';
 import { ENV } from '../constants/env';
-import { loadAuthentication } from '../services/authStorage';
+import {
+    clearStoredSession,
+    loadAuthentication,
+    saveSession,
+} from '../services/authStorage';
+
+let refreshPromise = null;
+
+const refreshAccessToken = async () => {
+    if (!refreshPromise) {
+        refreshPromise = (async () => {
+            const authentication = await loadAuthentication();
+            const refreshToken = authentication.session?.refreshToken;
+            if (!refreshToken) throw new Error('NO_REFRESH_TOKEN');
+
+            const response = await axios.post(`${ENV.API_URL}/auth/refresh`, { refreshToken });
+            const session = await saveSession({
+                ...authentication.session,
+                ...response.data.data,
+                refreshToken,
+            });
+            return session.accessToken;
+        })().finally(() => {
+            refreshPromise = null;
+        });
+    }
+    return refreshPromise;
+};
 
 const axiosClient = axios.create({
     baseURL: ENV.API_URL,
@@ -78,7 +105,20 @@ axiosClient.interceptors.response.use(
     (response) => {
         return response.data;
     },
-    (error) => {
+    async (error) => {
+        const originalRequest = error.config;
+        const isRefreshRequest = originalRequest?.url?.includes('/auth/refresh');
+        if (error.response?.status === 401 && !originalRequest?._retry && !isRefreshRequest) {
+            originalRequest._retry = true;
+            try {
+                const accessToken = await refreshAccessToken();
+                originalRequest.headers = originalRequest.headers || {};
+                originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+                return axiosClient(originalRequest);
+            } catch {
+                await clearStoredSession();
+            }
+        }
         if (__DEV__) {
             console.warn(`[API Error] ${error.config?.baseURL}${error.config?.url}:`, error.message, error.response?.status || 'No Response');
         }

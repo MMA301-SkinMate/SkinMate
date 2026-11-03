@@ -21,7 +21,8 @@ import ScreenHeader from '../../components/scan/productInfoDetail/ScreenHeader';
 import AnalysisResultView from '../../components/scan/productInfoDetail/AnalysisResultView';
 import { useState, useRef } from 'react';
 import { collectionApi } from '../../api/collectionApi';
-import { parseToISODate } from '../../utils/formatDate';
+import { parseStrictDate } from '../../utils/formatDate';
+import { useCollection } from '../../context/CollectionContext';
 
 const AddProductScreen = ({ route, navigation }) => {
     const { productData, analysisResult } = route.params;
@@ -36,6 +37,7 @@ const AddProductScreen = ({ route, navigation }) => {
     const [paoMonths, setPaoMonths] = useState('');
     const [notes, setNotes] = useState('');
     const [loading, setLoading] = useState(false);
+    const { refreshCollection } = useCollection();
 
     const handleConfirmAdd = async () => {
         if (expiryType === 'months' && paoMonths.trim() !== '') {
@@ -48,15 +50,35 @@ const AddProductScreen = ({ route, navigation }) => {
             }
         }
 
-        const formattedOpenedDate = parseToISODate(openedDate.trim());
+        const formattedOpenedDate = openedDate.trim()
+            ? parseStrictDate(openedDate)
+            : null;
+        if (openedDate.trim() && !formattedOpenedDate) {
+            Alert.alert('Invalid date', 'Opened Date must use the format DD-MM-YYYY and be a valid date.');
+            return;
+        }
+
+        const formattedExpiryDate = expiryDateValue.trim()
+            ? parseStrictDate(expiryDateValue)
+            : null;
+        if (expiryType === 'date' && expiryDateValue.trim() && !formattedExpiryDate) {
+            Alert.alert('Invalid date', 'Expiry Date must use the format DD-MM-YYYY and be a valid date.');
+            return;
+        }
+
+        const months = paoMonths.trim() ? Number(paoMonths) : null;
+        if (expiryType === 'months' && (!Number.isInteger(months) || months < 1 || months > 3650)) {
+            Alert.alert('Invalid period', 'PAO must be a whole number between 1 and 3650 months.');
+            return;
+        }
 
         let finalExpirationDate = null;
         if (expiryType === 'date' && expiryDateValue.trim()) {
-            finalExpirationDate = parseToISODate(expiryDateValue.trim());
+            finalExpirationDate = formattedExpiryDate;
         } else if (expiryType === 'months' && openedDate.trim() && paoMonths.trim()) {
             const opened = new Date(formattedOpenedDate);
             if (!isNaN(opened.getTime())) {
-                const monthsToAdd = parseInt(paoMonths) || 0;
+                const monthsToAdd = months;
                 opened.setMonth(opened.getMonth() + monthsToAdd);
                 finalExpirationDate = opened.toISOString().split('T')[0];
             }
@@ -71,8 +93,9 @@ const AddProductScreen = ({ route, navigation }) => {
             ingredients: productData.ingredientList,
             analysisResult: analysisResult,
             openedDate: formattedOpenedDate,
-            expiryDate: expiryType === 'date' ? parseToISODate(expiryDateValue.trim()) : null,
-            paoMonths: expiryType === 'months' ? parseInt(paoMonths) || null : null,
+            expiryDate: expiryType === 'date' ? formattedExpiryDate : null,
+            durationMonths: expiryType === 'months' ? months : null,
+            paoMonths: expiryType === 'months' ? months : null,
             finalExpiryDate: finalExpirationDate,
             notes: notes.trim(),
             note: notes.trim(),
@@ -85,8 +108,12 @@ const AddProductScreen = ({ route, navigation }) => {
             const result = await collectionApi.addProduct(payload);
 
             if (result) {
+                await refreshCollection();
                 Alert.alert('Success', 'Added product to your collection successfully!', [
-                    { text: 'OK', onPress: () => navigation.navigate('MyCollection') }
+                    {
+                        text: 'OK',
+                        onPress: () => navigation.getParent()?.navigate('Collection'),
+                    }
                 ]);
             }
         } catch (error) {

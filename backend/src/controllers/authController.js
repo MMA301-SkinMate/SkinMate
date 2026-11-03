@@ -32,4 +32,16 @@ const login = async (req, res, next) => {
     }
 };
 
-module.exports = { register, login };
+const refresh = async (req, res, next) => {
+    try {
+        const data = await authService.refresh(
+            req.body?.refreshToken,
+            req.app.locals.config
+        );
+        return sendSuccess(res, { statusCode: 200, message: 'Token refreshed.', data });
+    } catch (error) {
+        return next(error);
+    }
+};
+
+module.exports = { register, login, refresh };

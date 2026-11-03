@@ -49,7 +49,7 @@ function formatDate(date) {
 }
 
 function getStatus(product, date) {
-  if (product.status === 'finished') return { label: 'Used up', color: Colors.textMuted };
+  if (product.status === 'used_up') return { label: 'Used up', color: Colors.textMuted };
   const days = getDaysFromToday(date);
   if (days < 0 || product.status === 'expired') return { label: 'Expired', color: Colors.error };
   if (days <= 30) return { label: days === 0 ? 'Expires today' : `${days} days left`, color: Colors.warning };

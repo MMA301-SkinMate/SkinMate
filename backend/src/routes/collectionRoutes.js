@@ -1,18 +1,26 @@
-const express = require('express');
-const router = express.Router();
-const collectionController = require('../controllers/collectionController');
+const express  = require('express');
+const router   = express.Router();
+const ctrl     = require('../controllers/collectionController');
 const authenticate = require('../middlewares/authMiddleware');
+const collectionDto = require('../validations/collectionDto');
 
+// Every collection route requires a valid JWT
 router.use(authenticate);
 
-router.post('/analyze', collectionController.analyzeProduct);
-router.post('/draft', collectionController.saveDraft);
-router.post('/add', collectionController.addProduct);
+// ── Scan-flow routes (invoked from scan/ProductInfoDetail screens) ──────────
+router.post('/analyze', ctrl.analyzeProduct);
+router.post('/draft',   collectionDto.create, ctrl.saveDraft);
+router.post('/add',     collectionDto.create, ctrl.addProduct);
 
-router.get('/', collectionController.getAllProduct);
-router.post('/:id/finish', collectionController.markProductOutOfStock);
-router.get('/:id', collectionController.getProductById);
-router.patch('/:id', collectionController.editProduct);
-router.delete('/:id', collectionController.deleteProduct);
+// ── Expired-alert routes (must come BEFORE /:id to avoid param collision) ──
+router.get('/expired-alerts',       ctrl.getExpiredAlerts);
+router.post('/:id/resolve-expiry',  ctrl.resolveExpiredAlert);
+
+// ── Collection CRUD ──────────────────────────────────────────────────────────
+router.get('/',         ctrl.listProducts);     // ?tab=active|used
+router.get('/:id',      ctrl.getProduct);
+router.patch('/:id', collectionDto.id, collectionDto.update, ctrl.editProduct);
+router.delete('/:id', collectionDto.id, ctrl.removeProduct);
+router.post('/:id/finish', collectionDto.id, ctrl.finishProduct);
 
 module.exports = router;
