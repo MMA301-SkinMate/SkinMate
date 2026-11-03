@@ -5,7 +5,7 @@ const unwrap = (body) => {
   return body;
 };
 
-// 1. Các hàm gọi API theo chuẩn đối tượng collectionApi (phục vụ luồng Scan & Analyze)
+// 1. Đối tượng collectionApi phục vụ luồng Scan & Analyze (ProductInfoDetailScreen, AddProductScreen)
 export const collectionApi = {
   analyzeProduct: (data) => axiosClient.post('/collections/analyze', data).then(unwrap),
   saveDraft: (data) => axiosClient.post('/collections/draft', data).then(unwrap),
@@ -18,17 +18,16 @@ export const collectionApi = {
   getDrafts: () => axiosClient.get('/collections', { params: { status: 'draft' } }).then(unwrap),
 };
 
-// 2. Các named export phục vụ CollectionContext và các màn hình Tủ đồ (MyCollectionScreen, AddProductScreen)
+// 2. Named exports phục vụ CollectionContext và MyCollectionScreen
 export const listCollectionProducts = (params = {}) => {
   return axiosClient.get('/collections', { params }).then(res => {
-    // Trả về { products: [...] } để CollectionContext nhận đúng format
     const products = Array.isArray(res?.data) ? res.data : (res?.products || res || []);
     return { products, total: products.length };
   });
 };
 
 export const createCollectionProduct = (payload) => {
-  return axiosClient.post('/collections', payload).then(res => {
+  return axiosClient.post('/collections/add', payload).then(res => {
     const product = res?.data || res?.product || res;
     return { product };
   });
@@ -43,24 +42,6 @@ export const updateCollectionProduct = (id, payload) => {
 
 export const deleteCollectionProduct = (id) => {
   return axiosClient.delete(`/collections/${id}`).then(res => res?.data || res);
-};
-
-export const uploadCollectionProductImage = async (imageUri) => {
-  const formData = new FormData();
-  const filename = imageUri.split('/').pop() || `product-${Date.now()}.jpg`;
-  const match = /\.(\w+)$/.exec(filename);
-  const ext = match ? match[1].toLowerCase() : 'jpg';
-  const type = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
-
-  formData.append('image', {
-    uri: imageUri,
-    type,
-    name: filename,
-  });
-
-  return axiosClient.post('/collections/image', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  }).then(res => res?.data || res);
 };
 
 export default collectionApi;

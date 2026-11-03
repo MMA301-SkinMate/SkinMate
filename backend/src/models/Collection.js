@@ -57,12 +57,6 @@ const collectionSchema = new mongoose.Schema(
             default: 'serum',
         },
 
-        productImageUrl: {
-            type: String,
-            default: null,
-            trim: true,
-        },
-
         ingredients: {
             type: [String],
             default: [],
@@ -116,27 +110,6 @@ const collectionSchema = new mongoose.Schema(
         continueAfterExpiry: {
             type: Boolean,
             default: false,
-        },
-
-        brand: {
-            type: String,
-            default: '',
-            trim: true,
-            maxlength: 100,
-        },
-
-        size: {
-            type: String,
-            default: '',
-            trim: true,
-            maxlength: 50,
-        },
-
-        remainingPercent: {
-            type: Number,
-            default: 100,
-            min: 0,
-            max: 100,
         },
 
         routineUsage: {

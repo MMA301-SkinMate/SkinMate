@@ -5,20 +5,23 @@ const fields = {
   productName: Joi.string().trim().min(1).max(150),
   productType: Joi.string().valid(...productTypes),
   productIcon: Joi.string().valid(...productIcons).allow(null, ''),
-  productImageUrl: Joi.string().uri({ scheme: ['http', 'https'] }).allow(null, ''),
   ingredients: Joi.array().items(Joi.string().trim().min(1).max(200)).max(100),
   analysisResult: Joi.object({
     baseScore: Joi.number().min(0).max(100),
     contextualScore: Joi.number().min(0).max(100),
-    verdict: Joi.string().allow(null, ''),
-    conflictResolution: Joi.string().allow(null, ''),
-    bestPairingInCloset: Joi.string().allow(null, ''),
-    futurePlan: Joi.string().allow(null, ''),
+    verdict: Joi.any().allow(null),
+    conflictResolution: Joi.any().allow(null),
+    pairingRecommendation: Joi.any().allow(null),
+    bestPairingInCloset: Joi.any().allow(null),
+    futurePlan: Joi.any().allow(null),
   }).allow(null),
   openedDate: Joi.date().iso().allow(null),
   expirationDate: Joi.date().iso().allow(null),
+  expiryDate: Joi.date().iso().allow(null),
   paoMonths: Joi.number().integer().min(1).max(3650).allow(null),
+  finalExpiryDate: Joi.date().iso().allow(null),
   note: Joi.string().trim().max(1000).allow(null, ''),
+  notes: Joi.string().trim().max(1000).allow(null, ''),
   status: Joi.string().valid(...statuses),
   continueAfterExpiry: Joi.boolean(),
   routineUsage: Joi.object({
@@ -26,15 +29,12 @@ const fields = {
     evening: Joi.boolean(),
     step: Joi.number().integer().min(1).allow(null),
   }).allow(null),
-  brand: Joi.string().trim().max(100).allow(null, ''),
-  size: Joi.string().trim().max(50).allow(null, ''),
-  remainingPercent: Joi.number().min(0).max(100).allow(null),
 };
 
 function validate(schema) {
   return (req, res, next) => {
     const { error, value } = schema.validate(req.body || {}, { abortEarly: false, stripUnknown: true });
-    if (error) return res.status(400).json({ error: { message: 'Request body is invalid', code: 'VALIDATION_ERROR' } });
+    if (error) return res.status(400).json({ success: false, error: { message: 'Request body is invalid', code: 'VALIDATION_ERROR', details: error.details } });
     req.body = value;
     next();
   };
