@@ -69,8 +69,9 @@ const ProductInfoDetailScreen = ({ route, navigation }) => {
             //         "text": "Sản phẩm toner Emmié by Happy Skin rất phù hợp với làn da thường và tình trạng da ổn định hiện tại. Công thức giàu dưỡng chất lên men và Niacinamide giúp cân bằng độ ẩm, làm sáng và củng cố hàng rào bảo vệ da hiệu quả."
             //     }
             // }
-            if (result && result.data) {
-                setAnalysisResult(result.data);
+            const data = result?.data || result;
+            if (data && (data.baseScore !== undefined || data.contextualScore !== undefined || data.verdict)) {
+                setAnalysisResult(data);
                 setTimeout(() => {
                     scrollViewRef.current?.scrollToEnd({ animated: true });
                 }, 300);
@@ -83,7 +84,7 @@ const ProductInfoDetailScreen = ({ route, navigation }) => {
     const handleSaveDraft = async () => {
         try {
             const draftPayload = {
-                userId: "65b123456789abcdef123456", // (Tạm thời cho test khi chưa có Auth)
+                // userId handled by auth
                 productName: productName.trim(),
                 productType: selectedType,
                 productIcon: selectedIcon,

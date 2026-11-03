@@ -64,7 +64,7 @@ const AddProductScreen = ({ route, navigation }) => {
 
 
         const payload = {
-            userId: "65b123456789abcdef123456", // ID test tạm thời
+            // userId handled by auth
             productName: productName,
             productType: selectedType,
             productIcon: selectedIcon,
@@ -75,6 +75,7 @@ const AddProductScreen = ({ route, navigation }) => {
             paoMonths: expiryType === 'months' ? parseInt(paoMonths) || null : null,
             finalExpiryDate: finalExpirationDate,
             notes: notes.trim(),
+            note: notes.trim(),
             status: 'active'
         };
         console.log(payload)

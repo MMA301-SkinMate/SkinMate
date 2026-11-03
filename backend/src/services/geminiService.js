@@ -2,10 +2,9 @@ const ai = require('../config/AI');
 
 // Fallback models in case one hits rate limit (429) or high demand (503)
 const CANDIDATE_MODELS = [
-    'gemini-3.5-flash-lite',
     'gemini-3.5-flash',
-    'gemini-3.1-flash-lite',
     'gemini-3-flash-preview',
+    'gemini-3.5-flash-lite',
 ];
 
 const safeParseJson = (rawText) => {

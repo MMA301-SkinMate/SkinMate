@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const CommunityPost = require('../models/CommunityPost');
+const Community = require('../models/Community');
 const Collection = require('../models/Collection');
 const { uploadToCloudinary } = require('../services/cloudinaryService');
 const { notFound } = require('../validations/postDto');
@@ -72,7 +72,7 @@ exports.list = async (req, res, next) => {
     const before = req.query.before ? new Date(req.query.before) : null;
     if (before && !Number.isNaN(before.getTime())) filter.createdAt = { $lt: before };
 
-    const posts = await CommunityPost.find(filter).sort({ createdAt: -1 }).limit(PAGE_SIZE).lean();
+    const posts = await Community.find(filter).sort({ createdAt: -1 }).limit(PAGE_SIZE).lean();
     res.json({ posts: posts.map(post => serialize(post, userId)) });
   } catch (error) {
     next(error);
@@ -81,7 +81,7 @@ exports.list = async (req, res, next) => {
 
 exports.get = async (req, res, next) => {
   try {
-    const post = await CommunityPost.findOne({
+    const post = await Community.findOne({
       _id: req.params.id,
       $or: [{ status: 'published' }, { status: 'draft', userId: currentUserId(req) }],
     }).lean();
@@ -94,7 +94,7 @@ exports.get = async (req, res, next) => {
 exports.create = async (req, res, next) => {
   try {
     const userId = currentUserId(req);
-    const post = await CommunityPost.create({
+    const post = await Community.create({
       ...normalizeSkinTypes(req.body, req),
       userId,
       authorName: req.user?.name || undefined,
@@ -108,7 +108,7 @@ exports.create = async (req, res, next) => {
 exports.update = async (req, res, next) => {
   try {
     const userId = currentUserId(req);
-    const post = await CommunityPost.findOneAndUpdate(
+    const post = await Community.findOneAndUpdate(
       { _id: req.params.id, userId, status: 'draft' },
       { $set: normalizeSkinTypes(req.body, req) },
       { returnDocument: 'after', runValidators: true }
@@ -121,7 +121,7 @@ exports.update = async (req, res, next) => {
 
 exports.remove = async (req, res, next) => {
   try {
-    const post = await CommunityPost.findOneAndUpdate(
+    const post = await Community.findOneAndUpdate(
       { _id: req.params.id, userId: currentUserId(req), status: 'published' },
       { status: 'deleted' }
     );
@@ -137,13 +137,13 @@ exports.toggleLike = async (req, res, next) => {
     const userId = currentUserId(req);
     const userObjectId = new mongoose.Types.ObjectId(userId);
     const base = { _id: req.params.id, status: 'published' };
-    let post = await CommunityPost.findOneAndUpdate(
+    let post = await Community.findOneAndUpdate(
       { ...base, likedBy: { $ne: userObjectId } },
       { $addToSet: { likedBy: userObjectId }, $inc: { likesCount: 1 } },
       { returnDocument: 'after' }
     ).lean();
     if (!post) {
-      post = await CommunityPost.findOneAndUpdate(
+      post = await Community.findOneAndUpdate(
         { ...base, likedBy: userObjectId },
         { $pull: { likedBy: userObjectId }, $inc: { likesCount: -1 } },
         { returnDocument: 'after' }
@@ -160,7 +160,7 @@ exports.toggleLike = async (req, res, next) => {
 exports.copyRoutine = async (req, res, next) => {
   try {
     const userId = currentUserId(req);
-    const post = await CommunityPost.findOne({ _id: req.params.id, status: 'published' }).lean();
+    const post = await Community.findOne({ _id: req.params.id, status: 'published' }).lean();
     if (!post) return notFound(res);
 
     const toProducts = (steps, slot) => steps.map((step, index) => ({
@@ -180,7 +180,7 @@ exports.copyRoutine = async (req, res, next) => {
     if (!products.length) return res.status(400).json({ error: { message: 'This post has no routine to copy', code: 'EMPTY_ROUTINE' } });
 
     const created = await Collection.insertMany(products);
-    const updated = await CommunityPost.findByIdAndUpdate(post._id, { $inc: { copiesCount: 1 } }, { returnDocument: 'after' }).lean();
+    const updated = await Community.findByIdAndUpdate(post._id, { $inc: { copiesCount: 1 } }, { returnDocument: 'after' }).lean();
     res.status(201).json({ copiedCount: created.length, post: serialize(updated, userId) });
   } catch (error) {
     next(error);

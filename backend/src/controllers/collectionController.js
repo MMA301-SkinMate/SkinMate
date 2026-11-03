@@ -173,6 +173,7 @@ const addProduct = async (req, res) => {
             paoMonths,
             finalExpiryDate,
             note,
+            notes,
             continueAfterExpiry,
             routineUsage,
         } = req.body;
@@ -188,7 +189,7 @@ const addProduct = async (req, res) => {
             expirationDate: expirationDate || expiryDate || null,
             paoMonths: paoMonths || null,
             finalExpiryDate: finalExpiryDate || null,
-            note: note || null,
+            note: note || notes || null,
             continueAfterExpiry: continueAfterExpiry || false,
             routineUsage: routineUsage || { morning: false, evening: false, step: null },
         };

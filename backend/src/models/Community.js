@@ -77,11 +77,6 @@ const communitySchema = new mongoose.Schema(
       min: 0,
     },
 
-    likedUserIds: {
-      type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-      default: [],
-    },
-
     copiesCount: {
       type: Number,
       default: 0,
