@@ -1,2 +1,5 @@
 # Local Stitch design artifacts
 /.stitch/
+/.claude/
+/.idea/
+/.vscode/

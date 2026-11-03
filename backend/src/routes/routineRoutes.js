@@ -30,5 +30,25 @@ profileRouter.get('/history', routineController.getRoutineHistory);
 profileRouter.post('/history/:planId/copy', routineController.copyOldRoutine);
 profileRouter.post('/plans/:planId/share-payload', routineController.prepareRoutineForShare);
 
+const dailyRouter = express.Router();
+const dailyService = require('../services/daily-routine-service');
+const { sendSuccess } = require('../utils/response');
+const daily = operation => async (req, res, next) => {
+  try { return sendSuccess(res, { data: await operation(req) }); } catch (error) { next(error); }
+};
+dailyRouter.use(authenticate);
+dailyRouter.get('/daily', daily(req => dailyService.getDailyRoutine(req.user.id)));
+dailyRouter.post('/daily/checkin', daily(req => dailyService.checkIn(req.user.id, req.body?.conditions)));
+dailyRouter.post('/daily/undo', daily(req => dailyService.undoCheckIn(req.user.id)));
+dailyRouter.get('/plan/active', daily(req => dailyService.getActivePlan(req.user.id)));
+dailyRouter.get('/plan/suggested', daily(req => dailyService.getSuggestedPlans(req.user.id)));
+dailyRouter.get('/plan/:planId', daily(req => dailyService.viewPlan(req.user.id, req.params.planId)));
+dailyRouter.post('/plan/:planId/activate', daily(req => dailyService.activatePlan(req.user.id, req.params.planId)));
+dailyRouter.post('/plan/:planId/product', daily(req => dailyService.updatePlanProduct(req.user.id, req.params.planId, req.body || {})));
+dailyRouter.post('/plan/:planId/day', daily(req => dailyService.addPlanDay(req.user.id, req.params.planId, req.body || {})));
+dailyRouter.post('/check-conflict', daily(req => dailyService.checkConflict(req.user.id, req.body || {})));
+dailyRouter.get('/external-recommendations', daily(() => require('../services/routine-catalog').EXTERNAL_RECOMMENDATIONS));
+
 module.exports = router;
 module.exports.profileRouter = profileRouter;
+module.exports.dailyRouter = dailyRouter;

@@ -349,7 +349,7 @@ const getEmbeddedDays = async (plan, userId) => {
 };
 
 const getPlanDays = async (plan, userId) => {
-    const days = await DailyRoutine.find({ planId: plan._id, userId }).sort({ dayNumber: 1 }).lean();
+    const days = await DailyRoutine.find({ planId: plan._id, userId, date: { $exists: false } }).sort({ dayNumber: 1 }).lean();
     if (days.length) return days;
     return (plan.planPayload || []).map(day => {
         const mapStep = step => ({
