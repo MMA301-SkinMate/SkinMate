@@ -2,9 +2,9 @@ const { randomUUID } = require('node:crypto');
 const pino = require('pino');
 const pinoHttp = require('pino-http');
 
-const createRequestLogger = (config) =>
+const createRequestLogger = (config = {}) =>
     pinoHttp({
-        logger: pino({ level: config.logLevel }),
+        logger: pino({ level: config?.logLevel || 'info' }),
         genReqId(req, res) {
             const id = randomUUID();
             res.setHeader('X-Request-Id', id);

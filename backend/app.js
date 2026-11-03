@@ -7,8 +7,9 @@ const createDocsRoutes = require('./src/routes/docsRoutes');
 const createPasswordResetPageRoutes = require('./src/routes/password-reset-page');
 const openApi = require('./src/docs/openapi');
 const { notFound, errorHandler } = require('./src/middlewares/errorMiddleware');
+const { loadConfig } = require('./src/config/env');
 
-const createApp = (config) => {
+const createApp = (config = loadConfig()) => {
     // Module routes are loaded after server.js has loaded the environment.
     const scanRoutes = require('./src/routes/scanRoutes');
     const authRoutes = require('./src/routes/authRoutes');

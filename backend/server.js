@@ -58,7 +58,7 @@ function handleSignal() {
 const startServer = async () => {
     try {
         const config = loadConfig();
-        const app = createApp();
+        const app = createApp(config);
 
         await connectDB(config.mongoUri);
         await Promise.all([User.init(), AuthSession.init()]);
@@ -95,6 +95,7 @@ if (require.main === module) {
             console.error(
                 `Server startup failed (${error.code || error.name || 'UNKNOWN'}). Check backend configuration and module requirements.`
             );
+            console.error(error);
         }
     });
 }
