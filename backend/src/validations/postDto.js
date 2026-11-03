@@ -1,6 +1,6 @@
 const Joi = require('joi');
 const { productTypes, productIcons } = require('../models/Collection');
-const { skinTypes } = require('../models/CommunityPost');
+const { skinTypes } = require('../models/Community');
 
 const routineStep = Joi.object({
   productName: Joi.string().trim().min(1).max(150).required(),
@@ -30,27 +30,30 @@ const createSchema = Joi.object({
     return helpers.error('any.invalid');
   }
   return value;
+}, 'Published post content requirement').messages({
+  'any.invalid': 'Content is required when publishing a post',
 });
 
-const notFound = res => res.status(404).json({ error: { message: 'Community post was not found', code: 'POST_NOT_FOUND' } });
+function validate(schema) {
+  return (req, res, next) => {
+    const { error, value } = schema.validate(req.body || {}, { abortEarly: false, stripUnknown: true });
+    if (error) return res.status(400).json({ error: { message: error.details?.[0]?.message || 'Request body is invalid', code: 'VALIDATION_ERROR' } });
+    req.body = value;
+    next();
+  };
+}
 
-exports.create = (req, res, next) => {
-  const { error, value } = createSchema.validate(req.body || {}, { abortEarly: false, stripUnknown: true });
-  if (error) return res.status(400).json({ error: { message: 'Request body is invalid', code: 'VALIDATION_ERROR' } });
-  req.body = value;
-  next();
-};
-
+exports.create = validate(createSchema);
+exports.id = (req, res, next) => /^[a-f\d]{24}$/i.test(req.params.id) ? next() : res.status(404).json({ error: { message: 'Community post was not found', code: 'POST_NOT_FOUND' } });
 exports.listQuery = (req, res, next) => {
-  const { skinType, status, mine } = req.query;
-  if ((status && !['draft', 'published'].includes(status)) || (status === 'draft' && mine !== 'true')) {
-    return res.status(400).json({ error: { message: 'Drafts require the owner filter', code: 'VALIDATION_ERROR' } });
-  }
-  if (skinType && !skinTypes.includes(skinType)) {
-    return res.status(400).json({ error: { message: 'Unknown skin type filter', code: 'VALIDATION_ERROR' } });
-  }
+  const schema = Joi.object({
+    skinType: Joi.string().valid(...skinTypes),
+    tag: Joi.string().trim(),
+    mine: Joi.string().valid('true', 'false'),
+    status: Joi.string().valid('draft', 'published', 'hidden', 'deleted'),
+  });
+  const { error, value } = schema.validate(req.query || {}, { stripUnknown: true });
+  if (error) return res.status(400).json({ error: { message: 'Query string is invalid', code: 'VALIDATION_ERROR' } });
+  req.query = value;
   next();
 };
-
-exports.id = (req, res, next) => /^[a-f\d]{24}$/i.test(req.params.id) ? next() : notFound(res);
-exports.notFound = notFound;

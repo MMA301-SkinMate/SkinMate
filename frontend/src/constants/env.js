@@ -6,7 +6,6 @@ const resolveBaseUrl = () => {
         return 'https://api.skinmate.com/api';
     }
 
-    // 1. Trích xuất IP động từ Expo (tự động nhận IP máy chạy Metro, hỗ trợ cả máy thật, iOS và Android)
     const hostUri =
         Constants.expoConfig?.hostUri ||
         Constants.expoGoConfig?.debuggerHost ||
@@ -15,10 +14,8 @@ const resolveBaseUrl = () => {
 
     const localIp = hostUri ? hostUri.split(':')[0] : null;
 
-    // 2. Kiểm tra biến EXPO_PUBLIC_API_URL từ file .env
     const manualUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
 
-    // Tự động thay thế placeholder [IP_ADDRESS] bằng IP động từ máy
     if (manualUrl && manualUrl.includes('[IP_ADDRESS]')) {
         const targetIp = (localIp && localIp !== 'localhost' && localIp !== '127.0.0.1')
             ? localIp
@@ -33,12 +30,9 @@ const resolveBaseUrl = () => {
         }
     }
 
-    // 3. Nếu lấy được IP động từ Expo
     if (localIp && localIp !== 'localhost' && localIp !== '127.0.0.1') {
         return `http://${localIp}:5000/api`;
     }
-
-    // 4. Fallbacks
     if (Platform.OS === 'android') {
         return 'http://10.0.2.2:5000/api';
     }

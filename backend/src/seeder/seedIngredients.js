@@ -11,3 +11,4 @@ const seedIngredients = async () => {
 };
 
 module.exports = seedIngredients;
+

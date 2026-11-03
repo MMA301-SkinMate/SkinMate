@@ -18,7 +18,6 @@ const userSchema = new mongoose.Schema(
         },
         passwordHash: { type: String, required: true, select: false },
         avatarUrl: { type: String, default: null },
-        googleSubject: { type: String, default: undefined },
         passwordResetTokenHash: { type: String, default: null, select: false },
         passwordResetExpiresAt: { type: Date, default: null },
         googleExchangeCodeHash: { type: String, default: null, select: false },
@@ -68,14 +67,7 @@ const userSchema = new mongoose.Schema(
     }
 );
 
-userSchema.pre('save', function () {
-    if (!this.googleSubject) {
-        this.googleSubject = undefined;
-    }
-});
 
 userSchema.index({ email: 1 }, { unique: true });
-// Must match the existing Atlas index: sparse: true (NOT partialFilterExpression)
-userSchema.index({ googleSubject: 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model('User', userSchema);

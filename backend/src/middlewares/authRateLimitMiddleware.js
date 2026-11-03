@@ -12,17 +12,15 @@ const createAuthRateLimiter = (limit, message) =>
         },
     });
 
-const isProd = process.env.NODE_ENV === 'production';
-
 const createRegisterRateLimiter = () =>
     createAuthRateLimiter(
-        isProd ? 5 : 50,
+        5,
         'Bạn đã thử đăng ký quá nhiều lần. Vui lòng thử lại sau.'
     );
 
 const createLoginRateLimiter = () =>
     createAuthRateLimiter(
-        isProd ? 10 : 50,
+        10,
         'Bạn đã thử đăng nhập quá nhiều lần. Vui lòng thử lại sau.'
     );
 

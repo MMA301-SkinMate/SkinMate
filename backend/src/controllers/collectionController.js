@@ -16,7 +16,7 @@ const analyzeProduct = async (req, res) => {
         if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
             return res.status(401).json({
                 success: false,
-                message: 'Vui lòng đăng nhập để phân tích sản phẩm',
+                message: 'Please login to analyze products',
             });
         }
 
@@ -24,7 +24,7 @@ const analyzeProduct = async (req, res) => {
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: 'Không tìm thấy thông tin người dùng',
+                message: 'User not found',
             });
         }
 
@@ -113,7 +113,7 @@ const saveDraft = async (req, res) => {
         if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
             return res.status(401).json({
                 success: false,
-                message: 'Vui lòng đăng nhập để lưu bản nháp',
+                message: 'Please login to save draft',
             });
         }
 
@@ -156,7 +156,7 @@ const addProduct = async (req, res) => {
         if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
             return res.status(401).json({
                 success: false,
-                message: 'Vui lòng đăng nhập để thêm sản phẩm',
+                message: 'Please login to add product',
             });
         }
 
@@ -172,7 +172,6 @@ const addProduct = async (req, res) => {
             expirationDate,
             paoMonths,
             finalExpiryDate,
-            notes,
             note,
             continueAfterExpiry,
             routineUsage,
@@ -189,7 +188,7 @@ const addProduct = async (req, res) => {
             expirationDate: expirationDate || expiryDate || null,
             paoMonths: paoMonths || null,
             finalExpiryDate: finalExpiryDate || null,
-            note: note || notes || null,
+            note: note || null,
             continueAfterExpiry: continueAfterExpiry || false,
             routineUsage: routineUsage || { morning: false, evening: false, step: null },
         };
@@ -222,7 +221,7 @@ const getAllProduct = async (req, res) => {
         if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
             return res.status(401).json({
                 success: false,
-                message: 'Vui lòng đăng nhập để xem tủ đồ',
+                message: 'Please login to view your closet',
             });
         }
 
@@ -255,7 +254,7 @@ const getAllProduct = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: 'Lấy danh sách sản phẩm thành công',
+            message: 'Get products successfully',
             data: products,
             products,
         });
@@ -275,7 +274,7 @@ const getProductById = async (req, res) => {
         const { id } = req.params;
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({ success: false, message: 'ID sản phẩm không hợp lệ' });
+            return res.status(400).json({ success: false, message: 'Invalid product ID' });
         }
 
         const filter = { _id: id };
@@ -283,12 +282,12 @@ const getProductById = async (req, res) => {
 
         const product = await Collection.findOne(filter).lean();
         if (!product) {
-            return res.status(404).json({ success: false, message: 'Không tìm thấy sản phẩm' });
+            return res.status(404).json({ success: false, message: 'Not found product' });
         }
 
         return res.status(200).json({
             success: true,
-            message: 'Lấy thông tin sản phẩm thành công',
+            message: 'Get product successfully',
             data: product,
             product,
         });
@@ -308,7 +307,7 @@ const editProduct = async (req, res) => {
         const { id } = req.params;
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({ success: false, message: 'ID sản phẩm không hợp lệ' });
+            return res.status(400).json({ success: false, message: 'Invalid product ID' });
         }
 
         const filter = { _id: id };
@@ -325,7 +324,6 @@ const editProduct = async (req, res) => {
             expirationDate,
             paoMonths,
             finalExpiryDate,
-            notes,
             note,
             status,
             continueAfterExpiry,
@@ -344,19 +342,19 @@ const editProduct = async (req, res) => {
         }
         if (paoMonths !== undefined) updateData.paoMonths = paoMonths;
         if (finalExpiryDate !== undefined) updateData.finalExpiryDate = finalExpiryDate;
-        if (note !== undefined || notes !== undefined) updateData.note = note || notes;
+        if (note !== undefined) updateData.note = note;
         if (status !== undefined) updateData.status = status;
         if (continueAfterExpiry !== undefined) updateData.continueAfterExpiry = continueAfterExpiry;
         if (routineUsage !== undefined) updateData.routineUsage = routineUsage;
 
         const updated = await Collection.findOneAndUpdate(filter, updateData, { new: true, runValidators: true }).lean();
         if (!updated) {
-            return res.status(404).json({ success: false, message: 'Không tìm thấy sản phẩm để cập nhật' });
+            return res.status(404).json({ success: false, message: 'Not found product' });
         }
 
         return res.status(200).json({
             success: true,
-            message: 'Cập nhật sản phẩm thành công',
+            message: 'Updated product successfully',
             data: updated,
             product: updated,
         });
@@ -376,7 +374,7 @@ const deleteProduct = async (req, res) => {
         const { id } = req.params;
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({ success: false, message: 'ID sản phẩm không hợp lệ' });
+            return res.status(400).json({ success: false, message: 'Invalid product ID' });
         }
 
         const filter = { _id: id };
@@ -384,12 +382,12 @@ const deleteProduct = async (req, res) => {
 
         const deleted = await Collection.findOneAndDelete(filter);
         if (!deleted) {
-            return res.status(404).json({ success: false, message: 'Không tìm thấy sản phẩm để xóa' });
+            return res.status(404).json({ success: false, message: 'Not found product' });
         }
 
         return res.status(200).json({
             success: true,
-            message: 'Xóa sản phẩm thành công',
+            message: 'Deleted product successfully',
         });
     } catch (error) {
         console.error('Delete product error:', error);
@@ -407,7 +405,7 @@ const markProductOutOfStock = async (req, res) => {
         const { id } = req.params;
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({ success: false, message: 'ID sản phẩm không hợp lệ' });
+            return res.status(400).json({ success: false, message: 'Invalid product ID' });
         }
 
         const filter = { _id: id };
@@ -420,12 +418,12 @@ const markProductOutOfStock = async (req, res) => {
         ).lean();
 
         if (!updated) {
-            return res.status(404).json({ success: false, message: 'Không tìm thấy sản phẩm' });
+            return res.status(404).json({ success: false, message: 'Not found product' });
         }
 
         return res.status(200).json({
             success: true,
-            message: 'Đã đánh dấu sản phẩm dùng hết',
+            message: 'Marked as out of stock successfully',
             data: updated,
             product: updated,
         });
@@ -448,11 +446,4 @@ module.exports = {
     editProduct,
     deleteProduct,
     markProductOutOfStock,
-
-    // Aliases
-    list: getAllProduct,
-    create: addProduct,
-    get: getProductById,
-    update: editProduct,
-    remove: deleteProduct,
 };

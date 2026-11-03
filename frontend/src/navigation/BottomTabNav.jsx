@@ -76,6 +76,7 @@ export default function BottomTabNav() {
           ),
         }}
       />
+
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}

@@ -74,10 +74,6 @@ const loginSchema = Joi.object({
     });
 
 const validateAuthBody = (schema, message) => (req, res, next) => {
-    if (req.body && !req.body.fullName && req.body.name) {
-        req.body.fullName = req.body.name;
-    }
-
     const { error, value } = schema.validate(req.body, {
         abortEarly: false,
         allowUnknown: false,
