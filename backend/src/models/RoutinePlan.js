@@ -8,7 +8,7 @@ const routineDaySchema = new mongoose.Schema({
 
 const routinePlanSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    title: { type: String, trim: true, maxlength: 150, default: 'Routine cá nhân' },
+    title: { type: String, trim: true, maxlength: 150, default: 'Personal routine' },
     startDate: { type: String, required: true },
     totalDays: { type: Number, required: true, min: 1, max: 365 },
     currentDay: { type: Number, min: 1, default: 1 },

@@ -7,8 +7,8 @@
  */
 
 const mongoose = require('mongoose');
-const Collection  = require('../models/Collection');
-const User        = require('../models/User');
+const Collection = require('../models/Collection');
+const User = require('../models/User');
 const DailyRoutine = require('../models/DailyRoutine');
 const collectionService = require('../services/collectionService');
 const { calculateProductScores } = require('../services/analysisService');
@@ -74,7 +74,7 @@ const analyzeProduct = async (req, res) => {
             aiResponse = await analyzeProductByScores({
                 productName,
                 productType,
-                baseScore:       scores.baseScore,
+                baseScore: scores.baseScore,
                 contextualScore: scores.contextualScore,
                 skinType,
                 todayCondition,
@@ -86,33 +86,33 @@ const analyzeProduct = async (req, res) => {
         }
 
         const analysisResult = {
-            baseScore:       scores.baseScore,
+            baseScore: scores.baseScore,
             contextualScore: scores.contextualScore,
             verdict: aiResponse?.verdict || {
-                text:       `Sản phẩm có độ phù hợp ${scores.contextualScore}% với tình trạng da hiện tại.`,
+                text: `Sản phẩm có độ phù hợp ${scores.contextualScore}% với tình trạng da hiện tại.`,
                 badgeLevel: scores.contextualScore >= 80 ? 'success' : scores.contextualScore >= 50 ? 'warning' : 'danger',
             },
             conflictResolution: aiResponse?.conflictResolution || {
                 hasConflict: false,
-                details:     'Chưa phát hiện xung đột hoạt chất nghiêm trọng với chu trình hiện tại.',
+                details: 'Chưa phát hiện xung đột hoạt chất nghiêm trọng với chu trình hiện tại.',
             },
             pairingRecommendation: aiResponse?.pairingRecommendation || {
                 matchedProductInCloset: null,
-                advice:              'Nên chọn thêm các sản phẩm phục hồi dịu nhẹ.',
-                ingredientsToAdd:    ['Panthenol (B5)', 'Ceramide'],
-                ingredientsToAvoid:  [],
+                advice: 'Nên chọn thêm các sản phẩm phục hồi dịu nhẹ.',
+                ingredientsToAdd: ['Panthenol (B5)', 'Ceramide'],
+                ingredientsToAvoid: [],
             },
             futurePlan: aiResponse?.futurePlan || {
                 frequency: '2 - 3 lần / tuần',
-                timing:    'Buổi tối',
-                notes:     'Test thử trên vùng da nhỏ trước khi sử dụng chính thức.',
+                timing: 'Buổi tối',
+                notes: 'Test thử trên vùng da nhỏ trước khi sử dụng chính thức.',
             },
         };
 
         return res.status(200).json({
             success: true,
             message: 'Product analysis successful',
-            data:    analysisResult,
+            data: analysisResult,
         });
 
     } catch (error) {
@@ -146,7 +146,7 @@ const saveDraft = async (req, res) => {
         return res.status(201).json({
             success: true,
             message: 'Product saved successfully',
-            data:    savedProduct,
+            data: savedProduct,
         });
 
     } catch (error) {
@@ -167,7 +167,7 @@ const addProduct = async (req, res) => {
         return res.status(201).json({
             success: true,
             message: 'Product saved successfully',
-            data:    savedProduct,
+            data: savedProduct,
         });
 
     } catch (error) {
@@ -192,9 +192,9 @@ const listProducts = async (req, res) => {
         const products = await collectionService.getAllProducts(userId, { tab });
 
         return res.status(200).json({
-            success:  true,
-            message:  'Products fetched successfully',
-            data:     products,
+            success: true,
+            message: 'Products fetched successfully',
+            data: products,
             products, // backward-compat alias
         });
     } catch (err) {
@@ -220,7 +220,7 @@ const editProduct = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: 'Cập nhật thành công',
-            data:    product,
+            data: product,
             product,
         });
     } catch (err) {
@@ -233,8 +233,8 @@ const removeProduct = async (req, res) => {
     try {
         const result = await collectionService.deleteProduct(req.user.id, req.params.id);
         return res.status(200).json({
-            success:      true,
-            message:      result.wasInRoutine
+            success: true,
+            message: result.wasInRoutine
                 ? 'Sản phẩm đã được xóa. Hệ thống đã tự động điều chỉnh routine của bạn.'
                 : 'Sản phẩm đã được xóa.',
             wasInRoutine: result.wasInRoutine,
@@ -250,12 +250,12 @@ const finishProduct = async (req, res) => {
     try {
         const result = await collectionService.markAsUsedUp(req.user.id, req.params.id);
         return res.status(200).json({
-            success:      true,
-            message:      result.wasInRoutine
+            success: true,
+            message: result.wasInRoutine
                 ? 'Sản phẩm đã được đánh dấu dùng hết. Routine đã được cập nhật.'
                 : 'Sản phẩm đã được đánh dấu dùng hết.',
-            data:         result.product,
-            product:      result.product,
+            data: result.product,
+            product: result.product,
             wasInRoutine: result.wasInRoutine,
             replacedWith: result.replacedWith,
         });
@@ -286,6 +286,27 @@ const resolveExpiredAlert = async (req, res) => {
     }
 };
 
+const getScanHistory = async (req, res) => {
+    try {
+        // /collections is protected by authenticate; scope drafts to that session.
+        const userId = req.user.id;
+
+        const historyList = await Collection.find({ userId, status: 'draft' })
+            .sort({ createdAt: -1 })
+            .select('productName productType productIcon ingredients createdAt analysisResult');
+
+        res.status(200).json({
+            success: true,
+            count: historyList.length,
+            data: historyList,
+        });
+    } catch (error) {
+        console.error('Error getting scan history:', error);
+        res.status(500).json({ success: false, message: 'Failed to load scan history' });
+    }
+};
+
+
 module.exports = {
     // Scan-flow (unchanged)
     analyzeProduct,
@@ -299,4 +320,5 @@ module.exports = {
     finishProduct,
     getExpiredAlerts,
     resolveExpiredAlert,
+    getScanHistory
 };

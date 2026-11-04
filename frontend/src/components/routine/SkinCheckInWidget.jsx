@@ -5,11 +5,11 @@ import routineApi from '../../api/routineApi';
 import { COLORS } from '../../constants/colors';
 
 const OPTIONS = [
-    { value: 'Binh_Thuong', label: 'Normal', icon: 'happy-outline' },
-    { value: 'Kho_Rat', label: 'Dry / tight', icon: 'water-outline' },
-    { value: 'Kich_Ung', label: 'Irritated', icon: 'warning-outline' },
-    { value: 'Noi_Mun', label: 'Breakouts', icon: 'ellipse-outline' },
-    { value: 'Bong_Dau', label: 'Oily', icon: 'sunny-outline' },
+    { value: 'Binh_Thuong', label: 'Bình thường', icon: 'happy-outline' },
+    { value: 'Kho_Rat', label: 'Khô rát', icon: 'water-outline' },
+    { value: 'Kich_Ung', label: 'Kích ứng', icon: 'warning-outline' },
+    { value: 'Noi_Mun', label: 'Nổi mụn', icon: 'ellipse-outline' },
+    { value: 'Bong_Dau', label: 'Bóng dầu', icon: 'sunny-outline' },
 ];
 
 const todayKey = () => new Date().toISOString().slice(0, 10);
@@ -82,8 +82,8 @@ export default function SkinCheckInWidget({ onSaved }) {
 
     return (
         <View style={styles.card}>
-            <Text style={styles.title}>Daily skin check-in</Text>
-            <Text style={styles.subtitle}>How does your skin feel today?</Text>
+            <Text style={styles.title}>Nhật ký làn da</Text>
+            <Text style={styles.subtitle}>Da bạn hôm nay thế nào?</Text>
             <View style={styles.options}>
                 {OPTIONS.map((option) => {
                     const active = selected.includes(option.value);

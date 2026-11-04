@@ -23,7 +23,7 @@ export default function RoutineEditScreen({ navigation, route }) {
             setRoutine(value);
             setMorning((value?.morningProducts || []).map((product) => product._id || product));
             setEvening((value?.eveningProducts || []).map((product) => product._id || product));
-        }).catch(() => Alert.alert('Lỗi', 'Không thể tải routine hôm nay.'));
+        }).catch(() => Alert.alert('Error', 'Unable to load today’s routine.'));
     }, [editDate]);
 
     const selected = session === 'morning' ? morning : evening;
@@ -48,36 +48,36 @@ export default function RoutineEditScreen({ navigation, route }) {
             if (!validation.valid) {
                 setSaving(false);
                 Alert.alert(
-                    'Routine có xung đột',
+                    'Routine conflict',
                     validation.conflicts.map((conflict) => `• ${conflict.message}`).join('\n'),
                     [
-                        { text: 'Hủy', style: 'cancel' },
-                        { text: 'Vẫn lưu', style: 'destructive', onPress: () => saveValidated(payload) },
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Save anyway', style: 'destructive', onPress: () => saveValidated(payload) },
                     ],
                 );
                 return;
             }
             await saveValidated(payload);
         } catch (error) {
-            Alert.alert('Không thể lưu', error.response?.data?.message || 'Vui lòng thử lại.');
+            Alert.alert('Unable to save', error.response?.data?.message || 'Please try again.');
         } finally { setSaving(false); }
     };
 
     const saveValidated = async (payload) => {
         try {
             await routineApi.save(payload);
-            Alert.alert('Đã lưu', 'Routine hôm nay đã được cập nhật.', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+            Alert.alert('Changes saved', 'Today’s routine has been updated.', [{ text: 'OK', onPress: () => navigation.goBack() }]);
         } catch (error) {
-            Alert.alert('Không thể lưu', error.response?.data?.message || 'Vui lòng thử lại.');
+            Alert.alert('Unable to save', error.response?.data?.message || 'Please try again.');
         } finally { setSaving(false); }
     };
 
     return <ScreenWrapper scroll>
-        <View style={styles.header}><Pressable onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={24} color={COLORS.textMain} /></Pressable><Text style={styles.title}>{editDayNumber ? `Edit ngày ${editDayNumber}` : 'Edit routine hôm nay'}</Text><View style={{ width: 24 }} /></View>
-        <View style={styles.switch}><Pressable onPress={() => setSession('morning')} style={[styles.switchItem, session === 'morning' && styles.active]}><Text style={[styles.switchText, session === 'morning' && styles.activeText]}>Buổi sáng</Text></Pressable><Pressable onPress={() => setSession('evening')} style={[styles.switchItem, session === 'evening' && styles.active]}><Text style={[styles.switchText, session === 'evening' && styles.activeText]}>Buổi tối</Text></Pressable></View>
-        <Text style={styles.hint}>Chọn sản phẩm có sẵn trong tủ cho ngày hiện tại.</Text>
-        <View style={styles.products}>{(activeProducts || []).map((product) => { const id = product._id || product.id; const isSelected = selected.includes(id); return <Pressable key={id} onPress={() => toggle(id)} style={[styles.product, isSelected && styles.productActive]}><Ionicons name={isSelected ? 'checkmark-circle' : 'ellipse-outline'} size={22} color={isSelected ? COLORS.primary : COLORS.textMuted} /><View style={styles.info}><Text style={styles.name}>{product.productName || product.name}</Text><Text style={styles.type}>{product.productType}</Text></View></Pressable>; })}</View>
-        <Pressable disabled={saving || !routine} onPress={save} style={styles.save}><Text style={styles.saveText}>{saving ? 'Đang lưu...' : 'Lưu thay đổi'}</Text></Pressable>
+        <View style={styles.header}><Pressable onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={24} color={COLORS.textMain} /></Pressable><Text style={styles.title}>{editDayNumber ? `Edit day ${editDayNumber}` : 'Edit today’s routine'}</Text><View style={{ width: 24 }} /></View>
+        <View style={styles.switch}><Pressable onPress={() => setSession('morning')} style={[styles.switchItem, session === 'morning' && styles.active]}><Text style={[styles.switchText, session === 'morning' && styles.activeText]}>Morning</Text></Pressable><Pressable onPress={() => setSession('evening')} style={[styles.switchItem, session === 'evening' && styles.active]}><Text style={[styles.switchText, session === 'evening' && styles.activeText]}>Evening</Text></Pressable></View>
+        <Text style={styles.hint}>Choose products from your active collection for this day.</Text>
+        <View style={styles.products}>{(activeProducts || []).map((product) => { const id = product._id || product.id; const isSelected = selected.includes(id); return <Pressable key={id} onPress={() => toggle(id)} style={[styles.product, isSelected && styles.productActive]}><Ionicons name={isSelected ? 'checkmark-circle' : 'ellipse-outline'} size={22} color={isSelected ? COLORS.primary : COLORS.textMuted} /><View style={styles.info}><Text style={styles.name}>{product.productName || product.name}</Text><Text style={styles.type}>{product.productType || 'Skincare product'}</Text></View></Pressable>; })}</View>
+        <Pressable disabled={saving || !routine} onPress={save} style={styles.save}><Text style={styles.saveText}>{saving ? 'Saving...' : 'Save changes'}</Text></Pressable>
     </ScreenWrapper>;
 }
 

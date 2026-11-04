@@ -25,7 +25,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AlertTriangle, Plus, Trash2, CheckCircle } from 'lucide-react-native';
-import { Colors } from '../../constants/theme';
+import { Colors, FONT_FAMILIES } from '../../constants/theme';
 import { getProductIcon } from '../../constants/product-icons';
 import { useCollection } from '../../context/CollectionContext';
 import ProductDetailModal from './ProductDetailModal';
@@ -97,8 +97,9 @@ export default function MyCollectionScreen({ navigation }) {
     // shelf after every four products. No product type is used for grouping.
     const shelves = useMemo(() => {
         const result = [];
-        for (let index = 0; index < productsForTab.length; index += 4) {
-            result.push(productsForTab.slice(index, index + 4));
+        // Reserve the fourth slot on the last shelf for the inline add action.
+        for (let index = 0; index < productsForTab.length; index += 3) {
+            result.push(productsForTab.slice(index, index + 3));
         }
         if (result.length === 0 || result[result.length - 1].length === 4) {
             result.push([]);
@@ -512,35 +513,35 @@ const styles = StyleSheet.create({
     // Header
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 18 },
     titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    title: { fontSize: 25, fontWeight: '800', color: Colors.text },
+    title: { fontFamily: FONT_FAMILIES.interBold, fontSize: 25, fontWeight: '800', color: Colors.text },
     countBadge: { backgroundColor: Colors.primaryLight, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 14 },
-    countBadgeText: { fontSize: 11, color: Colors.primaryDark, fontWeight: '700' },
-    subtitle: { color: Colors.muted, fontSize: 13, marginTop: 5 },
+    countBadgeText: { fontFamily: FONT_FAMILIES.interSemiBold, fontSize: 11, color: Colors.primaryDark, fontWeight: '700' },
+    subtitle: { fontFamily: FONT_FAMILIES.interRegular, color: Colors.muted, fontSize: 13, marginTop: 5 },
 
     // Tab bar
     tabBar: { flexDirection: 'row', backgroundColor: '#eaf1ed', borderRadius: 18, padding: 4, marginBottom: 16 },
     tabItem: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, minHeight: 38, borderRadius: 20 },
     tabItemActive: { backgroundColor: Colors.card, shadowColor: Colors.shadow, shadowOpacity: 0.07, shadowRadius: 5, elevation: 2 },
-    tabText: { fontSize: 13, color: Colors.textSecondary, fontWeight: '500' },
+    tabText: { fontFamily: FONT_FAMILIES.interMedium, fontSize: 13, color: Colors.textSecondary, fontWeight: '500' },
     tabTextActive: { color: Colors.text, fontWeight: '700' },
     tabCountBadge: { backgroundColor: Colors.primaryLight, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 10 },
     tabCountUsed: { backgroundColor: Colors.borderDark },
-    tabCountText: { fontSize: 11, color: Colors.primaryDark, fontWeight: '700' },
+    tabCountText: { fontFamily: FONT_FAMILIES.interSemiBold, fontSize: 11, color: Colors.primaryDark, fontWeight: '700' },
 
     // Banners
     alertBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 9, borderRadius: 18, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.error, marginBottom: 10 },
-    alertBannerText: { flex: 1, fontSize: 12, color: Colors.error },
+    alertBannerText: { flex: 1, fontFamily: FONT_FAMILIES.interRegular, fontSize: 12, color: Colors.error },
     alertBannerBold: { fontWeight: '800' },
     warnBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 9, borderRadius: 18, backgroundColor: Colors.background, marginBottom: 10 },
     warnDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: Colors.warning },
-    warnBannerText: { flex: 1, fontSize: 12, color: Colors.text },
+    warnBannerText: { flex: 1, fontFamily: FONT_FAMILIES.interRegular, fontSize: 12, color: Colors.text },
     warnBannerBold: { fontWeight: '700', color: Colors.warning },
 
     // State cards
     stateBox: { alignItems: 'center', gap: 10, padding: 30, borderRadius: 18, backgroundColor: Colors.background, marginTop: 12 },
-    emptyTitle: { fontSize: 16, fontWeight: '700', color: Colors.text },
-    stateText: { fontSize: 13, color: Colors.muted, textAlign: 'center', lineHeight: 19 },
-    retryText: { fontSize: 14, fontWeight: '700', color: Colors.primary },
+    emptyTitle: { fontFamily: FONT_FAMILIES.interSemiBold, fontSize: 16, fontWeight: '700', color: Colors.text },
+    stateText: { fontFamily: FONT_FAMILIES.interRegular, fontSize: 13, color: Colors.muted, textAlign: 'center', lineHeight: 19 },
+    retryText: { fontFamily: FONT_FAMILIES.interSemiBold, fontSize: 14, fontWeight: '700', color: Colors.primary },
 
     // Cabinet shell
     collectionCabinet: { marginHorizontal: -2, padding: 12, paddingBottom: 5, borderRadius: 22, backgroundColor: '#e1f2eb', borderWidth: 1, borderColor: '#d2e8de' },
@@ -549,8 +550,8 @@ const styles = StyleSheet.create({
     productRowIcon: { width: 62, height: 62, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.72)' },
     productRowImage: { width: 52, height: 56 },
     productRowInfo: { flex: 1, gap: 4 },
-    productRowName: { fontSize: 15, fontWeight: '800', color: Colors.text },
-    productRowType: { fontSize: 12, color: Colors.primary, fontWeight: '600' },
+    productRowName: { fontFamily: FONT_FAMILIES.interSemiBold, fontSize: 15, fontWeight: '800', color: Colors.text },
+    productRowType: { fontFamily: FONT_FAMILIES.interMedium, fontSize: 12, color: Colors.primary, fontWeight: '600' },
     cabinetTop: { height: 13, borderRadius: 5, backgroundColor: '#B65B17', marginBottom: 7, borderTopWidth: 2, borderTopColor: '#D47A2C' },
     cabinetKnob: { width: 9, height: 9, borderRadius: 5, backgroundColor: '#F2BC65', marginLeft: 7, marginTop: 1 },
     cabinetBottom: { height: 13, marginHorizontal: -1, marginTop: -15, borderRadius: 4, backgroundColor: '#A94A0B', borderTopWidth: 2, borderTopColor: '#D47A2C' },
@@ -582,7 +583,7 @@ const styles = StyleSheet.create({
     badgePending: { position: 'absolute', top: 2, right: 2, width: 13, height: 13, borderRadius: 7, backgroundColor: Colors.warning, alignItems: 'center', justifyContent: 'center' },
     badgePendingText: { color: '#fff', fontSize: 8, fontWeight: '900' },
 
-    productName: { width: '100%', fontSize: 10, lineHeight: 13, fontWeight: '700', textAlign: 'center', color: Colors.text },
+    productName: { width: '100%', fontFamily: FONT_FAMILIES.interSemiBold, fontSize: 10, lineHeight: 13, fontWeight: '700', textAlign: 'center', color: Colors.text },
     productNameExpired: { color: Colors.error, fontWeight: '800' },
 
     // FAB

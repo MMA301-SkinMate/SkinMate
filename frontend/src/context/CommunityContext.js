@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { copyCommunityRoutine, createCommunityPost, deleteCommunityPost, listCommunityPosts, toggleCommunityPostLike } from '../api/communityApi';
 
 const CommunityContext = createContext(null);
@@ -7,6 +7,7 @@ export function CommunityProvider({ children }) {
   const [posts, setPosts] = useState([]);
   const [skinTypeFilter, setSkinTypeFilter] = useState(null);
   const [skinConditionFilter, setSkinConditionFilter] = useState(null);
+  const [showMyPosts, setShowMyPosts] = useState(false);
   const [isCommunityLoading, setIsCommunityLoading] = useState(false);
   const [communityError, setCommunityError] = useState(null);
 
@@ -17,6 +18,7 @@ export function CommunityProvider({ children }) {
       const params = {};
       if (skinTypeFilter) params.skinType = skinTypeFilter;
       if (skinConditionFilter) params.skinCondition = skinConditionFilter;
+      if (showMyPosts) params.mine = 'true';
       const result = await listCommunityPosts(params);
       setPosts(result.posts || []);
     } catch (error) {
@@ -24,9 +26,7 @@ export function CommunityProvider({ children }) {
     } finally {
       setIsCommunityLoading(false);
     }
-  }, [skinTypeFilter, skinConditionFilter]);
-
-  useEffect(() => { refreshPosts(); }, [refreshPosts]);
+  }, [skinTypeFilter, skinConditionFilter, showMyPosts]);
 
   const replacePost = post => setPosts(current => current.map(item => item.id === post.id ? post : item));
 
@@ -51,9 +51,9 @@ export function CommunityProvider({ children }) {
   }, []);
 
   const value = useMemo(() => ({
-    posts, skinTypeFilter, setSkinTypeFilter, skinConditionFilter, setSkinConditionFilter, isCommunityLoading, communityError,
+    posts, skinTypeFilter, setSkinTypeFilter, skinConditionFilter, setSkinConditionFilter, showMyPosts, setShowMyPosts, isCommunityLoading, communityError,
     refreshPosts, addPost, toggleLike, copyRoutine, removePost,
-  }), [posts, skinTypeFilter, isCommunityLoading, communityError, refreshPosts, addPost, toggleLike, copyRoutine, removePost]);
+  }), [posts, skinTypeFilter, skinConditionFilter, showMyPosts, isCommunityLoading, communityError, refreshPosts, addPost, toggleLike, copyRoutine, removePost]);
   return <CommunityContext.Provider value={value}>{children}</CommunityContext.Provider>;
 }
 

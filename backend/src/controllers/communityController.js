@@ -6,10 +6,9 @@ const DailyRoutine = require('../models/DailyRoutine');
 const { uploadToCloudinary } = require('../services/cloudinaryService');
 const { notFound } = require('../validations/postDto');
 
-const DEFAULT_USER_ID = '6ad620492ae8913ed1eb2871';
 const PAGE_SIZE = 20;
 
-const currentUserId = req => req.user?.id || req.userId || DEFAULT_USER_ID;
+const currentUserId = req => req.user.id;
 
 const getSkinTypes = post => {
   if (Array.isArray(post.skinTypes) && post.skinTypes.length) return post.skinTypes;
@@ -68,13 +67,13 @@ exports.uploadImages = async (req, res, next) => {
 exports.list = async (req, res, next) => {
   try {
     const userId = currentUserId(req);
-    const filter = { status: 'published' };
-    if (req.query.skinType) filter.$or = [{ skinTypes: req.query.skinType }, { skinType: req.query.skinType }];
-    if (req.query.skinCondition) filter.skinConditions = req.query.skinCondition;
-    if (req.query.mine === 'true') {
-      filter.userId = userId;
-      if (req.query.status === 'draft') filter.status = 'draft';
-    }
+    const isMine = req.query.mine === 'true';
+    const filter = isMine
+      ? { userId, status: req.query.status || 'published' }
+      : { status: 'published' };
+    // Personal posts should not disappear because a public-feed filter is active.
+    if (!isMine && req.query.skinType) filter.$or = [{ skinTypes: req.query.skinType }, { skinType: req.query.skinType }];
+    if (!isMine && req.query.skinCondition) filter.skinConditions = req.query.skinCondition;
     const before = req.query.before ? new Date(req.query.before) : null;
     if (before && !Number.isNaN(before.getTime())) filter.createdAt = { $lt: before };
 

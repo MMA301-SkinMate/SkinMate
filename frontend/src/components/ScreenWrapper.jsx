@@ -52,11 +52,11 @@ const ScreenWrapper = forwardRef(function ScreenWrapper(
           style={scroll ? styles.inner : contentStyle}
           {...(scroll
             ? {
-                contentContainerStyle: contentStyle,
-                keyboardShouldPersistTaps: "handled",
-                keyboardDismissMode: "on-drag",
-                contentInsetAdjustmentBehavior: "never",
-              }
+              contentContainerStyle: contentStyle,
+              keyboardShouldPersistTaps: "handled",
+              keyboardDismissMode: "on-drag",
+              contentInsetAdjustmentBehavior: "never",
+            }
             : {})}
         >
           {children}

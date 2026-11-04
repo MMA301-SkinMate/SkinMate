@@ -2,8 +2,10 @@ const express = require('express');
 const controller = require('../controllers/communityController');
 const validate = require('../validations/postDto');
 const { createMemoryImageUpload } = require('../middlewares/productImageUploadMiddleware');
+const authenticate = require('../middlewares/authMiddleware');
 const uploadCommunityImages = createMemoryImageUpload();
 const router = express.Router();
+router.use(authenticate);
 router.get('/', validate.listQuery, controller.list);
 router.post('/image', (req, res, next) => {
   uploadCommunityImages.array('images', 5)(req, res, error => {

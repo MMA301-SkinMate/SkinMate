@@ -1,22 +1,23 @@
 import { COLORS } from './colors';
 
-// Must stay in sync with skinTypes in backend/src/models/CommunityPost.js
-export const SKIN_TYPES = ['Da dầu mụn', 'Da khô', 'Da hỗn hợp', 'Da nhạy cảm', 'Phục hồi'];
+// Must stay in sync with skinTypes in backend/src/models/Community.js
+export const SKIN_TYPES = ['Da dầu', 'Da khô', 'Da hỗn hợp thiên dầu', 'Da hỗn hợp thiên khô', 'Da nhạy cảm', 'Da thường'];
 
 export const SKIN_TYPE_LABELS = {
-  'Da dầu mụn': 'Oily / acne-prone',
-  'Da khô': 'Dry',
-  'Da hỗn hợp': 'Combination',
-  'Da nhạy cảm': 'Sensitive',
-  'Phục hồi': 'Repair / recovery',
+  'Da dầu': 'Da dầu',
+  'Da khô': 'Da khô',
+  'Da hỗn hợp thiên dầu': 'Da hỗn hợp thiên dầu',
+  'Da hỗn hợp thiên khô': 'Da hỗn hợp thiên khô',
+  'Da nhạy cảm': 'Da nhạy cảm',
+  'Da thường': 'Da thường',
 };
 
 export const POST_TAGS = ['#Routine', '#DaDauMun', '#PhucHoi', '#Review'];
 
 export const SKIN_CONDITIONS = ['Binh_Thuong', 'Kho_Rat', 'Kich_Ung', 'Noi_Mun', 'Bong_Dau'];
 export const SKIN_CONDITION_LABELS = {
-  Binh_Thuong: 'Normal', Kho_Rat: 'Dry / tight', Kich_Ung: 'Irritated',
-  Noi_Mun: 'Breakouts', Bong_Dau: 'Oily',
+  Binh_Thuong: 'Bình thường', Kho_Rat: 'Khô rát', Kich_Ung: 'Kích ứng',
+  Noi_Mun: 'Nổi mụn', Bong_Dau: 'Bóng dầu',
 };
 
 export const POST_TAG_LABELS = {
